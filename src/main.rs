@@ -6,6 +6,7 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
 mod test_main;
+mod test_aes;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
