@@ -1,6 +1,7 @@
 
 use axum::{extract::Path, routing::{get, post}, Json, Router};
 use hyper::StatusCode;
+use mysql::{params, prelude::Queryable, Pool};
 use serde_derive::{Deserialize, Serialize};
 
 mod test_main;
@@ -37,20 +38,37 @@ async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<
 async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
-  let vi = VideoInfo {
-    id: 1,
-    video_file_name: "vid.mp4".to_string(),
-    cover_file_name: "vid.jpg".to_string(),
-  };
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+
+  let url = "mysql://root:000000@localhost:3306/mp4viewer";
+  let pool = Pool::new(url).unwrap();
+
+  let mut conn = pool.get_conn().unwrap();
+
+  let selected_video: Vec<VideoEntity> = conn.exec_map(
+    "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
+      "dir_path" => sub_dir_param,
+      "base_index" => base_index,
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+
 
   let di = DirInfo {
     id: base_index,
     sub_dir,
-    video_list: vec![vi]
+    video_list: selected_video
   };
   (StatusCode::OK, Json(di))
 }
 
+#[derive(Serialize)]
+struct VideoEntity {
+  id: u32,
+  #[serde(rename = "videoFileName")]
+  video_file_name: String,
+  #[serde(rename = "coverFileName")]
+  cover_file_name: String
+}
 
 #[derive(Deserialize)]
 struct CreateUser {
@@ -68,17 +86,17 @@ struct User {
 #[derive(Serialize)]
 struct VideoInfo {
   id: u32,
-  #[serde(alias = "videoFileName")]
+  #[serde(rename = "videoFileName")]
   video_file_name: String,
-  #[serde(alias = "coverFileName")]
+  #[serde(rename = "coverFileName")]
   cover_file_name: String,
 }
 
 #[derive(Serialize)]
 struct DirInfo {
   id: u32,
-  #[serde(alias = "subDir")]
+  #[serde(rename = "subDir")]
   sub_dir: String,
-  #[serde(alias = "videoList")]
-  video_list: Vec<VideoInfo>
+  #[serde(rename = "videoList")]
+  video_list: Vec<VideoEntity>
 }
