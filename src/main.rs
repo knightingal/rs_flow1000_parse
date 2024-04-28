@@ -1,5 +1,5 @@
 
-use axum::{extract::Path, routing::{get, post}, Json, Router};
+use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
 use hyper::StatusCode;
 use mysql::{params, prelude::Queryable, Pool};
 use serde_derive::{Deserialize, Serialize};
@@ -7,22 +7,16 @@ use serde_derive::{Deserialize, Serialize};
 mod test_main;
 mod test_aes;
 
-static mut POOL: Option<&mut Pool>= None;
-
 #[tokio::main]
 async fn main() {
 
   let url = "mysql://root:000000@localhost:3306/mp4viewer";
   let pool = Pool::new(url).unwrap();
-  let box_pool = Box::new(pool);
-  unsafe {
-    POOL = Some(Box::leak(box_pool))
-  }
 
   let app = Router::new()
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
-    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/video-info/:base_index/*sub_dir", get(video_info_handler)).with_state(pool)
     ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
   axum::serve(listener, app).await.unwrap();
@@ -45,14 +39,11 @@ async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<
   (StatusCode::CREATED, Json(user))
 }
 
-async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
+async fn video_info_handler(State(pool): State<Pool>, Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
-
-  let url = "mysql://root:000000@localhost:3306/mp4viewer";
-  let pool = Pool::new(url).unwrap();
 
   let mut conn = pool.get_conn().unwrap();
 
