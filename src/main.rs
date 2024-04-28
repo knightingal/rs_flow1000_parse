@@ -7,8 +7,18 @@ use serde_derive::{Deserialize, Serialize};
 mod test_main;
 mod test_aes;
 
+static mut POOL: Option<&mut Pool>= None;
+
 #[tokio::main]
 async fn main() {
+
+  let url = "mysql://root:000000@localhost:3306/mp4viewer";
+  let pool = Pool::new(url).unwrap();
+  let box_pool = Box::new(pool);
+  unsafe {
+    POOL = Some(Box::leak(box_pool))
+  }
+
   let app = Router::new()
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
