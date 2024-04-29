@@ -1,4 +1,3 @@
-
 use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
 use hyper::StatusCode;
 use mysql::{params, prelude::Queryable, Pool};
@@ -22,7 +21,9 @@ async fn main() {
   let app = Router::new()
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
-    .route("/video-info/:base_index/*sub_dir", get(video_info_handler)).with_state(pool)
+    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/video-detail/:id", get(video_detail))
+    .with_state(pool)
     ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
   axum::serve(listener, app).await.unwrap();
@@ -45,13 +46,24 @@ async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<
   (StatusCode::CREATED, Json(user))
 }
 
-async fn video_info_handler(State(pool): State<Pool>, Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
+
+async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
+  let mut conn1 = pool.get_conn().unwrap();
+  let selected_video = conn1.exec_map(
+    "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
+      "id" => id,
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+
+  (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+
+}
+
+async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-  let mut conn1 = pool.get_conn().unwrap();
 
   let mut conn = unsafe {
     POOL.unwrap().get_conn().unwrap()
@@ -71,8 +83,7 @@ async fn video_info_handler(State(pool): State<Pool>, Path((base_index, sub_dir)
   };
   (StatusCode::OK, Json(di))
 }
-
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct VideoEntity {
   id: u32,
   #[serde(rename = "videoFileName")]
