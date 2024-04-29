@@ -7,11 +7,17 @@ use serde_derive::{Deserialize, Serialize};
 mod test_main;
 mod test_aes;
 
+static mut POOL: Option<&Pool>= None;
+
 #[tokio::main]
 async fn main() {
 
   let url = "mysql://root:000000@localhost:3306/mp4viewer";
   let pool = Pool::new(url).unwrap();
+  let box_pool = Box::new(Pool::new(url).unwrap());
+  unsafe {
+    POOL = Some(Box::leak(box_pool))
+  }
 
   let app = Router::new()
     .route("/", get(root))
@@ -45,7 +51,11 @@ async fn video_info_handler(State(pool): State<Pool>, Path((base_index, sub_dir)
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-  let mut conn = pool.get_conn().unwrap();
+  let mut conn1 = pool.get_conn().unwrap();
+
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
 
   let selected_video: Vec<VideoEntity> = conn.exec_map(
     "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
