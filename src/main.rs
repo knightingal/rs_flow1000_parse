@@ -58,7 +58,8 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
 
 }
 
-async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> (StatusCode, Json<DirInfo>) {
+async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
+    -> (StatusCode, Json<Vec<VideoEntity>>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
@@ -76,12 +77,7 @@ async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) ->
     }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
 
 
-  let di = DirInfo {
-    id: base_index,
-    sub_dir,
-    video_list: selected_video
-  };
-  (StatusCode::OK, Json(di))
+  (StatusCode::OK, Json(selected_video))
 }
 #[derive(Serialize, Clone)]
 struct VideoEntity {
