@@ -1,5 +1,5 @@
 use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
-use hyper::StatusCode;
+use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool};
 use serde_derive::{Deserialize, Serialize};
 
@@ -59,7 +59,7 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
 }
 
 async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
-    -> (StatusCode, Json<Vec<VideoEntity>>) {
+    -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
@@ -76,8 +76,10 @@ async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
       "base_index" => base_index,
     }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
 
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
 
-  (StatusCode::OK, Json(selected_video))
+  (StatusCode::OK, header, Json(selected_video))
 }
 #[derive(Serialize, Clone)]
 struct VideoEntity {
