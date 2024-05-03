@@ -22,6 +22,7 @@ async fn main() {
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
     .route("/video-detail/:id", get(video_detail))
     .with_state(pool)
     ;
@@ -56,6 +57,29 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 
+}
+
+async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
+    -> (StatusCode, HeaderMap, Json<String>) {
+  println!("{}", base_index);
+  println!("{}", sub_dir);
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+
+
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+
+  let dir_path: String = conn.exec_first(
+    "select dir_path from mp4_base_dir where id = :id ", params! {
+      "id" => base_index,
+    }).unwrap().unwrap();
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+
+  (StatusCode::OK, header, Json(dir_path))
 }
 
 async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
