@@ -1,3 +1,5 @@
+use std::{ffi::OsString, fs};
+
 use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
 use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool};
@@ -22,7 +24,11 @@ async fn main() {
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+
+    .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
+    .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
+
     .route("/video-detail/:id", get(video_detail))
     .with_state(pool)
     ;
@@ -59,12 +65,9 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
 
 }
 
-async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
-    -> (StatusCode, HeaderMap, Json<String>) {
+async fn mp4_dir_handler1(Path(base_index): Path<u32>) 
+    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
   println!("{}", base_index);
-  println!("{}", sub_dir);
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
 
 
   let mut conn = unsafe {
@@ -76,10 +79,51 @@ async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
       "id" => base_index,
     }).unwrap().unwrap();
 
+  let file_names:Vec<String> = fs::read_dir(&dir_path).unwrap().map(|res| 
+      res.unwrap()
+        .file_name()
+        .into_string()
+        .unwrap()
+  ).collect();
+
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
 
-  (StatusCode::OK, header, Json(dir_path))
+  (StatusCode::OK, header, Json(file_names))
+}
+
+async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
+    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
+  println!("{}", base_index);
+  println!("{}", sub_dir);
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+
+
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+
+  let mut dir_path: String = conn.exec_first(
+    "select dir_path from mp4_base_dir where id = :id ", params! {
+      "id" => base_index,
+    }).unwrap().unwrap();
+
+  dir_path += "/";
+  dir_path += &sub_dir;
+
+
+  let file_names:Vec<String> = fs::read_dir(&dir_path).unwrap().map(|res| 
+      res.unwrap()
+        .file_name()
+        .into_string()
+        .unwrap()
+  ).collect();
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+
+  (StatusCode::OK, header, Json(file_names))
 }
 
 async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
