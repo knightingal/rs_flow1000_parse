@@ -1,4 +1,4 @@
-use std::{ffi::OsString, fs};
+use std::fs::{self, DirEntry};
 
 use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
 use hyper::{HeaderMap, StatusCode};
@@ -78,9 +78,13 @@ async fn mp4_dir_handler1(Path(base_index): Path<u32>)
     "select dir_path from mp4_base_dir where id = :id ", params! {
       "id" => base_index,
     }).unwrap().unwrap();
+  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(&dir_path).unwrap()
+    .map(|res| res.unwrap())
+    .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent")).collect();
+  file_entry_list.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
 
-  let file_names:Vec<String> = fs::read_dir(&dir_path).unwrap().map(|res| 
-      res.unwrap()
+  let file_names:Vec<String> = file_entry_list.into_iter().map(|res| 
+      res
         .file_name()
         .into_string()
         .unwrap()
@@ -113,8 +117,13 @@ async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   dir_path += &sub_dir;
 
 
-  let file_names:Vec<String> = fs::read_dir(&dir_path).unwrap().map(|res| 
-      res.unwrap()
+  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(&dir_path).unwrap()
+    .map(|res| res.unwrap())
+    .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent")).collect();
+  file_entry_list.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
+
+  let file_names:Vec<String> = file_entry_list.into_iter().map(|res| 
+      res
         .file_name()
         .into_string()
         .unwrap()
