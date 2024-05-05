@@ -24,6 +24,7 @@ async fn main() {
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/mount-config", get(mount_config_handler))
 
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
@@ -39,6 +40,7 @@ async fn main() {
 async fn root() -> &'static str {
   "Hello World!"
 }
+
 
 async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<CreateUser>) -> (StatusCode, Json<User>) {
   let name:String = name;
@@ -62,6 +64,25 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
     }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+
+}
+
+async fn mount_config_handler()  
+    -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+  let mount_config_list:Vec<MountConfig> = conn.query_map(
+    "select id, dir_path, url_prefix, api_version from mp4_base_dir", 
+    |(id, dir_path, url_prefix, api_version)| {
+      MountConfig{id, dir_path, url_prefix, api_version}
+    }
+  ).unwrap();
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+
+  (StatusCode::OK, header, Json(mount_config_list))
 
 }
 
@@ -141,6 +162,9 @@ async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
+  if sub_dir_param.ends_with("/") {
+    sub_dir_param.truncate(sub_dir_param.len() - 1);
+  }
 
 
   let mut conn = unsafe {
@@ -196,4 +220,16 @@ struct DirInfo {
   sub_dir: String,
   #[serde(rename = "videoList")]
   video_list: Vec<VideoEntity>
+}
+
+
+#[derive(Serialize)]
+struct MountConfig {
+  id: u32,
+  #[serde(rename = "baseDir")]
+  dir_path: String,
+  #[serde(rename = "urlPrefix")]
+  url_prefix: String,
+  #[serde(rename = "apiVersion")]
+  api_version: u32,
 }
