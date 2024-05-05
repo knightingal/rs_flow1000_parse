@@ -1,4 +1,4 @@
-use std::fs::{self, DirEntry};
+use std::{cmp::Ordering, fs::{self, DirEntry}};
 
 use axum::{extract::{Path, State}, routing::{get, post}, Json, Router};
 use hyper::{HeaderMap, StatusCode};
@@ -64,7 +64,6 @@ async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusC
     }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
-
 }
 
 async fn mount_config_handler()  
@@ -83,13 +82,11 @@ async fn mount_config_handler()
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
 
   (StatusCode::OK, header, Json(mount_config_list))
-
 }
 
 async fn mp4_dir_handler1(Path(base_index): Path<u32>) 
     -> (StatusCode, HeaderMap, Json<Vec<String>>) {
   println!("{}", base_index);
-
 
   let mut conn = unsafe {
     POOL.unwrap().get_conn().unwrap()
@@ -99,17 +96,8 @@ async fn mp4_dir_handler1(Path(base_index): Path<u32>)
     "select dir_path from mp4_base_dir where id = :id ", params! {
       "id" => base_index,
     }).unwrap().unwrap();
-  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(&dir_path).unwrap()
-    .map(|res| res.unwrap())
-    .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent")).collect();
-  file_entry_list.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
 
-  let file_names:Vec<String> = file_entry_list.into_iter().map(|res| 
-      res
-        .file_name()
-        .into_string()
-        .unwrap()
-  ).collect();
+  let file_names = parse_dir_path(&dir_path).unwrap();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -137,11 +125,18 @@ async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   dir_path += "/";
   dir_path += &sub_dir;
 
+  let file_names = parse_dir_path(&dir_path);
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
 
-  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(&dir_path).unwrap()
+  (StatusCode::OK, header, Json(file_names.unwrap()))
+}
+
+fn parse_dir_path(dir_path: &String) -> Result<Vec<String>, std::io::Error> {
+  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
     .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent")).collect();
-  file_entry_list.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
+  file_entry_list.sort_by(|a, b| comp_path(&b, &a).unwrap());
 
   let file_names:Vec<String> = file_entry_list.into_iter().map(|res| 
       res
@@ -150,10 +145,14 @@ async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
         .unwrap()
   ).collect();
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  return Result::Ok(file_names);
+}
 
-  (StatusCode::OK, header, Json(file_names))
+fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
+  let mod_a = a.metadata()?.modified()?;
+  let mod_b = b.metadata()?.modified()?;
+
+  Result::Ok(mod_a.cmp(&mod_b))
 }
 
 async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
@@ -182,6 +181,7 @@ async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
 
   (StatusCode::OK, header, Json(selected_video))
 }
+
 #[derive(Serialize, Clone)]
 struct VideoEntity {
   id: u32,
@@ -221,7 +221,6 @@ struct DirInfo {
   #[serde(rename = "videoList")]
   video_list: Vec<VideoEntity>
 }
-
 
 #[derive(Serialize)]
 struct MountConfig {
