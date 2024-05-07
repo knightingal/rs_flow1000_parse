@@ -54,6 +54,26 @@ async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<
   (StatusCode::CREATED, Json(user))
 }
 
+fn is_charact(byte:&u8) -> bool {
+  byte >= &b'a' && byte <= &b'z' || byte >= &b'A' && byte <= &b'Z'
+}
+
+fn is_number(byte:&u8) -> bool {
+  byte >= &b'0' && byte <= &b'9' 
+}
+
+
+fn parse_designation(file_name: &String) -> String {
+  let bytes = file_name.as_bytes();
+  let bytes_it = bytes.into_iter();
+  for byte in bytes_it {
+    if byte == &b'a' {
+
+    }
+  }
+
+  return String::from("designation");
+}
 
 #[derive(Deserialize)]
 struct CreateUser {
