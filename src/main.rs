@@ -62,12 +62,28 @@ fn is_number(byte:&u8) -> bool {
   byte >= &b'0' && byte <= &b'9' 
 }
 
+struct DesignationData {
+  char_len: u8,
+  state: DesignationState,
+  num_len: u8,
+}
+
+enum DesignationState {
+  init,
+  char,
+  num,
+  split,
+}
 
 fn parse_designation(file_name: &String) -> String {
-  let bytes = file_name.as_bytes();
-  let bytes_it = bytes.into_iter();
-  for byte in bytes_it {
-    if byte == &b'a' {
+  let chars = file_name.chars();
+  let mut designation_state: DesignationData;
+  for char_it in chars {
+    if char_it.is_ascii_alphabetic() {
+
+    } else if char_it.is_ascii_digit() {
+
+    } else if char_it == '-' {
 
     }
   }
