@@ -75,16 +75,50 @@ enum DesignationState {
   split,
 }
 
+enum DesignationTranc {
+  num,
+  char,
+  split,
+  other,
+}
+
+fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationTranc) {
+  match designation_state.state {
+    DesignationState::init => {
+      match tranc_code {
+        DesignationTranc::char => {designation_state.state = DesignationState::char;},
+        _ => {}
+      }
+
+
+    },
+    DesignationState::char => {
+      match tranc_code {
+        DesignationTranc::num => {designation_state.state = DesignationState::num}
+        _ => {designation_state.state = DesignationState::init}  
+      }
+
+    }
+    _ => {}
+
+      
+  }
+
+}
+
 fn parse_designation(file_name: &String) -> String {
   let chars = file_name.chars();
-  let mut designation_state: DesignationData;
+  let mut designation_state: DesignationData = DesignationData { char_len: (0), state: (DesignationState::init), num_len: (0) };
   for char_it in chars {
     if char_it.is_ascii_alphabetic() {
+      state_trans(&mut designation_state, DesignationTranc::char);
 
     } else if char_it.is_ascii_digit() {
-
+      state_trans(&mut designation_state, DesignationTranc::num);
     } else if char_it == '-' {
-
+      state_trans(&mut designation_state, DesignationTranc::split);
+    } else {
+      state_trans(&mut designation_state, DesignationTranc::other);
     }
   }
 
