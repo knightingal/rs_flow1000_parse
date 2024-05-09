@@ -95,11 +95,45 @@ fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationT
     DesignationState::char => {
       match tranc_code {
         DesignationTranc::num => {designation_state.state = DesignationState::num}
+        DesignationTranc::char => {
+          if designation_state.char_len == 4 {
+            designation_state.state = DesignationState::init;
+            designation_state.char_len = 0;
+            designation_state.num_len = 0;
+          } else {
+            designation_state.state = DesignationState::char;
+            designation_state.char_len = designation_state.char_len + 1;
+          }
+        }
         _ => {designation_state.state = DesignationState::init}  
       }
 
+    },
+    DesignationState::num => {
+      match tranc_code {
+        DesignationTranc::num => {
+          if designation_state.num_len == 5 {
+            designation_state.state = DesignationState::init;
+            designation_state.char_len = 0;
+            designation_state.num_len = 0;
+          } else {
+            designation_state.state = DesignationState::num;
+            designation_state.num_len = designation_state.num_len + 1;
+          }
+        }
+        _ => {
+          designation_state.state = DesignationState::init;
+          designation_state.char_len = 0;
+          designation_state.num_len = 0;
+        }  
+      }
+
+    },
+    _ => {
+      designation_state.state = DesignationState::init;
+      designation_state.char_len = 0;
+      designation_state.num_len = 0;
     }
-    _ => {}
 
       
   }
