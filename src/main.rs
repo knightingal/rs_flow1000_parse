@@ -66,6 +66,8 @@ struct DesignationData {
   char_len: u8,
   state: DesignationState,
   num_len: u8,
+  char_part: Vec<char>,
+  num_part: Vec<char>,
 }
 
 enum DesignationState {
@@ -82,15 +84,13 @@ enum DesignationTranc {
   other,
 }
 
-fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationTranc) {
+fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: DesignationTranc) {
   match designation_state.state {
     DesignationState::init => {
       match tranc_code {
         DesignationTranc::char => {designation_state.state = DesignationState::char;},
         _ => {}
       }
-
-
     },
     DesignationState::char => {
       match tranc_code {
@@ -100,9 +100,12 @@ fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationT
             designation_state.state = DesignationState::init;
             designation_state.char_len = 0;
             designation_state.num_len = 0;
+            designation_state.char_part.clear();
+            designation_state.num_part.clear();
           } else {
             designation_state.state = DesignationState::char;
             designation_state.char_len = designation_state.char_len + 1;
+            designation_state.char_part.push(*ch);
           }
         }
         _ => {designation_state.state = DesignationState::init}  
@@ -116,15 +119,20 @@ fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationT
             designation_state.state = DesignationState::init;
             designation_state.char_len = 0;
             designation_state.num_len = 0;
+            designation_state.char_part.clear();
+            designation_state.num_part.clear();
           } else {
             designation_state.state = DesignationState::num;
             designation_state.num_len = designation_state.num_len + 1;
+            designation_state.num_part.push(*ch);
           }
         }
         _ => {
           designation_state.state = DesignationState::init;
           designation_state.char_len = 0;
           designation_state.num_len = 0;
+          designation_state.char_part.clear();
+          designation_state.num_part.clear();
         }  
       }
 
@@ -133,6 +141,8 @@ fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationT
       designation_state.state = DesignationState::init;
       designation_state.char_len = 0;
       designation_state.num_len = 0;
+      designation_state.char_part.clear();
+      designation_state.num_part.clear();
     }
 
       
@@ -142,17 +152,22 @@ fn state_trans(designation_state: &mut DesignationData, tranc_code: DesignationT
 
 fn parse_designation(file_name: &String) -> String {
   let chars = file_name.chars();
-  let mut designation_state: DesignationData = DesignationData { char_len: (0), state: (DesignationState::init), num_len: (0) };
+  let mut designation_state: DesignationData = DesignationData { 
+    char_len: (0), 
+    state: (DesignationState::init), 
+    num_len: (0), 
+    char_part: Vec::new(), 
+    num_part: Vec::new() 
+  };
   for char_it in chars {
     if char_it.is_ascii_alphabetic() {
-      state_trans(&mut designation_state, DesignationTranc::char);
-
+      state_trans(&char_it, &mut designation_state, DesignationTranc::char);
     } else if char_it.is_ascii_digit() {
-      state_trans(&mut designation_state, DesignationTranc::num);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::num);
     } else if char_it == '-' {
-      state_trans(&mut designation_state, DesignationTranc::split);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::split);
     } else {
-      state_trans(&mut designation_state, DesignationTranc::other);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::other);
     }
   }
 
