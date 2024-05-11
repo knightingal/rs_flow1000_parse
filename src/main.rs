@@ -66,8 +66,8 @@ struct DesignationData {
   char_len: u8,
   state: DesignationState,
   num_len: u8,
-  char_part: Vec<char>,
-  num_part: Vec<char>,
+  char_part: String,
+  num_part: String,
 }
 
 enum DesignationState {
@@ -88,13 +88,24 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
   match designation_state.state {
     DesignationState::init => {
       match tranc_code {
-        DesignationTranc::char => {designation_state.state = DesignationState::char;},
+        DesignationTranc::char => {
+          designation_state.state = DesignationState::char;
+          designation_state.char_len = designation_state.char_len + 1;
+          designation_state.char_part.push(*ch);
+        },
         _ => {}
       }
     },
     DesignationState::char => {
       match tranc_code {
-        DesignationTranc::num => {designation_state.state = DesignationState::num}
+        DesignationTranc::num => {
+            designation_state.state = DesignationState::num;
+            designation_state.num_len = designation_state.num_len + 1;
+            designation_state.num_part.push(*ch);
+        }
+        DesignationTranc::split => {
+          designation_state.state = DesignationState::split;
+        }
         DesignationTranc::char => {
           if designation_state.char_len == 4 {
             designation_state.state = DesignationState::init;
@@ -137,6 +148,16 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
       }
 
     },
+    DesignationState::split => {
+      match tranc_code {
+        DesignationTranc::num => {
+            designation_state.state = DesignationState::num;
+            designation_state.num_len = designation_state.num_len + 1;
+            designation_state.num_part.push(*ch);
+        },
+        _ => {},
+      }
+    },
     _ => {
       designation_state.state = DesignationState::init;
       designation_state.char_len = 0;
@@ -150,14 +171,14 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
 
 }
 
-fn parse_designation(file_name: &String) -> String {
+fn parse_designation(file_name: &String) -> DesignationData {
   let chars = file_name.chars();
   let mut designation_state: DesignationData = DesignationData { 
     char_len: (0), 
     state: (DesignationState::init), 
     num_len: (0), 
-    char_part: Vec::new(), 
-    num_part: Vec::new() 
+    char_part: String::new(), 
+    num_part: String::new() 
   };
   for char_it in chars {
     if char_it.is_ascii_alphabetic() {
@@ -171,7 +192,7 @@ fn parse_designation(file_name: &String) -> String {
     }
   }
 
-  return String::from("designation");
+  return designation_state;
 }
 
 #[derive(Deserialize)]
