@@ -68,6 +68,8 @@ struct DesignationData {
   num_len: u8,
   char_part: String,
   num_part: String,
+  char_final: Option<String>,
+  num_final: Option<String>,
 }
 
 enum DesignationState {
@@ -75,6 +77,7 @@ enum DesignationState {
   char,
   num,
   split,
+  end,
 }
 
 enum DesignationTranc {
@@ -82,6 +85,16 @@ enum DesignationTranc {
   char,
   split,
   other,
+}
+
+fn state_end(designation_state: &mut DesignationData) {
+  designation_state.state = DesignationState::end;
+  if designation_state.char_final.is_none() {
+    designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
+  }
+  if designation_state.num_final.is_none() {
+    designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
+  }
 }
 
 fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: DesignationTranc) {
@@ -139,6 +152,8 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
           }
         }
         _ => {
+          designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
+          designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
           designation_state.state = DesignationState::init;
           designation_state.char_len = 0;
           designation_state.num_len = 0;
@@ -178,7 +193,10 @@ fn parse_designation(file_name: &String) -> DesignationData {
     state: (DesignationState::init), 
     num_len: (0), 
     char_part: String::new(), 
-    num_part: String::new() 
+    num_part: String::new(),
+    num_final: Option::None,
+    char_final: Option::None,
+
   };
   for char_it in chars {
     if char_it.is_ascii_alphabetic() {
@@ -191,6 +209,7 @@ fn parse_designation(file_name: &String) -> DesignationData {
       state_trans(&char_it, &mut designation_state, DesignationTranc::other);
     }
   }
+  state_end(&mut designation_state);
 
   return designation_state;
 }
