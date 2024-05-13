@@ -7,6 +7,7 @@ use serde_derive::{Deserialize, Serialize};
 mod test_main;
 mod test_aes;
 mod handles;
+mod test_designation;
 
 
 #[tokio::main]
@@ -72,6 +73,16 @@ struct DesignationData {
   num_final: Option<String>,
 }
 
+impl DesignationData {
+  pub fn reset(&mut self) {
+    self.char_len = 0;
+    self.num_len = 0;
+    self.state = DesignationState::init;
+    self.char_part.clear();
+    self.num_part.clear();
+  }
+}
+
 enum DesignationState {
   init,
   char,
@@ -121,11 +132,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
         }
         DesignationTranc::char => {
           if designation_state.char_len == 4 {
-            designation_state.state = DesignationState::init;
-            designation_state.char_len = 0;
-            designation_state.num_len = 0;
-            designation_state.char_part.clear();
-            designation_state.num_part.clear();
+            designation_state.reset();
           } else {
             designation_state.state = DesignationState::char;
             designation_state.char_len = designation_state.char_len + 1;
@@ -140,11 +147,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
       match tranc_code {
         DesignationTranc::num => {
           if designation_state.num_len == 5 {
-            designation_state.state = DesignationState::init;
-            designation_state.char_len = 0;
-            designation_state.num_len = 0;
-            designation_state.char_part.clear();
-            designation_state.num_part.clear();
+            designation_state.reset();
           } else {
             designation_state.state = DesignationState::num;
             designation_state.num_len = designation_state.num_len + 1;
@@ -154,11 +157,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
         _ => {
           designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
           designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
-          designation_state.state = DesignationState::init;
-          designation_state.char_len = 0;
-          designation_state.num_len = 0;
-          designation_state.char_part.clear();
-          designation_state.num_part.clear();
+          designation_state.reset();
         }  
       }
 
@@ -174,11 +173,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
       }
     },
     _ => {
-      designation_state.state = DesignationState::init;
-      designation_state.char_len = 0;
-      designation_state.num_len = 0;
-      designation_state.char_part.clear();
-      designation_state.num_part.clear();
+      designation_state.reset();
     }
 
       
