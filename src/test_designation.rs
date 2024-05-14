@@ -85,4 +85,20 @@ mod tests {
     assert_eq!(designation.num_final.unwrap(), "091");
   }
 
+  #[test]
+  fn test_parse_designation9() {
+    let file_name = String::from("@江南@jnty4588.com-DVAJ-642_2K.mp4");
+    let designation = parse_designation(&file_name);
+    assert_eq!(designation.char_final.unwrap(), "DVAJ");
+    assert_eq!(designation.num_final.unwrap(), "642");
+  }
+
+  #[test]
+  fn test_parse_designation10() {
+    let file_name = String::from("[gg5.co]WAAA-345.mp4");
+    let designation = parse_designation(&file_name);
+    assert_eq!(designation.char_final.unwrap(), "WAAA");
+    assert_eq!(designation.num_final.unwrap(), "345");
+  }
+
 }

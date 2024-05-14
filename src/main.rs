@@ -139,7 +139,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
             designation_state.char_part.push(*ch);
           }
         }
-        _ => {designation_state.state = DesignationState::init}  
+        _ => {designation_state.reset();}  
       }
 
     },
@@ -169,7 +169,15 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
             designation_state.num_len = designation_state.num_len + 1;
             designation_state.num_part.push(*ch);
         },
-        _ => {},
+        DesignationTranc::char => {
+          designation_state.reset();
+            designation_state.state = DesignationState::char;
+            designation_state.char_len = designation_state.char_len + 1;
+            designation_state.char_part.push(*ch);
+        },
+        _ => {
+          designation_state.reset();
+        },
       }
     },
     _ => {
