@@ -156,8 +156,8 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
         }
         _ => {
           if designation_state.num_len >= NUM_MIN {
-          designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
-          designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
+            designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
+            designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
           }
           designation_state.reset();
         }  
@@ -222,6 +222,146 @@ fn parse_designation(file_name: &String) -> DesignationData {
   return designation_state;
 }
 
+fn sample_code_list() -> Vec<&'static str> {
+  return vec![
+    "MIDD",
+    "MDED",
+    "MIRD",
+    "MIGD",
+    "MIID",
+    "MIAD",
+    "MIBD",
+    "MIMK",
+    "ASS",
+    "ES",
+    "NEW",
+    "REPLAY",
+    "LEGEND",
+    "MINT",
+    "ONED",
+    "SOE",
+    "SPS",
+    "ONSD",
+    "KIRD",
+    "BLK",
+    "KISD",
+    "GG",
+    "JJ",
+    "KK",
+    "SCOP",
+    "TBL",
+    "MZQ",
+    "YSN",
+    "DXMN",
+    "LABS",
+    "AM",
+    "BF",
+    "SUPD",
+    "NSS",
+    "ATOM",
+    "BDD",
+    "ARSO",
+    "FAA",
+    "SW",
+    "NGD",
+    "TBL",
+    "HBAD",
+    "TMDI",
+    "DCS",
+    "CWM",
+    "OKAD",
+    "MVBD",
+    "MVSD",
+    "SUNS",
+    "UMD",
+    "MOMJ",
+    "TARD",
+    "HUNT",
+    "DVDES",
+    "ROY",
+    "SASS",
+    "OLS",
+    "ATT",
+    "INF",
+    "DCM",
+    "MN",
+    "AGEMIX",
+    "BDSR",
+    "WDI",
+    "WSS",
+    "NATR",
+    "MAST",
+    "ONCE",
+    "WOBB",
+    "ODFR",
+    "ODFW",
+    "APAD",
+    "APAR",
+    "SERO",
+    "DXN",
+    "HUNT",
+    "GAR",
+    "SVDVD",
+    "RCT",
+    "NGKS",
+    "RD",
+    "KUF",
+    "IPTD",
+    "IPZIPZ",
+    "IDBD",
+    "SUPD",
+    "IPSD",
+    "SVND",
+    "HBAD",
+    "MV",
+    "VSPDS",
+    "VSPDR",
+    "FSET",
+    "DANDY",
+    "LADY",
+    "SVDVD",
+    "NMD",
+    "UFD",
+    "CXD",
+    "BBI",
+    "BEB",
+    "NST",
+    "BUR",
+    "FTA",
+    "NEO",
+    "CRPD",
+    "JUKD",
+    "JUC",
+    "ATID",
+    "RBD",
+    "JBD",
+    "SHKD",
+    "SSPD",
+    "MDYD",
+    "PGD",
+    "PJD",
+    "WANZ",
+    "KAWD",
+    "KAPD",
+    "MXGS",
+    "MX3DS",
+    "MXSPS",
+    "DDT",
+    "STAR",
+    "SACE",
+    "SDDM",
+    "SDDE",
+    "SDMT",
+    "OVDES",
+    "NHDTA",
+    "IESP",
+    "IDOL",
+    "IENE",
+    "OPEN",
+    "FSDSS",
+  ];
+}
+
 #[derive(Deserialize)]
 struct CreateUser {
   username: String,
@@ -234,143 +374,3 @@ struct User {
   name: String,
   username: String,
 }
-
-/*
-MIDD
-MDED
-MIRD
-MIGD
-MIID
-MIAD
-MIBD
-MIMK
-ASS
-ES
-NEW
-REPLAY
-LEGEND
-MINT
-ONED
-SOE
-SPS
-ONSD
-KIRD
-BLK
-KISD
-GG
-JJ
-KK
-SCOP
-TBL
-MZQ
-YSN
-DXMN
-LABS
-AM
-BF
-SUPD
-NSS
-ATOM
-BDD
-ARSO
-FAA
-SW
-NGD
-TBL
-HBAD
-TMDI
-DCS
-CWM
-OKAD
-MVBD
-MVSD
-SUNS
-UMD
-MOMJ
-TARD
-HUNT
-DVDES
-ROY
-SASS
-OLS
-ATT
-INF
-DCM
-MN
-AGEMIX
-BDSR
-WDI
-WSS
-NATR
-MAST
-ONCE
-WOBB
-ODFR
-ODFW
-APAD
-APAR
-SERO
-DXN
-HUNT
-GAR
-SVDVD
-RCT
-NGKS
-RD
-KUF
-IPTD
-IPZIPZ
-IDBD
-SUPD
-IPSD
-SVND
-HBAD
-MV
-VSPDS
-VSPDR
-FSET
-DANDY
-LADY
-SVDVD
-NMD
-UFD
-CXD
-BBI
-BEB
-NST
-BUR
-FTA
-NEO
-CRPD
-JUKD
-JUC
-ATID
-RBD
-JBD
-SHKD
-SSPD
-MDYD
-PGD
-PJD
-WANZ
-KAWD
-KAPD
-MXGS
-MX3DS
-MXSPS
-DDT
-STAR
-SACE
-SDDM
-SDDE
-SDMT
-OVDES
-NHDTA
-IESP
-IDOL
-IENE
-OPEN
-FSDSS
-
-
-*/
