@@ -146,7 +146,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
     DesignationState::num => {
       match tranc_code {
         DesignationTranc::num => {
-          if designation_state.num_len == 5 {
+          if designation_state.num_len == NUM_MAX {
             designation_state.reset();
           } else {
             designation_state.state = DesignationState::num;
@@ -155,8 +155,10 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
           }
         }
         _ => {
+          if designation_state.num_len >= NUM_MIN {
           designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
           designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
+          }
           designation_state.reset();
         }  
       }
@@ -188,6 +190,9 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
   }
 
 }
+
+const NUM_MAX: u8 = 6;
+const NUM_MIN: u8 = 3;
 
 fn parse_designation(file_name: &String) -> DesignationData {
   let chars = file_name.chars();
