@@ -33,7 +33,7 @@ async fn main() {
     .route("/video-detail/:id", get(video_detail))
     .with_state(pool)
     ;
-  let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+  let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
   axum::serve(listener, app).await.unwrap();
 }
 
