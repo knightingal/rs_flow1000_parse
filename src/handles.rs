@@ -30,6 +30,7 @@ pub async fn mount_config_handler()
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(mount_config_list))
 }
@@ -51,6 +52,7 @@ pub async fn mp4_dir_handler1(Path(base_index): Path<u32>)
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(file_names))
 }
@@ -78,6 +80,7 @@ pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   let file_names = parse_dir_path(&dir_path);
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(file_names.unwrap()))
 }
@@ -128,6 +131,7 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(selected_video))
 }
