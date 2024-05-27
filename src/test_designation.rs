@@ -124,4 +124,14 @@ mod tests {
     assert_eq!(designation.char_final.unwrap(), "SSIS");
     assert_eq!(designation.num_final.unwrap(), "656");
   }
+
+  #[test]
+  fn test_parse_designation14() {
+    let file_name = String::from("avav77.xyz@KTRA503.mp4");
+    let designation = parse_designation(&file_name);
+    assert_eq!(designation.char_final.unwrap(), "KTRA");
+    assert_eq!(designation.num_final.unwrap(), "503");
+  }
+
+
 }
