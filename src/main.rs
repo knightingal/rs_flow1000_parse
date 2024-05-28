@@ -1,5 +1,5 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{mount_config_handler, mp4_dir_handler, mp4_dir_handler1, video_detail, video_info_handler, POOL};
+use handles::{mount_config_handler, mp4_dir_handler, mp4_dir_handler1, video_detail, video_info_handler, parse_designation_handler, POOL};
 use hyper::StatusCode;
 use mysql::Pool;
 use serde_derive::{Deserialize, Serialize};
@@ -24,6 +24,7 @@ async fn main() {
     .route("/", get(root))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
     .route("/mount-config", get(mount_config_handler))
 
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
