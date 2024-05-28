@@ -136,6 +136,33 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   (StatusCode::OK, header, Json(selected_video))
 }
 
+pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
+    -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
+  println!("{}", base_index);
+  println!("{}", sub_dir);
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+  if sub_dir_param.ends_with("/") {
+    sub_dir_param.truncate(sub_dir_param.len() - 1);
+  }
+
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+
+  let selected_video: Vec<VideoEntity> = conn.exec_map(
+    "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
+      "dir_path" => sub_dir_param,
+      "base_index" => base_index,
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(selected_video))
+}
+
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
   id: u32,
