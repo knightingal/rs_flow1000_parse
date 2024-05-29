@@ -5,13 +5,21 @@ use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool};
 use serde_derive::Serialize;
 
+use crate::parse_designation;
+
 pub static mut POOL: Option<&Pool>= None;
 pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
   let selected_video = conn1.exec_map(
     "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
       "id" => id,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+      id, 
+      video_file_name, 
+      cover_file_name,
+      designation_char: String::new(), 
+      designation_num: String::new(),
+    }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
@@ -127,7 +135,13 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
     "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
       "dir_path" => sub_dir_param,
       "base_index" => base_index,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+      id, 
+      video_file_name, 
+      cover_file_name,
+      designation_char: String::new(), 
+      designation_num: String::new(),
+    }}).unwrap();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -154,7 +168,17 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
     "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
       "dir_path" => sub_dir_param,
       "base_index" => base_index,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{id, video_file_name, cover_file_name}}).unwrap();
+    }, |(id, video_file_name, cover_file_name)| {
+      let designation = parse_designation(&video_file_name);
+
+      return VideoEntity{
+        id, 
+        video_file_name, 
+        cover_file_name, 
+        designation_char: designation.char_final.unwrap(), 
+        designation_num: designation.num_final.unwrap(),
+      };
+    }).unwrap();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -169,7 +193,11 @@ pub struct VideoEntity {
   #[serde(rename = "videoFileName")]
   video_file_name: String,
   #[serde(rename = "coverFileName")]
-  cover_file_name: String
+  cover_file_name: String,
+  #[serde(rename = "designationChar")]
+  designation_char: String,
+  #[serde(rename = "designationNum")]
+  designation_num: String,
 }
 
 
