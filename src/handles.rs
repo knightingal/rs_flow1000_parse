@@ -1,8 +1,8 @@
-use std::{cmp::Ordering, fs::{self, DirEntry}};
+use std::{borrow::Borrow, cmp::Ordering, fs::{self, DirEntry}};
 
 use axum::{extract::{Path, State}, Json};
 use hyper::{HeaderMap, StatusCode};
-use mysql::{params, prelude::Queryable, Pool};
+use mysql::{params, prelude::Queryable, Pool, Row};
 use serde_derive::Serialize;
 
 use crate::parse_designation;
@@ -179,6 +179,15 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
         designation_num: designation.num_final.unwrap(),
       };
     }).unwrap();
+
+  selected_video.iter().for_each(|video| {
+    let _:Vec<Row> = conn.exec("update video_info set designation_char=:char, designation_num=:num where id=:id", params! {
+      "char" => video.designation_char.clone(),
+      "num" => video.designation_num.clone(),
+      "id" => video.id
+    }).unwrap();
+
+  });
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
