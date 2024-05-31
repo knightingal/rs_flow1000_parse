@@ -105,7 +105,11 @@ fn state_end(designation_state: &mut DesignationData) {
     designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
   }
   if designation_state.num_final.is_none() {
-    designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
+    let mut num_final = designation_state.num_part.clone();
+    while num_final.len() > 3 && num_final.starts_with("0") {
+      num_final = num_final.split_at(1).1.to_string();
+    }  
+    designation_state.num_final = Option::Some(num_final);
   }
 }
 
@@ -158,7 +162,11 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
         _ => {
           if designation_state.num_len >= NUM_MIN {
             designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
-            designation_state.num_final = Option::Some(String::from(designation_state.num_part.as_str()));
+            let mut num_final = designation_state.num_part.clone();
+            while num_final.len() > 3 && num_final.starts_with("0") {
+              num_final = num_final.split_at(1).1.to_string();
+            }  
+            designation_state.num_final = Option::Some(num_final);
           }
           designation_state.reset();
         }  
