@@ -102,7 +102,9 @@ enum DesignationTranc {
 fn state_end(designation_state: &mut DesignationData) {
   designation_state.state = DesignationState::end;
   if designation_state.char_final.is_none() {
-    designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
+    let mut char_final = designation_state.char_part.clone();
+    char_final = char_final.to_uppercase();
+    designation_state.char_final = Option::Some(char_final);
   }
   if designation_state.num_final.is_none() {
     let mut num_final = designation_state.num_part.clone();
@@ -161,7 +163,10 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
         }
         _ => {
           if designation_state.num_len >= NUM_MIN {
-            designation_state.char_final = Option::Some(String::from(designation_state.char_part.as_str()));
+
+            let mut char_final = designation_state.char_part.clone();
+            char_final = char_final.to_uppercase();
+            designation_state.char_final = Option::Some(char_final);
             let mut num_final = designation_state.num_part.clone();
             while num_final.len() > 3 && num_final.starts_with("0") {
               num_final = num_final.split_at(1).1.to_string();
