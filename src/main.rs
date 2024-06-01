@@ -166,11 +166,18 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
 
             let mut char_final = designation_state.char_part.clone();
             char_final = char_final.to_uppercase();
-            designation_state.char_final = Option::Some(char_final);
             let mut num_final = designation_state.num_part.clone();
             while num_final.len() > 3 && num_final.starts_with("0") {
               num_final = num_final.split_at(1).1.to_string();
             }  
+            let mut whole_designation = String::from(&char_final);
+            whole_designation.push_str(num_final.as_str());
+
+            if whole_designation == "H264" || whole_designation == "H265" {
+              return;
+            }
+
+            designation_state.char_final = Option::Some(char_final);
             designation_state.num_final = Option::Some(num_final);
           }
           designation_state.reset();
