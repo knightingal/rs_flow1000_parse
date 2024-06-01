@@ -138,7 +138,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
           designation_state.state = DesignationState::split;
         }
         DesignationTranc::char => {
-          if designation_state.char_len == 4 {
+          if designation_state.char_len == 6 {
             designation_state.reset();
           } else {
             designation_state.state = DesignationState::char;
