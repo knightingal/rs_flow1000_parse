@@ -19,9 +19,30 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
       cover_file_name,
       designation_char: String::new(), 
       designation_num: String::new(),
+      dir_path: String::new(),
+      base_index: 0
     }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+}
+
+pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
+  let designation = parse_designation(&designation_ori);
+  let mut conn1 = pool.get_conn().unwrap();
+  let selected_video:Vec<VideoEntity> = conn1.exec_map(
+    "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num ", params! {
+      "char" => designation.char_final.unwrap(),
+      "num" => designation.num_final.unwrap(),
+    }, |(id, video_file_name, cover_file_name, dir_path, base_index)| {VideoEntity{
+      id, 
+      video_file_name, 
+      cover_file_name,
+      designation_char: String::new(), 
+      designation_num: String::new(),
+      dir_path,
+      base_index
+    }}).unwrap();
+  (StatusCode::OK, Json(selected_video))
 }
 
 pub async fn mount_config_handler()  
@@ -141,6 +162,8 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
       cover_file_name,
       designation_char: String::new(), 
       designation_num: String::new(),
+      dir_path: String::new(),
+      base_index: 0
     }}).unwrap();
 
   let mut header = HeaderMap::new();
@@ -177,6 +200,8 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
         cover_file_name, 
         designation_char: designation.char_final.unwrap(), 
         designation_num: designation.num_final.unwrap(),
+        dir_path: String::new(),
+        base_index: 0
       };
     }).unwrap();
 
@@ -207,6 +232,10 @@ pub struct VideoEntity {
   designation_char: String,
   #[serde(rename = "designationNum")]
   designation_num: String,
+  #[serde(rename = "dirPath")]
+  dir_path: String,
+  #[serde(rename = "baseIndex")]
+  base_index: u32,
 }
 
 
