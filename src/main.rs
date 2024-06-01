@@ -1,5 +1,5 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{mount_config_handler, mp4_dir_handler, mp4_dir_handler1, video_detail, video_info_handler, parse_designation_handler, POOL};
+use handles::{designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_handler, video_detail, video_info_handler, POOL};
 use hyper::StatusCode;
 use mysql::Pool;
 use serde_derive::{Deserialize, Serialize};
@@ -31,6 +31,7 @@ async fn main() {
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
 
+    .route("/designation-search/:designation_ori", get(designation_search))
     .route("/video-detail/:id", get(video_detail))
     .with_state(pool)
     ;
