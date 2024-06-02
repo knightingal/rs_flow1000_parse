@@ -26,6 +26,18 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
+pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<Vec<DuplicateEntity>>) {
+  let mut conn1 = pool.get_conn().unwrap();
+  let duplicate_entity:Vec<DuplicateEntity> = conn1.query_map(
+    "select count, designation_char, designation_num from (select count(vi.id) as count, vi.designation_char , vi.designation_num  from video_info vi group by designation_char, designation_num) t where t.count > 1", 
+    |(count, designation_char, designation_num)| {DuplicateEntity{
+      count, 
+      designation_char, 
+      designation_num,
+    }}).unwrap();
+  (StatusCode::OK, Json(duplicate_entity))
+}
+
 pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
   let designation = parse_designation(&designation_ori);
   let mut conn1 = pool.get_conn().unwrap();
@@ -236,6 +248,15 @@ pub struct VideoEntity {
   dir_path: String,
   #[serde(rename = "baseIndex")]
   base_index: u32,
+}
+
+#[derive(Serialize, Clone)]
+pub struct DuplicateEntity {
+  count: u32,
+  #[serde(rename = "designationChar")]
+  designation_char: String,
+  #[serde(rename = "designationNum")]
+  designation_num: String,
 }
 
 
