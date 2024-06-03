@@ -28,14 +28,38 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
 
 pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<Vec<DuplicateEntity>>) {
   let mut conn1 = pool.get_conn().unwrap();
-  let duplicate_entity:Vec<DuplicateEntity> = conn1.query_map(
-    "select count, designation_char, designation_num from (select count(vi.id) as count, vi.designation_char , vi.designation_num  from video_info vi group by designation_char, designation_num) t where t.count > 1", 
+  let mut duplicate_entity_list:Vec<DuplicateEntity> = conn1.query_map(
+    "select 
+      count, designation_char, designation_num 
+    from (
+        select count(vi.id) as count, count(DISTINCT vi.dir_path) as cd, count(DISTINCT vi.base_index) as cb, vi.designation_char , vi.designation_num  
+        from video_info vi where vi.designation_char != 'MP' or vi.designation_num != '4' group by designation_char, designation_num) t 
+    where t.count > 1  and t.cd > 1 ", 
     |(count, designation_char, designation_num)| {DuplicateEntity{
       count, 
       designation_char, 
       designation_num,
+      video_info_list: vec![]
     }}).unwrap();
-  (StatusCode::OK, Json(duplicate_entity))
+  for duplicate_entity in &mut duplicate_entity_list {
+    let selected_video:Vec<VideoEntity> = conn1.exec_map(
+      "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num ", params! {
+        "char" => &duplicate_entity.designation_char,
+        "num" => &duplicate_entity.designation_num,
+      }, |(id, video_file_name, cover_file_name, dir_path, base_index)| {VideoEntity{
+        id, 
+        video_file_name, 
+        cover_file_name,
+        designation_char: String::new(), 
+        designation_num: String::new(),
+        dir_path,
+        base_index
+      }}).unwrap();
+    duplicate_entity.video_info_list = selected_video;
+  }
+
+
+  (StatusCode::OK, Json(duplicate_entity_list))
 }
 
 pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
@@ -257,6 +281,9 @@ pub struct DuplicateEntity {
   designation_char: String,
   #[serde(rename = "designationNum")]
   designation_num: String,
+
+  #[serde(rename = "videoInfo")]
+  video_info_list: Vec<VideoEntity>,
 }
 
 
