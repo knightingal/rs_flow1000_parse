@@ -58,14 +58,6 @@ async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<
   (StatusCode::CREATED, Json(user))
 }
 
-fn is_charact(byte:&u8) -> bool {
-  byte >= &b'a' && byte <= &b'z' || byte >= &b'A' && byte <= &b'Z'
-}
-
-fn is_number(byte:&u8) -> bool {
-  byte >= &b'0' && byte <= &b'9' 
-}
-
 struct DesignationData {
   char_len: u8,
   state: DesignationState,
@@ -80,29 +72,29 @@ impl DesignationData {
   pub fn reset(&mut self) {
     self.char_len = 0;
     self.num_len = 0;
-    self.state = DesignationState::init;
+    self.state = DesignationState::Init;
     self.char_part.clear();
     self.num_part.clear();
   }
 }
 
 enum DesignationState {
-  init,
-  char,
-  num,
-  split,
-  end,
+  Init,
+  Char,
+  Num,
+  Split,
+  End,
 }
 
 enum DesignationTranc {
-  num,
-  char,
-  split,
-  other,
+  Num,
+  Char,
+  Split,
+  Other,
 }
 
 fn state_end(designation_state: &mut DesignationData) {
-  designation_state.state = DesignationState::end;
+  designation_state.state = DesignationState::End;
   if designation_state.char_final.is_none() {
     let mut char_final = designation_state.char_part.clone();
     char_final = char_final.to_uppercase();
@@ -119,31 +111,31 @@ fn state_end(designation_state: &mut DesignationData) {
 
 fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: DesignationTranc) {
   match designation_state.state {
-    DesignationState::init => {
+    DesignationState::Init => {
       match tranc_code {
-        DesignationTranc::char => {
-          designation_state.state = DesignationState::char;
+        DesignationTranc::Char => {
+          designation_state.state = DesignationState::Char;
           designation_state.char_len = designation_state.char_len + 1;
           designation_state.char_part.push(*ch);
         },
         _ => {}
       }
     },
-    DesignationState::char => {
+    DesignationState::Char => {
       match tranc_code {
-        DesignationTranc::num => {
-            designation_state.state = DesignationState::num;
+        DesignationTranc::Num => {
+            designation_state.state = DesignationState::Num;
             designation_state.num_len = designation_state.num_len + 1;
             designation_state.num_part.push(*ch);
         }
-        DesignationTranc::split => {
-          designation_state.state = DesignationState::split;
+        DesignationTranc::Split => {
+          designation_state.state = DesignationState::Split;
         }
-        DesignationTranc::char => {
+        DesignationTranc::Char => {
           if designation_state.char_len == 6 {
             designation_state.reset();
           } else {
-            designation_state.state = DesignationState::char;
+            designation_state.state = DesignationState::Char;
             designation_state.char_len = designation_state.char_len + 1;
             designation_state.char_part.push(*ch);
           }
@@ -152,13 +144,13 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
       }
 
     },
-    DesignationState::num => {
+    DesignationState::Num => {
       match tranc_code {
-        DesignationTranc::num => {
+        DesignationTranc::Num => {
           if designation_state.num_len == NUM_MAX {
             designation_state.reset();
           } else {
-            designation_state.state = DesignationState::num;
+            designation_state.state = DesignationState::Num;
             designation_state.num_len = designation_state.num_len + 1;
             designation_state.num_part.push(*ch);
           }
@@ -187,16 +179,16 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
       }
 
     },
-    DesignationState::split => {
+    DesignationState::Split => {
       match tranc_code {
-        DesignationTranc::num => {
-            designation_state.state = DesignationState::num;
+        DesignationTranc::Num => {
+            designation_state.state = DesignationState::Num;
             designation_state.num_len = designation_state.num_len + 1;
             designation_state.num_part.push(*ch);
         },
-        DesignationTranc::char => {
+        DesignationTranc::Char => {
           designation_state.reset();
-            designation_state.state = DesignationState::char;
+            designation_state.state = DesignationState::Char;
             designation_state.char_len = designation_state.char_len + 1;
             designation_state.char_part.push(*ch);
         },
@@ -221,7 +213,7 @@ fn parse_designation(file_name: &String) -> DesignationData {
   let chars = file_name.chars();
   let mut designation_state: DesignationData = DesignationData { 
     char_len: (0), 
-    state: (DesignationState::init), 
+    state: (DesignationState::Init), 
     num_len: (0), 
     char_part: String::new(), 
     num_part: String::new(),
@@ -231,13 +223,13 @@ fn parse_designation(file_name: &String) -> DesignationData {
   };
   for char_it in chars {
     if char_it.is_ascii_alphabetic() {
-      state_trans(&char_it, &mut designation_state, DesignationTranc::char);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::Char);
     } else if char_it.is_ascii_digit() {
-      state_trans(&char_it, &mut designation_state, DesignationTranc::num);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::Num);
     } else if char_it == '-' {
-      state_trans(&char_it, &mut designation_state, DesignationTranc::split);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::Split);
     } else {
-      state_trans(&char_it, &mut designation_state, DesignationTranc::other);
+      state_trans(&char_it, &mut designation_state, DesignationTranc::Other);
     }
   }
   state_end(&mut designation_state);
@@ -245,6 +237,7 @@ fn parse_designation(file_name: &String) -> DesignationData {
   return designation_state;
 }
 
+/* 
 fn sample_code_list() -> Vec<&'static str> {
   return vec![
     "MIDD",
@@ -384,6 +377,7 @@ fn sample_code_list() -> Vec<&'static str> {
     "FSDSS",
   ];
 }
+*/
 
 #[derive(Deserialize)]
 struct CreateUser {
