@@ -5,7 +5,8 @@ use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool, Row};
 use serde_derive::Serialize;
 
-use crate::parse_designation;
+use crate::designation::parse_designation;
+
 
 pub static mut POOL: Option<&Pool>= None;
 pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
