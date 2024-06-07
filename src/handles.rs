@@ -130,7 +130,6 @@ pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-
   let mut conn = unsafe {
     POOL.unwrap().get_conn().unwrap()
   };

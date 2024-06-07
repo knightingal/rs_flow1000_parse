@@ -73,7 +73,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
           designation_state.state = DesignationState::Split;
         }
         DesignationTranc::Char => {
-          if designation_state.char_len == 6 {
+          if designation_state.char_len == CHAR_MAX {
             designation_state.reset();
           } else {
             designation_state.state = DesignationState::Char;
@@ -149,6 +149,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
 
 const NUM_MAX: u8 = 6;
 const NUM_MIN: u8 = 3;
+const CHAR_MAX: u8 = 6;
 
 pub fn parse_designation(file_name: &String) -> DesignationData {
   let chars = file_name.chars();
