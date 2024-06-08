@@ -1,5 +1,5 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_handler, video_detail, video_info_handler, POOL};
+use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_handler, video_detail, video_info_handler, video_rate, POOL};
 use hyper::StatusCode;
 use mysql::Pool;
 use serde_derive::{Deserialize, Serialize};
@@ -35,6 +35,7 @@ async fn main() {
     .route("/designation-search/:designation_ori", get(designation_search))
     .route("/all-duplicate-video", get(all_duplicate_video))
     .route("/video-detail/:id", get(video_detail))
+    .route("/video-rate/:id/:rate", post(video_rate))
     .with_state(pool)
     ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();

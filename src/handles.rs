@@ -9,7 +9,26 @@ use crate::designation::parse_designation;
 
 
 pub static mut POOL: Option<&Pool>= None;
+
 pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
+  let mut conn1 = pool.get_conn().unwrap();
+  let selected_video = conn1.exec_map(
+    "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
+      "id" => id,
+    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+      id, 
+      video_file_name, 
+      cover_file_name,
+      designation_char: String::new(), 
+      designation_num: String::new(),
+      dir_path: String::new(),
+      base_index: 0
+    }}).unwrap();
+
+  (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+}
+
+pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
   let selected_video = conn1.exec_map(
     "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
