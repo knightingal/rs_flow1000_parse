@@ -43,6 +43,13 @@ pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u
       base_index: 0
     }}).unwrap();
 
+
+    let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
+      "rate" => rate,
+      "id" => id
+    }).unwrap();
+
+
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
