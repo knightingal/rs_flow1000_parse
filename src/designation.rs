@@ -81,7 +81,7 @@ fn state_trans(ch: &char, designation_state: &mut DesignationData, tranc_code: D
             designation_state.char_part.push(*ch);
           }
         }
-        _ => {designation_state.reset();}  
+        _ => designation_state.reset()
       }
 
     },
