@@ -28,7 +28,7 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
-pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Json<VideoEntity>) {
+pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
   let selected_video = conn1.exec_map(
     "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
@@ -49,8 +49,11 @@ pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u
       "id" => id
     }).unwrap();
 
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+  (StatusCode::OK, header, Json(selected_video.get(0).unwrap().clone()))
 }
 
 pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<Vec<DuplicateEntity>>) {
