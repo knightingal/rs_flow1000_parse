@@ -22,7 +22,8 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
       designation_char: String::new(), 
       designation_num: String::new(),
       dir_path: String::new(),
-      base_index: 0
+      base_index: 0,
+      rate: 0
     }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
@@ -30,24 +31,25 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
 
 pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
+
+  let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
+    "rate" => rate,
+    "id" => id
+  }).unwrap();
+
   let selected_video = conn1.exec_map(
-    "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
+    "select id, video_file_name, cover_file_name, rate from video_info where id = :id ", params! {
       "id" => id,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+    }, |(id, video_file_name, cover_file_name, rate)| {VideoEntity{
       id, 
       video_file_name, 
       cover_file_name,
       designation_char: String::new(), 
       designation_num: String::new(),
       dir_path: String::new(),
-      base_index: 0
+      base_index: 0,
+      rate,
     }}).unwrap();
-
-
-    let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
-      "rate" => rate,
-      "id" => id
-    }).unwrap();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -83,7 +85,8 @@ pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<
         designation_char: String::new(), 
         designation_num: String::new(),
         dir_path,
-        base_index
+        base_index, 
+        rate: 0,
       }}).unwrap();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -106,7 +109,8 @@ pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori):
       designation_char: String::new(), 
       designation_num: String::new(),
       dir_path,
-      base_index
+      base_index,
+      rate: 0
     }}).unwrap();
   (StatusCode::OK, Json(selected_video))
 }
@@ -218,17 +222,18 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   };
 
   let selected_video: Vec<VideoEntity> = conn.exec_map(
-    "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
+    "select id, video_file_name, cover_file_name, rate from video_info where dir_path = :dir_path and base_index=:base_index", params! {
       "dir_path" => sub_dir_param,
       "base_index" => base_index,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+    }, |(id, video_file_name, cover_file_name, rate)| {VideoEntity{
       id, 
       video_file_name, 
       cover_file_name,
       designation_char: String::new(), 
       designation_num: String::new(),
       dir_path: String::new(),
-      base_index: 0
+      base_index: 0,
+      rate
     }}).unwrap();
 
   let mut header = HeaderMap::new();
@@ -266,7 +271,8 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
         designation_char: designation.char_final.unwrap(), 
         designation_num: designation.num_final.unwrap(),
         dir_path: String::new(),
-        base_index: 0
+        base_index: 0,
+        rate: 0,
       };
     }).unwrap();
 
@@ -301,6 +307,8 @@ pub struct VideoEntity {
   dir_path: String,
   #[serde(rename = "baseIndex")]
   base_index: u32,
+  #[serde(rename = "rate")]
+  rate: u32,
 }
 
 #[derive(Serialize, Clone)]
