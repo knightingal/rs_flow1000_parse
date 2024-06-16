@@ -23,7 +23,7 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
       designation_num: String::new(),
       dir_path: String::new(),
       base_index: 0,
-      rate: 0
+      rate: Option::Some(0),
     }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
@@ -86,7 +86,7 @@ pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<
         designation_num: String::new(),
         dir_path,
         base_index, 
-        rate: 0,
+        rate: Option::Some(0),
       }}).unwrap();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -110,7 +110,7 @@ pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori):
       designation_num: String::new(),
       dir_path,
       base_index,
-      rate: 0
+      rate: Option::Some(0),
     }}).unwrap();
   (StatusCode::OK, Json(selected_video))
 }
@@ -272,7 +272,7 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
         designation_num: designation.num_final.unwrap(),
         dir_path: String::new(),
         base_index: 0,
-        rate: 0,
+        rate: Option::Some(0),
       };
     }).unwrap();
 
@@ -308,7 +308,7 @@ pub struct VideoEntity {
   #[serde(rename = "baseIndex")]
   base_index: u32,
   #[serde(rename = "rate")]
-  rate: u32,
+  rate: Option<u32>,
 }
 
 #[derive(Serialize, Clone)]
