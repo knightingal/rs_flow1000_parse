@@ -86,7 +86,7 @@ pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<
         designation_num: String::new(),
         dir_path,
         base_index, 
-        rate: Option::Some(0),
+        rate: Option::None
       }}).unwrap();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -272,7 +272,7 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
         designation_num: designation.num_final.unwrap(),
         dir_path: String::new(),
         base_index: 0,
-        rate: Option::Some(0),
+        rate: Option::None
       };
     }).unwrap();
 
