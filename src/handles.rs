@@ -3,12 +3,14 @@ use std::{cmp::Ordering, fs::{self, DirEntry}};
 use axum::{extract::{Path, State}, Json};
 use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool, Row};
+use rusqlite::Connection;
 use serde_derive::Serialize;
 
 use crate::designation::parse_designation;
 
 
 pub static mut POOL: Option<&Pool>= None;
+pub static mut SQLITE_CONN: Option<&Connection>= None;
 
 pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
