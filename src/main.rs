@@ -1,7 +1,8 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, POOL};
+use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, POOL, SQLITE_CONN};
 use hyper::StatusCode;
 use mysql::Pool;
+use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
 
 mod test_main;
@@ -17,8 +18,10 @@ async fn main() {
   let url = "mysql://root:000000@localhost:3306/mp4viewer";
   let pool = Pool::new(url).unwrap();
   let box_pool = Box::new(Pool::new(url).unwrap());
+  let lite_conn = Box::new(Connection::open("flow1000.db").unwrap());
   unsafe {
-    POOL = Some(Box::leak(box_pool))
+    POOL = Some(Box::leak(box_pool));
+    SQLITE_CONN = Some(Box::leak(lite_conn));
   }
 
   let app = Router::new()
@@ -44,9 +47,18 @@ async fn main() {
 }
 
 async fn root() -> &'static str {
+  let conn: &Connection = get_sqlite_connection();
+  conn.execute("create table test_table  (id integer primary key)", ()).unwrap();
+
   "Hello World!"
 }
 
+fn get_sqlite_connection() -> &'static Connection {
+  let conn: &Connection = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+  return conn;
+}
 
 async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<CreateUser>) -> (StatusCode, Json<User>) {
   let name:String = name;
