@@ -1,8 +1,8 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, POOL, SQLITE_CONN};
-use hyper::StatusCode;
-use mysql::Pool;
-use rusqlite::Connection;
+use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, VideoEntity, POOL, SQLITE_CONN};
+use hyper::{HeaderMap, StatusCode};
+use mysql::{prelude::Queryable, Pool};
+use rusqlite::{params, Connection};
 use serde_derive::{Deserialize, Serialize};
 
 mod test_main;
@@ -26,6 +26,7 @@ async fn main() {
 
   let app = Router::new()
     .route("/", get(root))
+    .route("/sync-mysql2sqlite", get(sync_mysql2sqlite))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
@@ -52,6 +53,49 @@ async fn root() -> &'static str {
 
   "Hello World!"
 }
+
+async fn sync_mysql2sqlite() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
+  
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+
+  let selected_video: Vec<VideoEntity> = conn.query_map(
+    "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char from video_info ", 
+    |(id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char)| {
+
+      return VideoEntity{
+        id, 
+        video_file_name, 
+        cover_file_name, 
+        designation_char, 
+        designation_num,
+        dir_path,
+        base_index,
+        rate
+      };
+    }).unwrap();
+
+
+  (&selected_video).into_iter().for_each(|video_entity| {
+    sqlite_conn.execute("insert into video_info (id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char) 
+    values (?1, ?2,?3,?4,?5,?6,?7,?8)", params![video_entity.id, 
+    video_entity.dir_path, video_entity.base_index, 
+    video_entity.rate, video_entity.video_file_name, video_entity.cover_file_name, video_entity.designation_num, video_entity.designation_char]).unwrap();
+  });
+
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(selected_video))
+}
+
+
 
 fn get_sqlite_connection() -> &'static Connection {
   let conn: &Connection = unsafe {
