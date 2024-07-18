@@ -335,21 +335,21 @@ pub async fn parse_designation_all_handler()
 
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
-  id: u32,
+  pub id: u32,
   #[serde(rename = "videoFileName")]
-  video_file_name: String,
+  pub video_file_name: String,
   #[serde(rename = "coverFileName")]
-  cover_file_name: String,
+  pub cover_file_name: String,
   #[serde(rename = "designationChar")]
-  designation_char: String,
+  pub designation_char: String,
   #[serde(rename = "designationNum")]
-  designation_num: String,
+  pub designation_num: String,
   #[serde(rename = "dirPath")]
-  dir_path: String,
+  pub dir_path: String,
   #[serde(rename = "baseIndex")]
-  base_index: u32,
+  pub base_index: u32,
   #[serde(rename = "rate")]
-  rate: Option<u32>,
+  pub rate: Option<u32>,
 }
 
 #[derive(Serialize, Clone)]
