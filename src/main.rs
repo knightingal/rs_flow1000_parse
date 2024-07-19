@@ -1,5 +1,5 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, VideoEntity, POOL, SQLITE_CONN};
+use handles::{all_duplicate_video, designation_search, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, video_detail, video_info_handler, video_rate, MountConfig, VideoEntity, POOL, SQLITE_CONN};
 use hyper::{HeaderMap, StatusCode};
 use mysql::{prelude::Queryable, Pool};
 use rusqlite::{params, Connection};
@@ -33,6 +33,7 @@ async fn main() {
     .route("/parse-designation-all", get(parse_designation_all_handler))
     .route("/mount-config", get(mount_config_handler))
 
+    .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
@@ -46,6 +47,45 @@ async fn main() {
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
   axum::serve(listener, app).await.unwrap();
 }
+
+async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+
+  let mount_config: Vec<MountConfig> = conn.query_map(
+    "select id, dir_path,url_prefix,api_version from mp4_base_dir ", 
+    |(id, dir_path,url_prefix,api_version)| {
+      return MountConfig{
+        id, 
+        dir_path,
+        url_prefix,
+        api_version
+      };
+    }).unwrap();
+
+
+  (&mount_config).into_iter().for_each(|video_entity| {
+    sqlite_conn.execute("insert into mp4_base_dir (
+      id, dir_path,url_prefix,api_version
+    ) values (
+      ?1, ?2, ?3, ?4
+    )", 
+    params![video_entity.id, video_entity.dir_path, video_entity.url_prefix, video_entity.api_version]).unwrap();
+  });
+
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(mount_config))
+}
+
+
 
 async fn root() -> &'static str {
   let conn: &Connection = get_sqlite_connection();
