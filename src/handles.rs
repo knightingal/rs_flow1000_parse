@@ -385,11 +385,11 @@ struct DirInfo {
 
 #[derive(Serialize)]
 pub struct MountConfig {
-  id: u32,
+  pub id: u32,
   #[serde(rename = "baseDir")]
-  dir_path: String,
+  pub dir_path: String,
   #[serde(rename = "urlPrefix")]
-  url_prefix: String,
+  pub url_prefix: String,
   #[serde(rename = "apiVersion")]
-  api_version: u32,
+  pub api_version: u32,
 }
