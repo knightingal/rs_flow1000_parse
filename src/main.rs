@@ -27,13 +27,13 @@ async fn main() {
   let app = Router::new()
     .route("/", get(root))
     .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
+    .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
     .route("/parse-designation-all", get(parse_designation_all_handler))
     .route("/mount-config", get(mount_config_handler))
 
-    .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
@@ -46,6 +46,14 @@ async fn main() {
     ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
   axum::serve(listener, app).await.unwrap();
+}
+
+
+async fn root() -> &'static str {
+  let conn: &Connection = get_sqlite_connection();
+  conn.execute("create table test_table  (id integer primary key)", ()).unwrap();
+
+  "Hello World!"
 }
 
 async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
@@ -83,15 +91,6 @@ async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<Mo
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(mount_config))
-}
-
-
-
-async fn root() -> &'static str {
-  let conn: &Connection = get_sqlite_connection();
-  conn.execute("create table test_table  (id integer primary key)", ()).unwrap();
-
-  "Hello World!"
 }
 
 async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
