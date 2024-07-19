@@ -26,7 +26,7 @@ async fn main() {
 
   let app = Router::new()
     .route("/", get(root))
-    .route("/sync-mysql2sqlite", get(sync_mysql2sqlite))
+    .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
     .route("/users/name/:name/age/:age", post(create_user))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
@@ -94,8 +94,7 @@ async fn root() -> &'static str {
   "Hello World!"
 }
 
-async fn sync_mysql2sqlite() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  
+async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let mut conn = unsafe {
     POOL.unwrap().get_conn().unwrap()
   };
@@ -104,9 +103,8 @@ async fn sync_mysql2sqlite() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) 
   };
 
   let selected_video: Vec<VideoEntity> = conn.query_map(
-    "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char from video_info ", 
-    |(id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char)| {
-
+    "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num, designation_char from video_info ", 
+    |(id, dir_path, base_index, rate, video_file_name, cover_file_name, designation_num, designation_char)| {
       return VideoEntity{
         id, 
         video_file_name, 
@@ -119,14 +117,21 @@ async fn sync_mysql2sqlite() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) 
       };
     }).unwrap();
 
-
   (&selected_video).into_iter().for_each(|video_entity| {
-    sqlite_conn.execute("insert into video_info (id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num,designation_char) 
-    values (?1, ?2,?3,?4,?5,?6,?7,?8)", params![video_entity.id, 
-    video_entity.dir_path, video_entity.base_index, 
-    video_entity.rate, video_entity.video_file_name, video_entity.cover_file_name, video_entity.designation_num, video_entity.designation_char]).unwrap();
+    sqlite_conn.execute("insert into video_info (
+      id, dir_path, base_index,rate, video_file_name, cover_file_name, designation_num, designation_char
+    ) values (
+      ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+    )", params![
+      video_entity.id, 
+      video_entity.dir_path, 
+      video_entity.base_index, 
+      video_entity.rate, 
+      video_entity.video_file_name, 
+      video_entity.cover_file_name, 
+      video_entity.designation_num, 
+      video_entity.designation_char]).unwrap();
   });
-
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
