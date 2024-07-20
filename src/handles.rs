@@ -336,6 +336,89 @@ pub async fn parse_designation_all_handler()
   (StatusCode::OK, header, Json(selected_video))
 }
 
+pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+
+  let mount_config: Vec<MountConfig> = conn.query_map(
+    "select id, dir_path,url_prefix,api_version from mp4_base_dir ", 
+    |(id, dir_path,url_prefix,api_version)| {
+      return MountConfig{
+        id, 
+        dir_path,
+        url_prefix,
+        api_version
+      };
+    }).unwrap();
+
+
+  (&mount_config).into_iter().for_each(|video_entity| {
+    sqlite_conn.execute("insert into mp4_base_dir (
+      id, dir_path,url_prefix,api_version
+    ) values (
+      ?1, ?2, ?3, ?4
+    )", 
+    rusqlite::params![video_entity.id, video_entity.dir_path, video_entity.url_prefix, video_entity.api_version]).unwrap();
+  });
+
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(mount_config))
+}
+
+pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+
+  let selected_video: Vec<VideoEntity> = conn.query_map(
+    "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num, designation_char from video_info ", 
+    |(id, dir_path, base_index, rate, video_file_name, cover_file_name, designation_num, designation_char)| {
+      return VideoEntity{
+        id, 
+        video_file_name, 
+        cover_file_name, 
+        designation_char, 
+        designation_num,
+        dir_path,
+        base_index,
+        rate
+      };
+    }).unwrap();
+
+  (&selected_video).into_iter().for_each(|video_entity| {
+    sqlite_conn.execute("insert into video_info (
+      id, dir_path, base_index,rate, video_file_name, cover_file_name, designation_num, designation_char
+    ) values (
+      ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+    )", rusqlite::params![
+      video_entity.id, 
+      video_entity.dir_path, 
+      video_entity.base_index, 
+      video_entity.rate, 
+      video_entity.video_file_name, 
+      video_entity.cover_file_name, 
+      video_entity.designation_num, 
+      video_entity.designation_char]).unwrap();
+  });
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(selected_video))
+}
+
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
   pub id: u32,
