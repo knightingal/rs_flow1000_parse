@@ -421,21 +421,21 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
 
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
-  pub id: u32,
+  id: u32,
   #[serde(rename = "videoFileName")]
-  pub video_file_name: String,
+  video_file_name: String,
   #[serde(rename = "coverFileName")]
-  pub cover_file_name: String,
+  cover_file_name: String,
   #[serde(rename = "designationChar")]
-  pub designation_char: String,
+  designation_char: String,
   #[serde(rename = "designationNum")]
-  pub designation_num: String,
+  designation_num: String,
   #[serde(rename = "dirPath")]
-  pub dir_path: String,
+  dir_path: String,
   #[serde(rename = "baseIndex")]
-  pub base_index: u32,
+  base_index: u32,
   #[serde(rename = "rate")]
-  pub rate: Option<u32>,
+  rate: Option<u32>,
 }
 
 #[derive(Serialize, Clone)]
@@ -471,11 +471,11 @@ struct DirInfo {
 
 #[derive(Serialize)]
 pub struct MountConfig {
-  pub id: u32,
+  id: u32,
   #[serde(rename = "baseDir")]
-  pub dir_path: String,
+  dir_path: String,
   #[serde(rename = "urlPrefix")]
-  pub url_prefix: String,
+  url_prefix: String,
   #[serde(rename = "apiVersion")]
-  pub api_version: u32,
+  api_version: u32,
 }
