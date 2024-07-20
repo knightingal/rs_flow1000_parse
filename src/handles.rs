@@ -6,7 +6,7 @@ use mysql::{params, prelude::Queryable, Pool, Row};
 use rusqlite::Connection;
 use serde_derive::Serialize;
 
-use crate::designation::parse_designation;
+use crate::{designation::parse_designation, get_sqlite_connection};
 
 
 pub static mut POOL: Option<&Pool>= None;
@@ -34,10 +34,13 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
 pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
   let mut conn1 = pool.get_conn().unwrap();
 
+  let sqlite_conn = get_sqlite_connection();
   let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
     "rate" => rate,
     "id" => id
   }).unwrap();
+
+  sqlite_conn.execute("update video_info set rate=?1 where id=?2", rusqlite::params![rate, id]).unwrap();
 
   let selected_video = conn1.exec_map(
     "select id, video_file_name, cover_file_name, rate from video_info where id = :id ", params! {
