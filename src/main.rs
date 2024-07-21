@@ -25,6 +25,7 @@ mod test_aes;
 mod handles;
 mod test_designation;
 mod designation;
+mod video_name_util;
 
 
 #[tokio::main]
