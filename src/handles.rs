@@ -3,7 +3,7 @@ use std::{cmp::Ordering, fs::{self, DirEntry}};
 use axum::{extract::{Path, State}, Json};
 use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool, Row};
-use rusqlite::Connection;
+use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
 use crate::{designation::parse_designation, get_sqlite_connection};
@@ -221,25 +221,27 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
     sub_dir_param.truncate(sub_dir_param.len() - 1);
   }
 
+  let sqlite_conn = get_sqlite_connection();
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
-
-  let selected_video: Vec<VideoEntity> = conn.exec_map(
-    "select id, video_file_name, cover_file_name, rate from video_info where dir_path = :dir_path and base_index=:base_index", params! {
-      "dir_path" => sub_dir_param,
-      "base_index" => base_index,
-    }, |(id, video_file_name, cover_file_name, rate)| {VideoEntity{
-      id, 
-      video_file_name, 
-      cover_file_name,
+  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
+  let selected_video_iter = stmt.query_map(named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index}, |row| {
+    Ok(VideoEntity{
+      // id: row.get(0)?,
+      id: row.get_unwrap(0),
+      video_file_name: row.get_unwrap(1),
+      cover_file_name: row.get_unwrap(2),
       designation_char: String::new(), 
       designation_num: String::new(),
       dir_path: String::new(),
       base_index: 0,
-      rate
-    }}).unwrap();
+      rate: row.get_unwrap(3)
+    })
+  }).unwrap();
+
+  let mut selected_video:Vec<VideoEntity> = Vec::new();
+  for video in selected_video_iter {
+    selected_video.push(video.unwrap());
+  }
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
