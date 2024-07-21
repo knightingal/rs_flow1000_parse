@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use std::{fs::File, io::Write};
+  use std::{fs::File, io::{Read, Seek, SeekFrom, Write}};
 
   #[test]
   fn it_works() {
@@ -30,6 +30,17 @@ mod tests {
       i = i + 1;
     }
 
+    Ok(())
+  }
+
+  #[test]
+  fn seek_file() -> std::io::Result<()> {
+    let mut f = File::open("testfile.bin")?;
+    let pos : SeekFrom = SeekFrom::Start(0x3ffffffc);
+    let _ = f.seek(pos);
+    let mut buf:[u8; 4] = [0,0,0,0];
+    let _ = f.read(& mut buf);
+    println!("{:02x},{:02x},{:02x},{:02x},", buf[0], buf[1], buf[2], buf[3]);
     Ok(())
   }
 }
