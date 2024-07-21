@@ -33,7 +33,7 @@ async fn main() {
   let url = "mysql://root:000000@localhost:3306/mp4viewer";
   let pool = Pool::new(url).unwrap();
   let box_pool = Box::new(Pool::new(url).unwrap());
-  let lite_conn = Box::new(Connection::open("flow1000.db").unwrap());
+  let lite_conn = Box::new(Connection::open("/home/knightingal/flow1000.db").unwrap());
   unsafe {
     POOL = Some(Box::leak(box_pool));
     SQLITE_CONN = Some(Box::leak(lite_conn));
