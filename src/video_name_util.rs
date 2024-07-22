@@ -1,5 +1,5 @@
 
-fn parse_Video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
+pub fn parse_video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
   let mut video_cover_list: Vec<VideoCover> = Vec::new();
   let mut video_file_name_list: Vec<&String> = Vec::new();
   let mut img_file_name_list: Vec<&String> = Vec::new();
@@ -70,7 +70,8 @@ fn only_one_matched_test() {
   assert_eq!(matched, "1234567890.jpg".to_string());
 }
 
-struct VideoCover {
+#[derive(Debug)]
+pub struct VideoCover {
   video_file_name: String,
   cover_file_name: String,
 }

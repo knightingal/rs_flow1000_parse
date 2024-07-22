@@ -6,7 +6,7 @@ use mysql::{params, prelude::Queryable, Pool, Row};
 use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_sqlite_connection};
+use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::parse_video_cover};
 
 
 pub static mut POOL: Option<&Pool>= None;
@@ -428,24 +428,28 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
   };
 
-  let mut dir_path: String = conn.exec_first(
-    "select dir_path from mp4_base_dir where id = :id ", params! {
-      "id" => base_index,
-    }).unwrap().unwrap();
+  let mut stmt = sqlite_conn.prepare("select dir_path from mp4_base_dir where id = :id").unwrap();
+  let mut dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
+    Ok(row.get_unwrap(0))
+  }).unwrap();
 
   dir_path += "/";
   dir_path += &sub_dir;
 
-  let file_names = parse_dir_path(&dir_path);
+  let file_names = parse_dir_path(&dir_path).unwrap();
+  let video_cover_list = parse_video_cover(&file_names);
+
+  println!("{:?}", video_cover_list);
+
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(file_names.unwrap()))
+  (StatusCode::OK, header, Json(file_names))
 }
 
 #[derive(Serialize, Clone)]
