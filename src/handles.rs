@@ -421,6 +421,33 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
   (StatusCode::OK, header, Json(selected_video))
 }
 
+pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
+    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
+  println!("{}", base_index);
+  println!("{}", sub_dir);
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+
+  let mut conn = unsafe {
+    POOL.unwrap().get_conn().unwrap()
+  };
+
+  let mut dir_path: String = conn.exec_first(
+    "select dir_path from mp4_base_dir where id = :id ", params! {
+      "id" => base_index,
+    }).unwrap().unwrap();
+
+  dir_path += "/";
+  dir_path += &sub_dir;
+
+  let file_names = parse_dir_path(&dir_path);
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(file_names.unwrap()))
+}
+
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
   id: u32,
