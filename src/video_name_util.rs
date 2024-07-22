@@ -22,7 +22,7 @@ pub fn parse_video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
 
 fn video_match_to_cover(video_file_name: &String, img_file_name_list: &Vec<&String>) -> Result<VideoCover, ()> {
   let pure_name = parse_pure_name(video_file_name);
-  let size = pure_name.len();
+  let size = pure_name.chars().count();
   for i in 0..size {
     for j in 0..i + 1 {
       let sub1:String = pure_name.split_at(j + size - i).0.into();
@@ -40,7 +40,7 @@ fn video_match_to_cover(video_file_name: &String, img_file_name_list: &Vec<&Stri
 
 fn only_one_matched(src: &String, img_file_name_list: &Vec<&String>) -> Result<String, bool> {
   let filted = img_file_name_list.into_iter().filter(|img_file_name| {
-    parse_pure_name(img_file_name).contains(src)
+    img_file_name.contains(src)
   });
   let mut matched_vec: Vec<&String> = Vec::new();
   for filted_it in filted {
@@ -54,7 +54,8 @@ fn only_one_matched(src: &String, img_file_name_list: &Vec<&String>) -> Result<S
 }
 
 fn parse_pure_name(file_name: &String) -> String {
-  return String::from(file_name.split('.').next().unwrap());
+  return (file_name.strip_suffix(".mp4").unwrap()).to_string();
+
 }
 
 #[test]
