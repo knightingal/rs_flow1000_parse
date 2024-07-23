@@ -6,7 +6,7 @@ use mysql::{params, prelude::Queryable, Pool, Row};
 use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::parse_video_cover};
+use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
 
 
 pub static mut POOL: Option<&Pool>= None;
@@ -422,7 +422,7 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
 }
 
 pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
-    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
+    -> (StatusCode, HeaderMap, Json<Vec<VideoCover>>) {
   println!("{}", base_index);
   println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
@@ -449,7 +449,7 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(file_names))
+  (StatusCode::OK, header, Json(video_cover_list))
 }
 
 #[derive(Serialize, Clone)]

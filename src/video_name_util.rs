@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 
 pub fn parse_video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
   let mut video_cover_list: Vec<VideoCover> = Vec::new();
@@ -114,8 +116,8 @@ fn test_sub_string_matched() {
   assert_eq!(matched, false);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct VideoCover {
-  video_file_name: String,
-  cover_file_name: String,
+  pub video_file_name: String,
+  pub cover_file_name: String,
 }
