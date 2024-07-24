@@ -437,11 +437,21 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
     Ok(row.get_unwrap(0))
   }).unwrap();
 
-  dir_path += "/";
-  dir_path += &sub_dir;
+  dir_path += &sub_dir_param;
 
   let file_names = parse_dir_path(&dir_path).unwrap();
   let video_cover_list = parse_video_cover(&file_names);
+
+  for video_cover_entry in video_cover_list.iter() {
+    let _ = sqlite_conn.execute("insert into video_info(
+      dir_path, base_index, video_file_name, cover_file_name
+    ) values (
+      :dir_path, :base_index, :video_file_name, :cover_file_name
+    )", named_params! {
+      ":dir_path": sub_dir_param, ":base_index": base_index, 
+      ":video_file_name": video_cover_entry.video_file_name, ":cover_file_name": video_cover_entry.cover_file_name
+    });
+  }
 
   println!("{:?}", video_cover_list);
 
