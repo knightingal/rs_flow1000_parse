@@ -443,13 +443,18 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   let video_cover_list = parse_video_cover(&file_names);
 
   for video_cover_entry in video_cover_list.iter() {
+
+    let designation = parse_designation(&video_cover_entry.video_file_name);
     let _ = sqlite_conn.execute("insert into video_info(
-      dir_path, base_index, video_file_name, cover_file_name
+      dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
     ) values (
-      :dir_path, :base_index, :video_file_name, :cover_file_name
+      :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num
     )", named_params! {
       ":dir_path": sub_dir_param, ":base_index": base_index, 
-      ":video_file_name": video_cover_entry.video_file_name, ":cover_file_name": video_cover_entry.cover_file_name
+      ":video_file_name": video_cover_entry.video_file_name, 
+      ":cover_file_name": video_cover_entry.cover_file_name,
+      ":designation_char": designation.char_final, 
+      ":designation_num": designation.num_final,
     });
   }
 
