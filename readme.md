@@ -1,3 +1,15 @@
+# Install in wsl
+
+```
+sudo apt install clang
+sudo apt install pkg-config
+sudo apt install pkg-config-dev
+sudo apt install libpkgconf-dev
+sudo apt install libopenssl-dev
+sudo apt install libssl-dev
+sudo apt install libsqlite3-dev
+```
+
 # Build
 
 ```
