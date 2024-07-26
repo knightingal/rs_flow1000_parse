@@ -22,6 +22,10 @@ cargo build --release
 
 * ~~sync mysql to sqlite~~
 
-* query date from sqlite
+* ~~query date from sqlite~~
 
-* implement `init-video` interface
+* ~~implement `init-video` interfacie~~
+
+* read param from environment
+
+* disable mysql if not needed
