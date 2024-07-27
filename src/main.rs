@@ -20,6 +20,7 @@ mod video_name_util;
 async fn main() {
   let home_param = env::var("HOME").unwrap();
   let use_mysql_env = env::var("USE_MYSQL");
+  let db_path_env = env::var("DB_PATH").unwrap();
   let mut use_mysql: bool = false;
   match use_mysql_env {
     Ok(val) => {
@@ -30,6 +31,7 @@ async fn main() {
   }
   println!("use_mysql:{}", use_mysql);
   println!("home:{}", home_param);
+  println!("db_path:{}", db_path_env);
 
   if use_mysql {
     let url = "mysql://root:000000@localhost:3306/mp4viewer";
@@ -39,7 +41,7 @@ async fn main() {
       POOL = Some(Box::leak(box_pool));
     }
   }
-  let lite_conn = Box::new(Connection::open("/home/knightingal/flow1000.db").unwrap());
+  let lite_conn = Box::new(Connection::open(db_path_env).unwrap());
   unsafe {
     SQLITE_CONN = Some(Box::leak(lite_conn));
   }
