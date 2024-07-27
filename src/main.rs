@@ -3,9 +3,10 @@ use handles::{
   all_duplicate_video, designation_search, init_video_handler, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_info_handler, video_rate, POOL, SQLITE_CONN
 };
 use hyper::StatusCode;
-use mysql::Pool;
+use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
+use std::env;
 
 mod test_main;
 mod test_aes;
@@ -17,13 +18,29 @@ mod video_name_util;
 
 #[tokio::main]
 async fn main() {
+  let home_param = env::var("HOME").unwrap();
+  let use_mysql_env = env::var("USE_MYSQL");
+  let mut use_mysql: bool = false;
+  match use_mysql_env {
+    Ok(val) => {
+      println!("use_mysql:{}", val);
+      use_mysql = val == "true";
+    },
+    Err(e) => println!("not found:{e}"),
+  }
+  println!("use_mysql:{}", use_mysql);
+  println!("home:{}", home_param);
 
-  let url = "mysql://root:000000@localhost:3306/mp4viewer";
-  let pool = Pool::new(url).unwrap();
-  let box_pool = Box::new(Pool::new(url).unwrap());
+  if use_mysql {
+    let url = "mysql://root:000000@localhost:3306/mp4viewer";
+    // let pool = Pool::new(url).unwrap();
+    let box_pool = Box::new(Pool::new(url).unwrap());
+    unsafe {
+      POOL = Some(Box::leak(box_pool));
+    }
+  }
   let lite_conn = Box::new(Connection::open("/home/knightingal/flow1000.db").unwrap());
   unsafe {
-    POOL = Some(Box::leak(box_pool));
     SQLITE_CONN = Some(Box::leak(lite_conn));
   }
 
@@ -45,9 +62,9 @@ async fn main() {
     .route("/designation-search/:designation_ori", get(designation_search))
     .route("/all-duplicate-video", get(all_duplicate_video))
     .route("/video-detail/:id", get(video_detail))
-    .route("/video-rate/:id/:rate", post(video_rate))
-    .with_state(pool)
-    ;
+    .route("/video-rate/:id/:rate", post(video_rate));
+    // .with_state(pool)
+    // ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
   axum::serve(listener, app).await.unwrap();
 }
@@ -64,6 +81,13 @@ async fn root() -> &'static str {
 fn get_sqlite_connection() -> &'static Connection {
   let conn: &Connection = unsafe {
     SQLITE_CONN.unwrap()
+  };
+  return conn;
+}
+
+fn get_mysql_connection() -> PooledConn {
+  let conn = unsafe {
+      POOL.unwrap().get_conn().unwrap()
   };
   return conn;
 }
