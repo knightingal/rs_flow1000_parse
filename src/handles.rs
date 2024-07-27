@@ -1,19 +1,19 @@
 use std::{cmp::Ordering, fs::{self, DirEntry}};
 
-use axum::{extract::{Path, State}, Json};
+use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
 use mysql::{params, prelude::Queryable, Pool, Row};
 use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
+use crate::{designation::parse_designation, get_mysql_connection, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
 
 
 pub static mut POOL: Option<&Pool>= None;
 pub static mut SQLITE_CONN: Option<&Connection>= None;
 
-pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
-  let mut conn1 = pool.get_conn().unwrap();
+pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
+  let mut conn1 = get_mysql_connection();
   let selected_video = conn1.exec_map(
     "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
       "id" => id,
@@ -31,8 +31,8 @@ pub async fn video_detail(State(pool): State<Pool>, Path(id): Path<u32>) -> (Sta
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
-pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
-  let mut conn1 = pool.get_conn().unwrap();
+pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
+  let mut conn1 = get_mysql_connection();
 
   let sqlite_conn = get_sqlite_connection();
   let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
@@ -63,8 +63,8 @@ pub async fn video_rate(State(pool): State<Pool>, Path((id, rate)): Path<(u32, u
   (StatusCode::OK, header, Json(selected_video.get(0).unwrap().clone()))
 }
 
-pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<Vec<DuplicateEntity>>) {
-  let mut conn1 = pool.get_conn().unwrap();
+pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
+  let mut conn1 = get_mysql_connection();
   let mut duplicate_entity_list:Vec<DuplicateEntity> = conn1.query_map(
     "select 
       count, designation_char, designation_num 
@@ -100,9 +100,9 @@ pub async fn all_duplicate_video(State(pool): State<Pool>) -> (StatusCode, Json<
   (StatusCode::OK, Json(duplicate_entity_list))
 }
 
-pub async fn designation_search(State(pool): State<Pool>, Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
+pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
   let designation = parse_designation(&designation_ori);
-  let mut conn1 = pool.get_conn().unwrap();
+  let mut conn1 = get_mysql_connection();
   let selected_video:Vec<VideoEntity> = conn1.exec_map(
     "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num ", params! {
       "char" => designation.char_final.unwrap(),
@@ -143,10 +143,7 @@ pub async fn mp4_dir_handler1(Path(base_index): Path<u32>)
     -> (StatusCode, HeaderMap, Json<Vec<String>>) {
   println!("{}", base_index);
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
-
+  let mut conn = get_mysql_connection();
   let dir_path: String = conn.exec_first(
     "select dir_path from mp4_base_dir where id = :id ", params! {
       "id" => base_index,
@@ -437,11 +434,26 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
     Ok(row.get_unwrap(0))
   }).unwrap();
 
-  dir_path += "/";
-  dir_path += &sub_dir;
+  dir_path += &sub_dir_param;
 
   let file_names = parse_dir_path(&dir_path).unwrap();
   let video_cover_list = parse_video_cover(&file_names);
+
+  for video_cover_entry in video_cover_list.iter() {
+
+    let designation = parse_designation(&video_cover_entry.video_file_name);
+    let _ = sqlite_conn.execute("insert into video_info(
+      dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
+    ) values (
+      :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num
+    )", named_params! {
+      ":dir_path": sub_dir_param, ":base_index": base_index, 
+      ":video_file_name": video_cover_entry.video_file_name, 
+      ":cover_file_name": video_cover_entry.cover_file_name,
+      ":designation_char": designation.char_final, 
+      ":designation_num": designation.num_final,
+    });
+  }
 
   println!("{:?}", video_cover_list);
 
