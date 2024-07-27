@@ -102,21 +102,37 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
 
 pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusCode, Json<Vec<VideoEntity>>) {
   let designation = parse_designation(&designation_ori);
-  let mut conn1 = get_mysql_connection();
-  let selected_video:Vec<VideoEntity> = conn1.exec_map(
-    "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num ", params! {
-      "char" => designation.char_final.unwrap(),
-      "num" => designation.num_final.unwrap(),
-    }, |(id, video_file_name, cover_file_name, dir_path, base_index)| {VideoEntity{
-      id, 
-      video_file_name, 
-      cover_file_name,
-      designation_char: String::new(), 
-      designation_num: String::new(),
-      dir_path,
-      base_index,
-      rate: Option::Some(0),
-    }}).unwrap();
+  let conn1 = get_sqlite_connection();
+
+  let mut stmt = conn1.prepare("select 
+    id, video_file_name, cover_file_name, dir_path, base_index 
+  from 
+    video_info 
+  where 
+    designation_char=:char and designation_num=:num").unwrap();
+
+  let selected_video_iter = stmt.query_map(named_params! {
+      ":char" : designation.char_final.unwrap(),
+      ":num" : designation.num_final.unwrap(),
+  }, |row| {
+    Ok(VideoEntity{
+          id: row.get_unwrap(0) ,
+          video_file_name: row.get_unwrap(1), 
+          cover_file_name: row.get_unwrap(2),
+          designation_char: String::new(), 
+          designation_num: String::new(),
+          dir_path: row.get_unwrap(3),
+          base_index: row.get_unwrap(4),
+          rate: Option::Some(0),
+    })
+  }).unwrap();
+  let mut selected_video:Vec<VideoEntity> = Vec::new();
+  for video in selected_video_iter {
+    selected_video.push(video.unwrap());
+  }
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
   (StatusCode::OK, Json(selected_video))
 }
 
