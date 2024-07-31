@@ -15,6 +15,11 @@ sudo apt install libsqlite3-dev
 ```
 cargo build --release
 ```
+# Config wsl
+```
+netsh interface portproxy add v4tov4 listenport=8082 listenaddress=0.0.0.0 connectport=8082 connectaddress=172.23.9.218
+netsh interface portproxy add v4tov4 listenport=3002 listenaddress=0.0.0.0 connectport=3002 connectaddress=172.23.9.218
+```
 
 # TODO
 
