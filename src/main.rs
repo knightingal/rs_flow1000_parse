@@ -7,6 +7,7 @@ use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
 use std::env;
+use sysinfo::System;
 
 mod test_main;
 mod test_aes;
@@ -18,7 +19,7 @@ mod video_name_util;
 
 #[tokio::main]
 async fn main() {
-  let home_param = env::var("HOME").unwrap();
+  println!("{:?}", System::name());
   let use_mysql_env = env::var("USE_MYSQL");
   let db_path_env = env::var("DB_PATH").unwrap();
   let mut use_mysql: bool = false;
@@ -30,7 +31,6 @@ async fn main() {
     Err(e) => println!("not found:{e}"),
   }
   println!("use_mysql:{}", use_mysql);
-  println!("home:{}", home_param);
   println!("db_path:{}", db_path_env);
 
   if use_mysql {
