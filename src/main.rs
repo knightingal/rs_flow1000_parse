@@ -1,6 +1,6 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
 use handles::{
-  all_duplicate_video, designation_search, init_video_handler, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_info_handler, video_rate, POOL, SQLITE_CONN
+  all_duplicate_video, designation_search, init_video_handler, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_info_handler, video_rate, IS_LINUX, POOL, SQLITE_CONN
 };
 use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
@@ -42,8 +42,10 @@ async fn main() {
     }
   }
   let lite_conn = Box::new(Connection::open(db_path_env).unwrap());
+  let is_linux = Box::new(System::name().unwrap().contains("Linux"));
   unsafe {
     SQLITE_CONN = Some(Box::leak(lite_conn));
+    IS_LINUX = Some(Box::leak(is_linux));
   }
 
   let app = Router::new()

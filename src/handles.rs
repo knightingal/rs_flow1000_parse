@@ -11,6 +11,7 @@ use crate::{designation::parse_designation, get_mysql_connection, get_sqlite_con
 
 pub static mut POOL: Option<&Pool>= None;
 pub static mut SQLITE_CONN: Option<&Connection>= None;
+pub static mut IS_LINUX: Option<&bool>= None;
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
@@ -159,11 +160,22 @@ pub async fn mp4_dir_handler1(Path(base_index): Path<u32>)
     -> (StatusCode, HeaderMap, Json<Vec<String>>) {
   println!("{}", base_index);
 
-  let mut conn = get_mysql_connection();
-  let dir_path: String = conn.exec_first(
-    "select dir_path from mp4_base_dir where id = :id ", params! {
-      "id" => base_index,
-    }).unwrap().unwrap();
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut sql = String::from("select ");
+  unsafe {
+    if *IS_LINUX.unwrap() {
+      sql += "dir_path ";
+    } else {
+      sql += "win_dir_path ";
+    }
+  }
+  sql += " from mp4_base_dir where id = :id";
+
+  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
+  let dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
+    Ok(row.get_unwrap(0))
+  }).unwrap();
 
   let file_names = parse_dir_path(&dir_path).unwrap();
 
@@ -181,14 +193,22 @@ pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
+  let sqlite_conn = get_sqlite_connection();
 
-  let mut dir_path: String = conn.exec_first(
-    "select dir_path from mp4_base_dir where id = :id ", params! {
-      "id" => base_index,
-    }).unwrap().unwrap();
+  let mut sql = String::from("select ");
+  unsafe {
+    if *IS_LINUX.unwrap() {
+      sql += "dir_path ";
+    } else {
+      sql += "win_dir_path ";
+    }
+  }
+  sql += " from mp4_base_dir where id = :id";
+
+  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
+  let mut dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
+    Ok(row.get_unwrap(0))
+  }).unwrap();
 
   dir_path += "/";
   dir_path += &sub_dir;
