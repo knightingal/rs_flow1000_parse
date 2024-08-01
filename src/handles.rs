@@ -139,15 +139,35 @@ pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusC
 
 pub async fn mount_config_handler()  
     -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
-  let mount_config_list:Vec<MountConfig> = conn.query_map(
-    "select id, dir_path, url_prefix, api_version from mp4_base_dir", 
-    |(id, dir_path, url_prefix, api_version)| {
-      MountConfig{id, dir_path, url_prefix, api_version}
+
+
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut sql = String::from("select id, ");
+  unsafe {
+    if *IS_LINUX.unwrap() {
+      sql += "dir_path ";
+    } else {
+      sql += "win_dir_path ";
     }
-  ).unwrap();
+  }
+  sql += " , url_prefix, api_version from mp4_base_dir ";
+
+  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
+  let mount_config_iter = stmt.query_map(named_params! {}, |row| {
+    Ok(MountConfig{
+        id: row.get_unwrap(0),
+        dir_path: row.get_unwrap(1),
+        url_prefix: row.get_unwrap(2),
+        api_version: row.get_unwrap(3),
+    })
+  }).unwrap();
+
+  let mut mount_config_list:Vec<MountConfig> = Vec::new();
+  for mount_config in mount_config_iter {
+      mount_config_list.push(mount_config.unwrap());
+  }
+
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
