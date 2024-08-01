@@ -21,3 +21,4 @@ serde = "1.0.198"
 mysql = "=25.0.0"
 # sudo dnf install sqlite-devel
 rusqlite = "0.31.0"
+sysinfo = "0.31.0"
