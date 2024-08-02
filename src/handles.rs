@@ -551,25 +551,6 @@ pub struct DuplicateEntity {
   video_info_list: Vec<VideoEntity>,
 }
 
-
-#[derive(Serialize)]
-struct VideoInfo {
-  id: u32,
-  #[serde(rename = "videoFileName")]
-  video_file_name: String,
-  #[serde(rename = "coverFileName")]
-  cover_file_name: String,
-}
-
-#[derive(Serialize)]
-struct DirInfo {
-  id: u32,
-  #[serde(rename = "subDir")]
-  sub_dir: String,
-  #[serde(rename = "videoList")]
-  video_list: Vec<VideoEntity>
-}
-
 #[derive(Serialize)]
 pub struct MountConfig {
   id: u32,
