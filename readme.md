@@ -31,6 +31,6 @@ netsh interface portproxy add v4tov4 listenport=3002 listenaddress=0.0.0.0 conne
 
 * ~~implement `init-video` interfacie~~
 
-* read param from environment
+* ~~read param from environment~~
 
-* disable mysql if not needed
+* ~~disable mysql if not needed~~
