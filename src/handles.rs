@@ -9,9 +9,9 @@ use serde_derive::Serialize;
 use crate::{designation::parse_designation, get_mysql_connection, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
 
 
-pub static mut POOL: Option<&Pool>= None;
-pub static mut SQLITE_CONN: Option<&Connection>= None;
-pub static mut IS_LINUX: Option<&bool>= None;
+pub static mut POOL: Option<&Pool> = None;
+pub static mut SQLITE_CONN: Option<&Connection> = None;
+pub static mut IS_LINUX: Option<&bool> = None;
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
@@ -126,11 +126,8 @@ pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusC
           base_index: row.get_unwrap(4),
           rate: Option::Some(0),
     })
-  }).unwrap();
-  let mut selected_video:Vec<VideoEntity> = Vec::new();
-  for video in selected_video_iter {
-    selected_video.push(video.unwrap());
-  }
+  }).unwrap().map(|it| it.unwrap());
+  let selected_video:Vec<VideoEntity> = selected_video_iter.collect();
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
@@ -161,13 +158,9 @@ pub async fn mount_config_handler()
         url_prefix: row.get_unwrap(2),
         api_version: row.get_unwrap(3),
     })
-  }).unwrap();
+  }).unwrap().map(|it| it.unwrap());
 
-  let mut mount_config_list:Vec<MountConfig> = Vec::new();
-  for mount_config in mount_config_iter {
-      mount_config_list.push(mount_config.unwrap());
-  }
-
+  let mount_config_list:Vec<MountConfig> = mount_config_iter.collect();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -289,12 +282,9 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
       base_index: 0,
       rate: row.get_unwrap(3)
     })
-  }).unwrap();
+  }).unwrap().map(|it| it.unwrap());
 
-  let mut selected_video:Vec<VideoEntity> = Vec::new();
-  for video in selected_video_iter {
-    selected_video.push(video.unwrap());
-  }
+  let selected_video:Vec<VideoEntity> = selected_video_iter.collect();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
