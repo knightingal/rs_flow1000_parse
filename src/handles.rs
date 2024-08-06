@@ -303,36 +303,38 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
     sub_dir_param.truncate(sub_dir_param.len() - 1);
   }
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
+  let sqlite_conn = get_sqlite_connection();
 
-  let selected_video: Vec<VideoEntity> = conn.exec_map(
-    "select id, video_file_name, cover_file_name from video_info where dir_path = :dir_path and base_index=:base_index", params! {
-      "dir_path" => sub_dir_param,
-      "base_index" => base_index,
-    }, |(id, video_file_name, cover_file_name)| {
-      let designation = parse_designation(&video_file_name);
-
-      return VideoEntity{
-        id, 
-        video_file_name, 
-        cover_file_name, 
-        designation_char: designation.char_final.unwrap(), 
-        designation_num: designation.num_final.unwrap(),
-        dir_path: String::new(),
-        base_index: 0,
-        rate: Option::None
-      };
-    }).unwrap();
+  let mut stmt = sqlite_conn.prepare("select 
+    id, video_file_name, cover_file_name 
+  from 
+    video_info 
+  where 
+    dir_path = :dir_path 
+    and base_index=:base_index").unwrap();
+  let selected_video: Vec<VideoEntity> = stmt.query_map(named_params! {
+    ":dir_path": sub_dir_param, ":base_index": base_index
+  }, |row| {
+    let designation = parse_designation(&row.get_unwrap(1));
+    return Ok(VideoEntity{
+      id: row.get_unwrap(0),
+      video_file_name: row.get_unwrap(1),
+      cover_file_name: row.get_unwrap(2), 
+      designation_char: designation.char_final.unwrap(), 
+      designation_num: designation.num_final.unwrap(),
+      dir_path: String::new(),
+      base_index: 0,
+      rate: Option::None,
+    })
+  }).unwrap().map(|it| it.unwrap()).collect();
 
   selected_video.iter().for_each(|video| {
-    let _:Vec<Row> = conn.exec("update video_info set designation_char=:char, designation_num=:num where id=:id", params! {
-      "char" => video.designation_char.clone(),
-      "num" => video.designation_num.clone(),
-      "id" => video.id
-    }).unwrap();
-
+    let mut stmt = sqlite_conn.prepare("update video_info set designation_char=:char, designation_num=:num where id=:id").unwrap();
+    let _ = stmt.execute(named_params! {
+      "char": video.designation_char.clone(),
+      "num": video.designation_num.clone(),
+      "id": video.id,
+    });
   });
 
   let mut header = HeaderMap::new();
