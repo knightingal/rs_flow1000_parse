@@ -384,13 +384,8 @@ pub async fn parse_designation_all_handler()
 }
 
 pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
-  let sqlite_conn = unsafe {
-    SQLITE_CONN.unwrap()
-  };
-
+  let mut conn = get_mysql_connection();
+  let sqlite_conn = get_sqlite_connection();
   let mount_config: Vec<MountConfig> = conn.query_map(
     "select id, dir_path,url_prefix,api_version from mp4_base_dir ", 
     |(id, dir_path,url_prefix,api_version)| {
@@ -421,12 +416,8 @@ pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Ve
 }
 
 pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
-  let sqlite_conn = unsafe {
-    SQLITE_CONN.unwrap()
-  };
+  let mut conn = get_mysql_connection();
+  let sqlite_conn = get_sqlite_connection();
 
   let selected_video: Vec<VideoEntity> = conn.query_map(
     "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num, designation_char from video_info ", 
