@@ -411,11 +411,6 @@ pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Ve
   (StatusCode::OK, header, Json(mount_config))
 }
 
-pub async fn error_handler() -> String {
-  // VideoCover{video_file_name:String::new(), cover_file_name:String::new()}
-  String::from("hello")
-}
-
 pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let mut conn = get_mysql_connection();
   let sqlite_conn = get_sqlite_connection();
