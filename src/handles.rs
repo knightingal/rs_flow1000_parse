@@ -33,35 +33,31 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 }
 
 pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
-  let mut conn1 = get_mysql_connection();
-
   let sqlite_conn = get_sqlite_connection();
-  let _:Vec<Row> = conn1.exec("update video_info set rate=:rate where id=:id", params! {
-    "rate" => rate,
-    "id" => id
-  }).unwrap();
 
   sqlite_conn.execute("update video_info set rate=?1 where id=?2", rusqlite::params![rate, id]).unwrap();
-
-  let selected_video = conn1.exec_map(
-    "select id, video_file_name, cover_file_name, rate from video_info where id = :id ", params! {
-      "id" => id,
-    }, |(id, video_file_name, cover_file_name, rate)| {VideoEntity{
-      id, 
-      video_file_name, 
-      cover_file_name,
-      designation_char: String::new(), 
-      designation_num: String::new(),
-      dir_path: String::new(),
-      base_index: 0,
-      rate,
-    }}).unwrap();
+  let result: Result<VideoEntity, _> = sqlite_conn.query_row("select id, video_file_name, cover_file_name, rate from video_info where id = :id ", named_params! {
+      ":id" : id,
+  }, |row| {
+    Result::Ok(
+      VideoEntity{
+        id: row.get_unwrap(0),
+        video_file_name: row.get_unwrap(1),
+        cover_file_name: row.get_unwrap(2),
+        designation_char: String::new(), 
+        designation_num: String::new(),
+        dir_path: String::new(),
+        base_index: 0,
+        rate: row.get_unwrap(3)
+      }
+    )
+  });
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(selected_video.get(0).unwrap().clone()))
+  (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
 pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
@@ -413,6 +409,11 @@ pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Ve
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(mount_config))
+}
+
+pub async fn error_handler() -> String {
+  // VideoCover{video_file_name:String::new(), cover_file_name:String::new()}
+  String::from("hello")
 }
 
 pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
