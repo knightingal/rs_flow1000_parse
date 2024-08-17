@@ -60,6 +60,49 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
+pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
+  let conn1 = get_sqlite_connection();
+
+  let mut stmt = conn1.prepare(
+    "select count, cover_file_name from(
+      select count(vi.id) as count, vi.cover_file_name from video_info vi group by cover_file_name
+    ) t where t.count > 1"
+  ).unwrap();
+
+   let mut duplicate_entity_list:Vec<DuplicateCoverEntity> = stmt.query_map(
+     named_params! {},
+    |row| { Ok(DuplicateCoverEntity{
+      count: row.get_unwrap(0), 
+      cover_file_name: row.get_unwrap(1),
+      video_info_list: vec![]
+    })}).unwrap().map(|it| it.unwrap()).collect();
+
+
+  for duplicate_entity in &mut duplicate_entity_list {
+    let mut stmt = conn1.prepare(
+      "select id, video_file_name, cover_file_name, dir_path, base_index, designation_char, designation_num from video_info where cover_file_name=:cover_file_name "
+    ).unwrap();
+
+    let selected_video:Vec<VideoEntity> = stmt.query_map(
+      named_params! {
+        ":cover_file_name": &duplicate_entity.cover_file_name
+      }, |row| {Ok(VideoEntity{
+        id: row.get_unwrap(0), 
+        video_file_name: row.get_unwrap(1), 
+        cover_file_name: row.get_unwrap(2),
+        dir_path: row.get_unwrap(3),
+        base_index: row.get_unwrap(4), 
+        designation_char: row.get_unwrap(5), 
+        designation_num: row.get_unwrap(6),
+        rate: Option::None
+      })}).unwrap().map(|it| it.unwrap()).collect();
+    duplicate_entity.video_info_list = selected_video;
+  }
+
+  (StatusCode::OK, Json(duplicate_entity_list))
+}
+
+
 pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
   let conn1 = get_sqlite_connection();
 
@@ -533,6 +576,16 @@ pub struct VideoEntity {
   base_index: u32,
   #[serde(rename = "rate")]
   rate: Option<u32>,
+}
+
+
+#[derive(Serialize, Clone)]
+pub struct DuplicateCoverEntity {
+  count: u32,
+  #[serde(rename = "coverFileName")]
+  cover_file_name: String,
+  #[serde(rename = "videoInfo")]
+  video_info_list: Vec<VideoEntity>,
 }
 
 #[derive(Serialize, Clone)]
