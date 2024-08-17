@@ -61,38 +61,47 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
 }
 
 pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
-  let mut conn1 = get_mysql_connection();
-  let mut duplicate_entity_list:Vec<DuplicateEntity> = conn1.query_map(
+  let conn1 = get_sqlite_connection();
+
+  let mut stmt = conn1.prepare(
     "select 
       count, designation_char, designation_num 
     from (
         select count(vi.id) as count, count(DISTINCT vi.dir_path) as cd, count(DISTINCT vi.base_index) as cb, vi.designation_char , vi.designation_num  
         from video_info vi where vi.designation_char != 'MP' or vi.designation_num != '4' group by designation_char, designation_num) t 
-    where t.count > 1  and t.cd > 1 ", 
-    |(count, designation_char, designation_num)| {DuplicateEntity{
-      count, 
-      designation_char, 
-      designation_num,
+    where t.count > 1  and t.cd > 1 ").unwrap();
+
+   let mut duplicate_entity_list:Vec<DuplicateEntity> = stmt.query_map(
+     named_params! {},
+    |row| { Ok(DuplicateEntity{
+      count: row.get_unwrap(0), 
+      designation_char:row.get_unwrap(1), 
+      designation_num: row.get_unwrap(2),
       video_info_list: vec![]
-    }}).unwrap();
+    })}).unwrap().map(|it| it.unwrap()).collect();
+
+
   for duplicate_entity in &mut duplicate_entity_list {
-    let selected_video:Vec<VideoEntity> = conn1.exec_map(
-      "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num ", params! {
-        "char" => &duplicate_entity.designation_char,
-        "num" => &duplicate_entity.designation_num,
-      }, |(id, video_file_name, cover_file_name, dir_path, base_index)| {VideoEntity{
-        id, 
-        video_file_name, 
-        cover_file_name,
+    let mut stmt = conn1.prepare(
+      "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num "
+    ).unwrap();
+
+    let selected_video:Vec<VideoEntity> = stmt.query_map(
+      named_params! {
+        ":char" : &duplicate_entity.designation_char,
+        ":num" : &duplicate_entity.designation_num,
+      }, |row| {Ok(VideoEntity{
+        id: row.get_unwrap(0), 
+        video_file_name: row.get_unwrap(1), 
+        cover_file_name: row.get_unwrap(2),
         designation_char: String::new(), 
         designation_num: String::new(),
-        dir_path,
-        base_index, 
+        dir_path: row.get_unwrap(3),
+        base_index: row.get_unwrap(4), 
         rate: Option::None
-      }}).unwrap();
+      })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
   }
-
 
   (StatusCode::OK, Json(duplicate_entity_list))
 }
