@@ -334,7 +334,15 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
   }).unwrap().map(|it| it.unwrap()).collect();
 
   selected_video.iter().for_each(|video| {
-    let mut stmt = sqlite_conn.prepare("update video_info set designation_char=:char, designation_num=:num where id=:id").unwrap();
+    let mut stmt = sqlite_conn.prepare(
+    "update 
+      video_info 
+    set 
+      designation_char=:char, 
+      designation_num=:num 
+    where 
+      id=:id"
+    ).unwrap();
     let _ = stmt.execute(named_params! {
       "char": video.designation_char.clone(),
       "num": video.designation_num.clone(),
