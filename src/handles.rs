@@ -249,8 +249,6 @@ pub async fn mp4_dir_handler1(Path(base_index): Path<u32>)
 
 pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
     -> (StatusCode, HeaderMap, Json<Vec<String>>) {
-  println!("{}", base_index);
-  println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
