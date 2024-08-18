@@ -305,8 +305,6 @@ fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
 
 pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
     -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  println!("{}", base_index);
-  println!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {
