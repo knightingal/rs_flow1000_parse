@@ -533,17 +533,34 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   for video_cover_entry in video_cover_list.iter() {
 
     let designation = parse_designation(&video_cover_entry.video_file_name);
-    let _ = sqlite_conn.execute("insert into video_info(
-      dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
-    ) values (
-      :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num
-    )", named_params! {
-      ":dir_path": sub_dir_param, ":base_index": base_index, 
-      ":video_file_name": video_cover_entry.video_file_name, 
-      ":cover_file_name": video_cover_entry.cover_file_name,
-      ":designation_char": designation.char_final, 
-      ":designation_num": designation.num_final,
-    });
+    let mut stmt = sqlite_conn.prepare(
+    "select 
+      count(id) 
+    from video_info 
+    where 
+      dir_path=:dir_path 
+      and base_index=:base_index 
+      and video_file_name=:video_file_name").unwrap();
+    let count: u32 = stmt.query_row(named_params! {
+      ":video_file_name": video_cover_entry.video_file_name, ":base_index": base_index, ":dir_path": sub_dir_param, 
+    }, |row| {
+      Ok(row.get_unwrap(0))
+    }).unwrap();
+
+    if count == 0 {
+      let _ = sqlite_conn.execute("insert into video_info(
+        dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
+      ) values (
+        :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num
+      )", named_params! {
+        ":dir_path": sub_dir_param, 
+        ":base_index": base_index, 
+        ":video_file_name": video_cover_entry.video_file_name, 
+        ":cover_file_name": video_cover_entry.cover_file_name,
+        ":designation_char": designation.char_final, 
+        ":designation_num": designation.num_final,
+      });
+    }
   }
 
   println!("{:?}", video_cover_list);
