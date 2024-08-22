@@ -531,18 +531,20 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   let video_cover_list = parse_video_cover(&file_names);
 
   for video_cover_entry in video_cover_list.iter() {
-
     let designation = parse_designation(&video_cover_entry.video_file_name);
     let mut stmt = sqlite_conn.prepare(
     "select 
       count(id) 
-    from video_info 
+    from 
+      video_info 
     where 
       dir_path=:dir_path 
       and base_index=:base_index 
       and video_file_name=:video_file_name").unwrap();
     let count: u32 = stmt.query_row(named_params! {
-      ":video_file_name": video_cover_entry.video_file_name, ":base_index": base_index, ":dir_path": sub_dir_param, 
+      ":video_file_name": video_cover_entry.video_file_name, 
+      ":base_index": base_index, 
+      ":dir_path": sub_dir_param, 
     }, |row| {
       Ok(row.get_unwrap(0))
     }).unwrap();
