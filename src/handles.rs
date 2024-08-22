@@ -532,24 +532,9 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 
   for video_cover_entry in video_cover_list.iter() {
     let designation = parse_designation(&video_cover_entry.video_file_name);
-    let mut stmt = sqlite_conn.prepare(
-    "select 
-      count(id) 
-    from 
-      video_info 
-    where 
-      dir_path=:dir_path 
-      and base_index=:base_index 
-      and video_file_name=:video_file_name").unwrap();
-    let count: u32 = stmt.query_row(named_params! {
-      ":video_file_name": video_cover_entry.video_file_name, 
-      ":base_index": base_index, 
-      ":dir_path": sub_dir_param, 
-    }, |row| {
-      Ok(row.get_unwrap(0))
-    }).unwrap();
+    let exist = check_exist_by_video_file_name(&sub_dir_param, base_index, &video_cover_entry.video_file_name);
 
-    if count == 0 {
+    if !exist {
       let _ = sqlite_conn.execute("insert into video_info(
         dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
       ) values (
@@ -572,6 +557,30 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
   (StatusCode::OK, header, Json(video_cover_list))
+}
+
+fn check_exist_by_video_file_name(dir_path: &String, base_index: u32, video_file_name: &String) -> bool {
+  let sqlite_conn = unsafe {
+    SQLITE_CONN.unwrap()
+  };
+  let mut stmt = sqlite_conn.prepare(
+  "select 
+    count(id) 
+  from 
+    video_info 
+  where 
+    dir_path=:dir_path 
+    and base_index=:base_index 
+    and video_file_name=:video_file_name").unwrap();
+  let count: u32 = stmt.query_row(named_params! {
+    ":video_file_name": video_file_name, 
+    ":base_index": base_index, 
+    ":dir_path": dir_path, 
+  }, |row| {
+    Ok(row.get_unwrap(0))
+  }).unwrap();
+
+  count != 0
 }
 
 #[derive(Serialize, Clone)]
