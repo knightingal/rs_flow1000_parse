@@ -27,7 +27,7 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
       dir_path: String::new(),
       base_index: 0,
       rate: Option::Some(0),
-      video_size:0,
+      video_size: Option::Some(0),
     }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
@@ -50,7 +50,7 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
         dir_path: String::new(),
         base_index: 0,
         rate: row.get_unwrap(3),
-        video_size:0,
+        video_size: Option::Some(0),
       }
     )
   });
@@ -97,7 +97,7 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         designation_char: row.get_unwrap(5), 
         designation_num: row.get_unwrap(6),
         rate: Option::None,
-        video_size:0,
+        video_size: Option::Some(0),
       })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -144,7 +144,7 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
         designation_num: String::new(),
         dir_path: row.get_unwrap(3),
         base_index: row.get_unwrap(4), 
-        video_size:0,
+        video_size: Option::Some(0),
         rate: Option::None
       })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
@@ -177,7 +177,7 @@ pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusC
           dir_path: row.get_unwrap(3),
           base_index: row.get_unwrap(4),
           rate: Option::Some(0),
-          video_size:0,
+          video_size: Option::Some(0),
     })
   }).unwrap().map(|it| it.unwrap());
   let selected_video:Vec<VideoEntity> = selected_video_iter.collect();
@@ -318,7 +318,7 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 
   let sqlite_conn = get_sqlite_connection();
 
-  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
+  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate, video_size from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
   let selected_video_iter = stmt.query_map(named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index}, |row| {
     Ok(VideoEntity{
       // id: row.get(0)?,
@@ -329,7 +329,7 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
       designation_num: String::new(),
       dir_path: String::new(),
       base_index: 0,
-      video_size:0,
+      video_size: row.get_unwrap(4),
       rate: row.get_unwrap(3)
     })
   }).unwrap().map(|it| it.unwrap());
@@ -374,7 +374,7 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
       designation_num: designation.num_final.unwrap(),
       dir_path: String::new(),
       base_index: 0,
-      video_size:0,
+      video_size: Option::Some(0),
       rate: Option::None,
     })
   }).unwrap().map(|it| it.unwrap()).collect();
@@ -422,7 +422,7 @@ pub async fn parse_designation_all_handler()
         designation_num: designation.num_final.unwrap(),
         dir_path: String::new(),
         base_index: 0,
-        video_size:0,
+        video_size: Option::Some(0),
         rate: Option::None
       };
     }).unwrap();
@@ -491,7 +491,7 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
         dir_path,
         base_index,
         rate, 
-        video_size:0
+        video_size: Option::Some(0),
       };
     }).unwrap();
 
@@ -629,7 +629,7 @@ pub struct VideoEntity {
   #[serde(rename = "rate")]
   rate: Option<u32>,
   #[serde(rename = "videoSize")]
-  video_size: u64,
+  video_size: Option<u64>,
 }
 
 
