@@ -60,8 +60,11 @@ int main(int argc, char **argv) {
       const AVCodec* codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char* codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
+      AVCodecParameters* para = avcodec_parameters_alloc();
+
       dec_ctx = avcodec_alloc_context3(codec);
       printf("dec_ctx=%p\n", dec_ctx);
+      avcodec_parameters_to_context(dec_ctx, in_stream->codecpar);
       ret = avcodec_open2(dec_ctx, codec, NULL);
       printf("red=%d\n", ret);
     }  
@@ -69,7 +72,7 @@ int main(int argc, char **argv) {
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
 
-  av_seek_frame(fmt_ctx, 0, 2000, AVSEEK_FLAG_BACKWARD);
+  av_seek_frame(fmt_ctx, 0, 0, AVSEEK_FLAG_BACKWARD);
   AVPacket* p_packet = av_packet_alloc();
   ret = av_read_frame(fmt_ctx, p_packet);
   printf("red=%d\n", ret);
