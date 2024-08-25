@@ -15,7 +15,6 @@ int main(int argc, char **argv) {
   AVCodecParserContext *parser;
   AVCodecContext *c= NULL;
   FILE *f;
-  AVFrame *frame;
   uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
   uint8_t *data;
   size_t   data_size;
@@ -33,6 +32,7 @@ int main(int argc, char **argv) {
   printf("number=%d\n", count);
   int video_stream_index = -1;
   int audio_stream_index = -1;
+  AVCodecContext *dec_ctx;
 
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
   {
@@ -59,9 +59,24 @@ int main(int argc, char **argv) {
       printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
       const AVCodec* codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char* codec_name = codec->long_name;
-      printf("codec_name=%s", codec_name);
+      printf("codec_name=%s\n", codec_name);
+      dec_ctx = avcodec_alloc_context3(codec);
+      printf("dec_ctx=%p\n", dec_ctx);
+      ret = avcodec_open2(dec_ctx, codec, NULL);
+      printf("red=%d\n", ret);
     }  
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
+
+
+  av_seek_frame(fmt_ctx, 0, 2000, AVSEEK_FLAG_BACKWARD);
+  AVPacket* p_packet = av_packet_alloc();
+  ret = av_read_frame(fmt_ctx, p_packet);
+  printf("red=%d\n", ret);
+  ret = avcodec_send_packet(dec_ctx, p_packet);
+  printf("red=%d\n", ret);
+  AVFrame *frame = av_frame_alloc();
+  ret = avcodec_receive_frame(dec_ctx, frame);
+  printf("red=%d\n", ret);
   return 0;
 }
