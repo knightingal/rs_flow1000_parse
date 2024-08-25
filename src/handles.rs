@@ -243,13 +243,13 @@ pub async fn mp4_dir_handler1(Path(base_index): Path<u32>)
     Ok(row.get_unwrap(0))
   }).unwrap();
 
-  let file_names = parse_dir_path(&dir_path).unwrap();
+  let file_names:Vec<(String, u64)> = parse_dir_path(&dir_path).unwrap();
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(file_names))
+  (StatusCode::OK, header, Json(file_names.into_iter().map(|f| f.0).collect()))
 }
 
 pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
@@ -282,20 +282,20 @@ pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>)
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(file_names.unwrap()))
+  (StatusCode::OK, header, Json(file_names.unwrap().into_iter().map(|f| f.0).collect()))
 }
 
-fn parse_dir_path(dir_path: &String) -> Result<Vec<String>, std::io::Error> {
+fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
   let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
     .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent")).collect();
   file_entry_list.sort_by(|a, b| comp_path(&b, &a).unwrap());
 
-  let file_names:Vec<String> = file_entry_list.into_iter().map(|res| 
-      res
+  let file_names:Vec<(String, u64)> = file_entry_list.into_iter().map(|res| 
+      (res
         .file_name()
         .into_string()
-        .unwrap()
+        .unwrap(), res.metadata().unwrap().len())
   ).collect();
 
   return Result::Ok(file_names);
@@ -536,7 +536,7 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 
   dir_path += &sub_dir_param;
 
-  let file_names = parse_dir_path(&dir_path).unwrap();
+  let file_names: Vec<(String, u64)> = parse_dir_path(&dir_path).unwrap();
   let video_cover_list = parse_video_cover(&file_names);
 
   for video_cover_entry in video_cover_list.iter() {
@@ -545,9 +545,9 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 
     if !exist {
       let _ = sqlite_conn.execute("insert into video_info(
-        dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num
+        dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num, video_size
       ) values (
-        :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num
+        :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, video_size
       )", named_params! {
         ":dir_path": sub_dir_param, 
         ":base_index": base_index, 
@@ -555,7 +555,26 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
         ":cover_file_name": video_cover_entry.cover_file_name,
         ":designation_char": designation.char_final, 
         ":designation_num": designation.num_final,
+        "video_size": video_cover_entry.video_size,
       });
+    } else {
+      let _ = sqlite_conn.execute("update video_info set 
+        cover_file_name=:cover_file_name, 
+        designation_char=:designation_char, 
+        designation_num=:designation_num, 
+        video_size=:video_size
+      where
+        dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
+      ", named_params! {
+        ":dir_path": sub_dir_param, 
+        ":base_index": base_index, 
+        ":video_file_name": video_cover_entry.video_file_name, 
+        ":cover_file_name": video_cover_entry.cover_file_name,
+        ":designation_char": designation.char_final, 
+        ":designation_num": designation.num_final,
+        "video_size": video_cover_entry.video_size,
+      });
+
     }
   }
 

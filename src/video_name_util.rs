@@ -1,15 +1,15 @@
 use serde::Serialize;
 
 
-pub fn parse_video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
+pub fn parse_video_cover(dir_list: &Vec<(String, u64)>) -> Vec<VideoCover> {
   let mut video_cover_list: Vec<VideoCover> = Vec::new();
-  let mut video_file_name_list: Vec<&String> = Vec::new();
+  let mut video_file_name_list: Vec<(&String, u64)> = Vec::new();
   let mut img_file_name_list: Vec<&String> = Vec::new();
   for file_name in dir_list.iter() {
-    if file_name.strip_suffix(".mp4").is_some() {
-      video_file_name_list.push(file_name);
-    } else if file_name.strip_suffix(".jpg").is_some() || file_name.strip_suffix(".png").is_some() {
-      img_file_name_list.push(file_name);
+    if file_name.0.strip_suffix(".mp4").is_some() {
+      video_file_name_list.push((&file_name.0, file_name.1));
+    } else if file_name.0.strip_suffix(".jpg").is_some() || file_name.0.strip_suffix(".png").is_some() {
+      img_file_name_list.push(&file_name.0);
     }
   }
 
@@ -22,15 +22,15 @@ pub fn parse_video_cover(dir_list: &Vec<String>) -> Vec<VideoCover> {
   return video_cover_list;
 }
 
-fn video_match_to_cover(video_file_name: &String, img_file_name_list: &Vec<&String>) -> Result<VideoCover, ()> {
-  let pure_name = parse_pure_name(video_file_name);
+fn video_match_to_cover(video_file_name: (&String, u64), img_file_name_list: &Vec<&String>) -> Result<VideoCover, ()> {
+  let pure_name = parse_pure_name(video_file_name.0);
   let size = pure_name.chars().count();
   for i in 0..size {
     for j in 0..i + 1 {
       let ret = only_one_matched(&pure_name, img_file_name_list, j, j + size - i);
 
       if ret.is_ok() {
-        return Ok(VideoCover { video_file_name: video_file_name.clone(), cover_file_name: ret.unwrap() })
+        return Ok(VideoCover { video_file_name: video_file_name.0.clone(), cover_file_name: ret.unwrap(), video_size: video_file_name.1 })
       }
     }
   }
@@ -79,19 +79,19 @@ fn parse_pure_name(file_name: &String) -> String {
 
 #[test]
 fn video_match_to_cover_test() {
-  let ret = video_match_to_cover(&"1234567890.mp4".to_string(), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
+  let ret = video_match_to_cover((&"1234567890.mp4".to_string(), 0), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
   assert_eq!(ret.video_file_name, "1234567890.mp4".to_string());
   assert_eq!(ret.cover_file_name, "1234567890.jpg".to_string());
 
-  let ret = video_match_to_cover(&"23456789.mp4".to_string(), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
+  let ret = video_match_to_cover((&"23456789.mp4".to_string(), 0), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
   assert_eq!(ret.video_file_name, "23456789.mp4".to_string());
   assert_eq!(ret.cover_file_name, "1234567890.jpg".to_string());
 
-  let ret = video_match_to_cover(&"234567891.mp4".to_string(), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
+  let ret = video_match_to_cover((&"234567891.mp4".to_string(), 0), &vec![&"1234567890.jpg".to_string(), &"398434979.jpg".to_string()]).unwrap();
   assert_eq!(ret.video_file_name, "234567891.mp4".to_string());
   assert_eq!(ret.cover_file_name, "1234567890.jpg".to_string());
 
-  let ret = video_match_to_cover(&"234567891.mp4".to_string(), &vec![&"1234567890.jpg".to_string(), &"1234567892.jpg".to_string(), &"398434979.jpg".to_string()]);
+  let ret = video_match_to_cover((&"234567891.mp4".to_string(), 0), &vec![&"1234567890.jpg".to_string(), &"1234567892.jpg".to_string(), &"398434979.jpg".to_string()]);
   assert_eq!(ret.is_err(), true);
 }
 
@@ -120,4 +120,5 @@ fn test_sub_string_matched() {
 pub struct VideoCover {
   pub video_file_name: String,
   pub cover_file_name: String,
+  pub video_size: u64,
 }
