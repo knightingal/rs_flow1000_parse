@@ -72,14 +72,24 @@ int main(int argc, char **argv) {
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
 
-  av_seek_frame(fmt_ctx, 0, 0, AVSEEK_FLAG_BACKWARD);
+  av_seek_frame(fmt_ctx, 0, 600000000, AVSEEK_FLAG_BACKWARD);
   AVPacket* p_packet = av_packet_alloc();
-  ret = av_read_frame(fmt_ctx, p_packet);
-  printf("red=%d\n", ret);
-  ret = avcodec_send_packet(dec_ctx, p_packet);
-  printf("red=%d\n", ret);
-  AVFrame *frame = av_frame_alloc();
-  ret = avcodec_receive_frame(dec_ctx, frame);
-  printf("red=%d\n", ret);
+  while (1) {
+    ret = av_read_frame(fmt_ctx, p_packet);
+    printf("red=%d\n", ret);
+    ret = avcodec_send_packet(dec_ctx, p_packet);
+    printf("red=%d\n", ret);
+    AVFrame *frame = av_frame_alloc();
+  
+    /* code */
+    ret = avcodec_receive_frame(dec_ctx, frame);
+    printf("red=%d\n", ret);
+    if (ret == 0) {
+      printf("read succ \n");
+      break;
+    }
+  }
+
+  
   return 0;
 }
