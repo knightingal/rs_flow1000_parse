@@ -86,6 +86,13 @@ int main(int argc, char **argv) {
     printf("red=%d\n", ret);
     if (ret == 0) {
       printf("read succ \n");
+      int w = frame->width;
+      int h = frame->height;
+      printf("w=%d, h=%d\n", w, h);
+      int size = av_image_get_buffer_size(frame->format, frame->width,
+                                        frame->height, 1);
+      printf("size=%d\n", size);
+      
       break;
     }
   }
