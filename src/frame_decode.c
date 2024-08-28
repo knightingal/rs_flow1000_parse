@@ -16,7 +16,7 @@ static char* filename = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
-static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbuf, size_t buf_size) {
+static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbuf, size_t out_buf_size) {
   int ret = 0;
   AVPacket pkt;
   AVCodec* codec;
@@ -49,9 +49,43 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
     printf("avcodec_open2 failed");
     return -1;
   }
+  if (frame->format != ctx->pix_fmt) {
+    rgb_frame = av_frame_alloc();
+    swsContext = sws_getContext(frame->width, frame->height, 
+      (enum AVPixelFormat)frame->format, frame->width, frame->height, 
+      ctx->pix_fmt, 1, NULL, NULL, NULL
+    );
+    if (!swsContext) {
+      printf("sws_getContext failed\n");
+      return -1;
+    }
+    int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
+    buffer = (unsigned char*)av_malloc(buffer_size);
+    av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
+    if ((ret = sws_scale(swsContext, (const uint8_t * const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0) {
+      printf("sws_scale failed\n");
+    }
+    rgb_frame->format = ctx->pix_fmt;
+    rgb_frame->width = ctx->width;
+    rgb_frame->height = ctx->height;
+    ret = avcodec_send_frame(ctx, rgb_frame);
+  } else {
+    ret = avcodec_send_frame(ctx, frame);
+  }
+  if (ret < 0) {
+    printf("avcodec_send_frame failed\n");
+  }
+  ret = avcodec_receive_packet(ctx, &pkt);
+  if (ret < 0) {
+    printf("avcodec_receive_packet failed\n");
+  }
+  if (pkt.size > 0 && pkt.size <= out_buf_size) {
+    memcpy(outbuf, pkt.data, pkt.size);
+  }
+  ret = pkt.size;
 
 
-  return -1;
+  return ret;
 
 }
 
@@ -120,7 +154,7 @@ int main(int argc, char **argv) {
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
 
-  av_seek_frame(fmt_ctx, 0, 600000000, AVSEEK_FLAG_BACKWARD);
+  av_seek_frame(fmt_ctx, 0, 60000000, AVSEEK_FLAG_BACKWARD);
   AVPacket* p_packet = av_packet_alloc();
   while (1) {
     ret = av_read_frame(fmt_ctx, p_packet);
@@ -146,15 +180,12 @@ int main(int argc, char **argv) {
           ret = AVERROR(ENOMEM);
           break;;
       }
-      ret = av_image_copy_to_buffer(buffer, size,
-                                    (const uint8_t * const *)frame->data,
-                                    (const int *)frame->linesize, frame->format,
-                                    frame->width, frame->height, 1);
+      ret = frame_to_image(frame, AV_CODEC_ID_MJPEG, buffer, size);
       if (ret < 0) {
         printf("Can not copy image to buffer\n");
         break;
       }
-      if ((ret = fwrite(buffer, 1, size, output_file)) < 0) {
+      if ((ret = fwrite(buffer, 1, ret, output_file)) < 0) {
             fprintf(stderr, "Failed to dump raw data.\n");
             break;
       }
