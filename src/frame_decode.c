@@ -5,11 +5,58 @@
 #include <libavcodec/avcodec.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+#include <libavcodec/codec_id.h>
+#include <libswscale/swscale.h>
 
 #define INBUF_SIZE 4096
 
 static AVFormatContext *fmt_ctx;
 static char* filename = "/home/knightingal/demo_video.mp4";
+// static char* output_file = "/home/knightingal/demo_video_1.jpg";
+static FILE *output_file = NULL;
+
+static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbuf, size_t buf_size) {
+  int ret = 0;
+  AVPacket pkt;
+  AVCodec* codec;
+  AVCodecContext* ctx = NULL;
+  AVFrame* rgb_frame = NULL;
+  uint8_t* buffer = NULL;
+  struct SwsContext* swsContext = NULL;
+  av_init_packet(&pkt);
+  codec = avcodec_find_encoder(code_id);
+  if (!codec) {
+    printf("codec non found\n");
+    return -1;
+  }
+  if (!codec->pix_fmts) {
+    printf("codec non support pix_fmt\n");
+    
+    return -1;
+  }
+  ctx = avcodec_alloc_context3(codec);
+  ctx->bit_rate = 3000000;
+  ctx->width = frame->width;
+  ctx->height = frame->height;
+  ctx->time_base.num = 1;
+  ctx->time_base.den = 25;
+  ctx->gop_size = 10;
+  ctx->max_b_frames = 0;
+  ctx->pix_fmt = *codec->pix_fmts;
+  ret = avcodec_open2(ctx, codec, NULL);
+  if (ret < 0) {
+    printf("avcodec_open2 failed");
+    return -1;
+  }
+
+
+  return -1;
+
+}
+
+
+
 int main(int argc, char **argv) {
   const AVCodec *codec;
   AVCodecParserContext *parser;
@@ -24,6 +71,7 @@ int main(int argc, char **argv) {
   pkt = av_packet_alloc();
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
+  output_file = fopen("/home/knightingal/demo_video_1.jpg", "w+b");
 
   ret = avformat_find_stream_info(fmt_ctx, 0);
   printf("red=%d\n", ret);
@@ -89,9 +137,27 @@ int main(int argc, char **argv) {
       int w = frame->width;
       int h = frame->height;
       printf("w=%d, h=%d\n", w, h);
-      int size = av_image_get_buffer_size(frame->format, frame->width,
-                                        frame->height, 1);
+      int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame->width,
+                                        frame->height, 64);
       printf("size=%d\n", size);
+      uint8_t *buffer = av_malloc(size);
+      if (!buffer) {
+          printf("Can not alloc buffer\n");
+          ret = AVERROR(ENOMEM);
+          break;;
+      }
+      ret = av_image_copy_to_buffer(buffer, size,
+                                    (const uint8_t * const *)frame->data,
+                                    (const int *)frame->linesize, frame->format,
+                                    frame->width, frame->height, 1);
+      if (ret < 0) {
+        printf("Can not copy image to buffer\n");
+        break;
+      }
+      if ((ret = fwrite(buffer, 1, size, output_file)) < 0) {
+            fprintf(stderr, "Failed to dump raw data.\n");
+            break;
+      }
       
       break;
     }
@@ -100,3 +166,4 @@ int main(int argc, char **argv) {
   
   return 0;
 }
+
