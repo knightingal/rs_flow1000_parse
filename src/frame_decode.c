@@ -193,6 +193,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
+  // TODO: free memory
 
   
   return 0;
