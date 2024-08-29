@@ -12,26 +12,29 @@
 #define INBUF_SIZE 4096
 
 static AVFormatContext *fmt_ctx;
-static char* filename = "/home/knightingal/demo_video.mp4";
+static char *filename = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
-static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbuf, size_t out_buf_size) {
+static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
+{
   int ret = 0;
   AVPacket pkt;
-  AVCodec* codec = NULL;
-  AVCodecContext* ctx = NULL;
-  AVFrame* rgb_frame = NULL;
-  uint8_t* buffer = NULL;
-  struct SwsContext* swsContext = NULL;
+  AVCodec *codec = NULL;
+  AVCodecContext *ctx = NULL;
+  AVFrame *rgb_frame = NULL;
+  uint8_t *buffer = NULL;
+  struct SwsContext *swsContext = NULL;
   av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
-  if (!codec) {
+  if (!codec)
+  {
     ret = -1;
     printf("codec non found\n");
     goto error;
   }
-  if (!codec->pix_fmts) {
+  if (!codec->pix_fmts)
+  {
     ret = -1;
     printf("codec non support pix_fmt\n");
     goto error;
@@ -46,65 +49,78 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
   ctx->max_b_frames = 0;
   ctx->pix_fmt = *codec->pix_fmts;
   ret = avcodec_open2(ctx, codec, NULL);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     printf("avcodec_open2 failed");
     goto error;
   }
-  if (frame->format != ctx->pix_fmt) {
+  if (frame->format != ctx->pix_fmt)
+  {
     rgb_frame = av_frame_alloc();
-    swsContext = sws_getContext(frame->width, frame->height, 
-      (enum AVPixelFormat)frame->format, frame->width, frame->height, 
-      ctx->pix_fmt, 1, NULL, NULL, NULL
-    );
-    if (!swsContext) {
+    swsContext = sws_getContext(frame->width, frame->height,
+                                (enum AVPixelFormat)frame->format, frame->width, frame->height,
+                                ctx->pix_fmt, 1, NULL, NULL, NULL);
+    if (!swsContext)
+    {
       printf("sws_getContext failed\n");
       ret = -1;
       goto error;
     }
     int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
-    buffer = (unsigned char*)av_malloc(buffer_size);
+    buffer = (unsigned char *)av_malloc(buffer_size);
     av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
-    if ((ret = sws_scale(swsContext, (const uint8_t * const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0) {
+    if ((ret = sws_scale(swsContext, (const uint8_t *const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0)
+    {
       printf("sws_scale failed\n");
     }
     rgb_frame->format = ctx->pix_fmt;
     rgb_frame->width = ctx->width;
     rgb_frame->height = ctx->height;
     ret = avcodec_send_frame(ctx, rgb_frame);
-  } else {
+  }
+  else
+  {
     ret = avcodec_send_frame(ctx, frame);
   }
-  if (ret < 0) {
+  if (ret < 0)
+  {
     printf("avcodec_send_frame failed\n");
   }
   ret = avcodec_receive_packet(ctx, &pkt);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     printf("avcodec_receive_packet failed\n");
   }
-  if (pkt.size > 0 && pkt.size <= out_buf_size) {
+  if (pkt.size > 0 && pkt.size <= out_buf_size)
+  {
     memcpy(outbuf, pkt.data, pkt.size);
   }
   ret = pkt.size;
 
 error:
-  if (swsContext) {
+  if (swsContext)
+  {
     sws_freeContext(swsContext);
-  }  
-  if (rgb_frame) {
+  }
+  if (rgb_frame)
+  {
     av_frame_unref(rgb_frame);
     av_frame_free(&rgb_frame);
   }
-  if (buffer) {av_free(buffer);}
-  if (ctx) {
+  if (buffer)
+  {
+    av_free(buffer);
+  }
+  if (ctx)
+  {
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
   return ret;
 }
 
-
-
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   int ret;
   int eof;
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
@@ -123,28 +139,28 @@ int main(int argc, char **argv) {
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
   {
     AVStream *in_stream = fmt_ctx->streams[i];
-		if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
-		{
-			video_stream_index = i;
-		}
-		else if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-		{
-			audio_stream_index = i;
-		}
+    if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+      video_stream_index = i;
+    }
+    else if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+      audio_stream_index = i;
+    }
 
     if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
     {
       int width = in_stream->codecpar->width;
       int height = in_stream->codecpar->height;
       int frame_rate;
-      if(in_stream->avg_frame_rate.den != 0 && in_stream->avg_frame_rate.num != 0)
+      if (in_stream->avg_frame_rate.den != 0 && in_stream->avg_frame_rate.num != 0)
       {
-        frame_rate = in_stream->avg_frame_rate.num/in_stream->avg_frame_rate.den; 
+        frame_rate = in_stream->avg_frame_rate.num / in_stream->avg_frame_rate.den;
       }
-      int video_frame_count = in_stream->nb_frames; 
+      int video_frame_count = in_stream->nb_frames;
       printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
-      const AVCodec* codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
-      const char* codec_name = codec->long_name;
+      const AVCodec *codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
+      const char *codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
       // AVCodecParameters* para = avcodec_parameters_alloc();
 
@@ -153,47 +169,52 @@ int main(int argc, char **argv) {
       avcodec_parameters_to_context(dec_ctx, in_stream->codecpar);
       ret = avcodec_open2(dec_ctx, codec, NULL);
       printf("red=%d\n", ret);
-    }  
+    }
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
-
   av_seek_frame(fmt_ctx, 0, 60000000, AVSEEK_FLAG_BACKWARD);
-  AVPacket* p_packet = av_packet_alloc();
-  while (1) {
+  AVPacket *p_packet = av_packet_alloc();
+  while (1)
+  {
     ret = av_read_frame(fmt_ctx, p_packet);
     printf("red=%d\n", ret);
     ret = avcodec_send_packet(dec_ctx, p_packet);
     printf("red=%d\n", ret);
     AVFrame *frame = av_frame_alloc();
-  
+
     /* code */
     ret = avcodec_receive_frame(dec_ctx, frame);
     printf("red=%d\n", ret);
-    if (ret == 0) {
+    if (ret == 0)
+    {
       printf("read succ \n");
       int w = frame->width;
       int h = frame->height;
       printf("w=%d, h=%d\n", w, h);
       int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame->width,
-                                        frame->height, 64);
+                                          frame->height, 64);
       printf("size=%d\n", size);
       uint8_t *buffer = av_malloc(size);
-      if (!buffer) {
-          printf("Can not alloc buffer\n");
-          ret = AVERROR(ENOMEM);
-          break;;
+      if (!buffer)
+      {
+        printf("Can not alloc buffer\n");
+        ret = AVERROR(ENOMEM);
+        break;
+        ;
       }
       ret = frame_to_image(frame, AV_CODEC_ID_MJPEG, buffer, size);
-      if (ret < 0) {
+      if (ret < 0)
+      {
         printf("Can not copy image to buffer\n");
         break;
       }
-      if ((ret = fwrite(buffer, 1, ret, output_file)) < 0) {
-            fprintf(stderr, "Failed to dump raw data.\n");
-            break;
+      if ((ret = fwrite(buffer, 1, ret, output_file)) < 0)
+      {
+        fprintf(stderr, "Failed to dump raw data.\n");
+        break;
       }
-      
+
       break;
     }
     free(frame);
@@ -202,7 +223,5 @@ int main(int argc, char **argv) {
   free(p_packet);
   free(dec_ctx);
 
-  
   return 0;
 }
-
