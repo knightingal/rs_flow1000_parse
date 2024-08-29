@@ -24,7 +24,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   AVCodecContext *ctx = NULL;
   AVFrame *rgb_frame = NULL;
   uint8_t *buffer = NULL;
-  struct SwsContext *swsContext = NULL;
+  struct SwsContext *sws_context = NULL;
   av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
   if (!codec)
@@ -57,10 +57,10 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   if (frame->format != ctx->pix_fmt)
   {
     rgb_frame = av_frame_alloc();
-    swsContext = sws_getContext(frame->width, frame->height,
+    sws_context = sws_getContext(frame->width, frame->height,
                                 (enum AVPixelFormat)frame->format, frame->width, frame->height,
                                 ctx->pix_fmt, 1, NULL, NULL, NULL);
-    if (!swsContext)
+    if (!sws_context)
     {
       printf("sws_getContext failed\n");
       ret = -1;
@@ -69,7 +69,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
     buffer = (unsigned char *)av_malloc(buffer_size);
     av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
-    if ((ret = sws_scale(swsContext, (const uint8_t *const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0)
+    if ((ret = sws_scale(sws_context, (const uint8_t *const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0)
     {
       printf("sws_scale failed\n");
     }
@@ -98,9 +98,9 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   ret = pkt.size;
 
 error:
-  if (swsContext)
+  if (sws_context)
   {
-    sws_freeContext(swsContext);
+    sws_freeContext(sws_context);
   }
   if (rgb_frame)
   {
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
-  av_seek_frame(fmt_ctx, 0, 60000000, AVSEEK_FLAG_BACKWARD);
+  av_seek_frame(fmt_ctx, 0, 120000000, AVSEEK_FLAG_BACKWARD);
   AVPacket *p_packet = av_packet_alloc();
   while (1)
   {
