@@ -19,7 +19,7 @@ static FILE *output_file = NULL;
 static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbuf, size_t out_buf_size) {
   int ret = 0;
   AVPacket pkt;
-  AVCodec* codec;
+  AVCodec* codec = NULL;
   AVCodecContext* ctx = NULL;
   AVFrame* rgb_frame = NULL;
   uint8_t* buffer = NULL;
@@ -27,13 +27,14 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
   av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
   if (!codec) {
+    ret = -1;
     printf("codec non found\n");
-    return -1;
+    goto error;
   }
   if (!codec->pix_fmts) {
+    ret = -1;
     printf("codec non support pix_fmt\n");
-    
-    return -1;
+    goto error;
   }
   ctx = avcodec_alloc_context3(codec);
   ctx->bit_rate = 3000000;
@@ -47,7 +48,7 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
   ret = avcodec_open2(ctx, codec, NULL);
   if (ret < 0) {
     printf("avcodec_open2 failed");
-    return -1;
+    goto error;
   }
   if (frame->format != ctx->pix_fmt) {
     rgb_frame = av_frame_alloc();
@@ -57,7 +58,8 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
     );
     if (!swsContext) {
       printf("sws_getContext failed\n");
-      return -1;
+      ret = -1;
+      goto error;
     }
     int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
     buffer = (unsigned char*)av_malloc(buffer_size);
@@ -84,25 +86,27 @@ static int frame_to_image(AVFrame* frame, enum AVCodecID code_id, uint8_t* outbu
   }
   ret = pkt.size;
 
-
+error:
+  if (swsContext) {
+    sws_freeContext(swsContext);
+  }  
+  if (rgb_frame) {
+    av_frame_unref(rgb_frame);
+    av_frame_free(&rgb_frame);
+  }
+  if (buffer) {av_free(buffer);}
+  if (ctx) {
+    avcodec_close(ctx);
+    avcodec_free_context(&ctx);
+  }
   return ret;
-
 }
 
 
 
 int main(int argc, char **argv) {
-  const AVCodec *codec;
-  AVCodecParserContext *parser;
-  AVCodecContext *c= NULL;
-  FILE *f;
-  uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-  uint8_t *data;
-  size_t   data_size;
   int ret;
   int eof;
-  AVPacket *pkt;
-  pkt = av_packet_alloc();
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
   output_file = fopen("/home/knightingal/demo_video_1.jpg", "w+b");
@@ -142,7 +146,7 @@ int main(int argc, char **argv) {
       const AVCodec* codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char* codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
-      AVCodecParameters* para = avcodec_parameters_alloc();
+      // AVCodecParameters* para = avcodec_parameters_alloc();
 
       dec_ctx = avcodec_alloc_context3(codec);
       printf("dec_ctx=%p\n", dec_ctx);
@@ -192,8 +196,11 @@ int main(int argc, char **argv) {
       
       break;
     }
+    free(frame);
   }
-  // TODO: free memory
+  fclose(output_file);
+  free(p_packet);
+  free(dec_ctx);
 
   
   return 0;
