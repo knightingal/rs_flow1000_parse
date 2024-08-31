@@ -1,6 +1,7 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
+use business_handles::{mp4_dir_handler, mp4_dir_handler1, video_rate, mount_config_handler, video_info_handler,};
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, init_video_handler, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_info_handler, video_rate, IS_LINUX, POOL, SQLITE_CONN
+  all_duplicate_cover, all_duplicate_video, designation_search, init_video_handler, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail,  IS_LINUX, POOL, SQLITE_CONN
 };
 use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
@@ -12,6 +13,7 @@ use sysinfo::System;
 mod test_main;
 mod test_aes;
 mod handles;
+mod business_handles;
 mod test_designation;
 mod designation;
 mod video_name_util;
@@ -50,23 +52,22 @@ async fn main() {
 
   let app = Router::new()
     .route("/", get(root))
+    .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
     .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
     .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
     .route("/users/name/:name/age/:age", post(create_user))
-    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
     .route("/parse-designation-all", get(parse_designation_all_handler))
-    .route("/mount-config", get(mount_config_handler))
-
-    .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
-    .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
-    .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
-    .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
-
     .route("/designation-search/:designation_ori", get(designation_search))
     .route("/all-duplicate-video", get(all_duplicate_video))
     .route("/all-duplicate-cover", get(all_duplicate_cover))
     .route("/video-detail/:id", get(video_detail))
+
+    .route("/mount-config", get(mount_config_handler))
+    .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
+    .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
+    .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
+    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/video-rate/:id/:rate", post(video_rate));
     // .with_state(pool)
     // ;

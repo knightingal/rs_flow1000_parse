@@ -33,35 +33,6 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
-pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
-  let sqlite_conn = get_sqlite_connection();
-
-  sqlite_conn.execute("update video_info set rate=?1 where id=?2", rusqlite::params![rate, id]).unwrap();
-  let result: Result<VideoEntity, _> = sqlite_conn.query_row("select id, video_file_name, cover_file_name, rate from video_info where id = :id ", named_params! {
-      ":id" : id,
-  }, |row| {
-    Result::Ok(
-      VideoEntity{
-        id: row.get_unwrap(0),
-        video_file_name: row.get_unwrap(1),
-        cover_file_name: row.get_unwrap(2),
-        designation_char: String::new(), 
-        designation_num: String::new(),
-        dir_path: String::new(),
-        base_index: 0,
-        rate: row.get_unwrap(3),
-        video_size: Option::Some(0),
-      }
-    )
-  });
-
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-  (StatusCode::OK, header, Json(result.unwrap().clone()))
-}
-
 pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
   let conn1 = get_sqlite_connection();
 
@@ -187,104 +158,6 @@ pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusC
   (StatusCode::OK, Json(selected_video))
 }
 
-pub async fn mount_config_handler()  
-    -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
-
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut sql = String::from("select id, ");
-  unsafe {
-    if *IS_LINUX.unwrap() {
-      sql += "dir_path ";
-    } else {
-      sql += "win_dir_path ";
-    }
-  }
-  sql += " , url_prefix, api_version from mp4_base_dir ";
-
-  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
-  let mount_config_iter = stmt.query_map(named_params! {}, |row| {
-    Ok(MountConfig{
-        id: row.get_unwrap(0),
-        dir_path: row.get_unwrap(1),
-        url_prefix: row.get_unwrap(2),
-        api_version: row.get_unwrap(3),
-    })
-  }).unwrap().map(|it| it.unwrap());
-
-  let mount_config_list:Vec<MountConfig> = mount_config_iter.collect();
-
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-  (StatusCode::OK, header, Json(mount_config_list))
-}
-
-pub async fn mp4_dir_handler1(Path(base_index): Path<u32>) 
-    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
-  println!("{}", base_index);
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut sql = String::from("select ");
-  unsafe {
-    if *IS_LINUX.unwrap() {
-      sql += "dir_path ";
-    } else {
-      sql += "win_dir_path ";
-    }
-  }
-  sql += " from mp4_base_dir where id = :id";
-
-  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
-  let dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
-    Ok(row.get_unwrap(0))
-  }).unwrap();
-
-  let file_names:Vec<(String, u64)> = parse_dir_path(&dir_path).unwrap();
-
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-  (StatusCode::OK, header, Json(file_names.into_iter().map(|f| f.0).collect()))
-}
-
-pub async fn mp4_dir_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
-    -> (StatusCode, HeaderMap, Json<Vec<String>>) {
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut sql = String::from("select ");
-  unsafe {
-    if *IS_LINUX.unwrap() {
-      sql += "dir_path ";
-    } else {
-      sql += "win_dir_path ";
-    }
-  }
-  sql += " from mp4_base_dir where id = :id";
-
-  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
-  let mut dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
-    Ok(row.get_unwrap(0))
-  }).unwrap();
-
-  dir_path += "/";
-  dir_path += &sub_dir;
-
-  let file_names = parse_dir_path(&dir_path);
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-  (StatusCode::OK, header, Json(file_names.unwrap().into_iter().map(|f| f.0).collect()))
-}
-
 fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
   let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
@@ -306,41 +179,6 @@ fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
   let mod_b = b.metadata()?.modified()?;
 
   Result::Ok(mod_a.cmp(&mod_b))
-}
-
-pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
-    -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
-  if sub_dir_param.ends_with("/") {
-    sub_dir_param.truncate(sub_dir_param.len() - 1);
-  }
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate, video_size from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
-  let selected_video_iter = stmt.query_map(named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index}, |row| {
-    Ok(VideoEntity{
-      // id: row.get(0)?,
-      id: row.get_unwrap(0),
-      video_file_name: row.get_unwrap(1),
-      cover_file_name: row.get_unwrap(2),
-      designation_char: String::new(), 
-      designation_num: String::new(),
-      dir_path: String::new(),
-      base_index: 0,
-      video_size: row.get_unwrap(4),
-      rate: row.get_unwrap(3)
-    })
-  }).unwrap().map(|it| it.unwrap());
-
-  let selected_video:Vec<VideoEntity> = selected_video_iter.collect();
-
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-  (StatusCode::OK, header, Json(selected_video))
 }
 
 pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 
@@ -613,23 +451,23 @@ fn check_exist_by_video_file_name(dir_path: &String, base_index: u32, video_file
 
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
-  id: u32,
+  pub id: u32,
   #[serde(rename = "videoFileName")]
-  video_file_name: String,
+  pub video_file_name: String,
   #[serde(rename = "coverFileName")]
-  cover_file_name: String,
+  pub cover_file_name: String,
   #[serde(rename = "designationChar")]
-  designation_char: String,
+  pub designation_char: String,
   #[serde(rename = "designationNum")]
-  designation_num: String,
+  pub designation_num: String,
   #[serde(rename = "dirPath")]
-  dir_path: String,
+  pub dir_path: String,
   #[serde(rename = "baseIndex")]
-  base_index: u32,
+  pub base_index: u32,
   #[serde(rename = "rate")]
-  rate: Option<u32>,
+  pub rate: Option<u32>,
   #[serde(rename = "videoSize")]
-  video_size: Option<u64>,
+  pub video_size: Option<u64>,
 }
 
 
@@ -656,11 +494,11 @@ pub struct DuplicateEntity {
 
 #[derive(Serialize)]
 pub struct MountConfig {
-  id: u32,
+  pub id: u32,
   #[serde(rename = "baseDir")]
-  dir_path: String,
+  pub dir_path: String,
   #[serde(rename = "urlPrefix")]
-  url_prefix: String,
+  pub url_prefix: String,
   #[serde(rename = "apiVersion")]
-  api_version: u32,
+  pub api_version: u32,
 }
