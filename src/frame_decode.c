@@ -40,9 +40,11 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     goto error;
   }
   ctx = avcodec_alloc_context3(codec);
+  int dest_width = frame->width / 2;
+  int dest_height = frame->height / 2;
+  ctx->width = dest_width;
+  ctx->height = dest_height;
   ctx->bit_rate = 3000000;
-  ctx->width = frame->width;
-  ctx->height = frame->height;
   ctx->time_base.num = 1;
   ctx->time_base.den = 25;
   ctx->gop_size = 10;
@@ -58,7 +60,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   {
     rgb_frame = av_frame_alloc();
     sws_context = sws_getContext(frame->width, frame->height,
-                                (enum AVPixelFormat)frame->format, frame->width, frame->height,
+                                (enum AVPixelFormat)frame->format, dest_width, dest_height,
                                 ctx->pix_fmt, 1, NULL, NULL, NULL);
     if (!sws_context)
     {
