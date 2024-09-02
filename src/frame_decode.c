@@ -12,7 +12,7 @@
 #define INBUF_SIZE 4096
 
 static AVFormatContext *fmt_ctx;
-static char *filename = "/home/knightingal/demo_video.mp4";
+static char *filename = "/home/knightingal/Videos/Screencasts/Screencast from 2024-09-02 21-18-33.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -40,10 +40,12 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     goto error;
   }
   ctx = avcodec_alloc_context3(codec);
-  int dest_width = frame->width / 2;
-  int dest_height = frame->height / 2;
-  ctx->width = dest_width;
-  ctx->height = dest_height;
+  // int dest_width = frame->width / 4;
+  // int dest_height = frame->height / 4;
+  int dest_width = frame->width ;
+  int dest_height = frame->height ;
+  ctx->width = frame->width;
+  ctx->height = frame->height;
   ctx->bit_rate = 3000000;
   ctx->time_base.num = 1;
   ctx->time_base.den = 25;
@@ -75,6 +77,14 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     {
       printf("sws_scale failed\n");
     }
+    size_t rgb_size = rgb_frame->linesize[0] * frame->height;
+    uint8_t* rgb_buffer = malloc(rgb_size);
+    memset(rgb_buffer, 0, rgb_size);
+    memcpy(rgb_buffer, rgb_frame->data[0], rgb_size);
+    FILE* rgb_file = fopen("/home/knightingal/Videos/Screencasts/Screencast.bin", "w+b");
+    
+    fwrite(rgb_buffer, 1, rgb_size, rgb_file);
+
     rgb_frame->format = ctx->pix_fmt;
     rgb_frame->width = ctx->width;
     rgb_frame->height = ctx->height;
@@ -127,7 +137,7 @@ int main(int argc, char **argv)
   int eof;
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
-  output_file = fopen("/home/knightingal/demo_video_1.jpg", "w+b");
+  output_file = fopen("/home/knightingal/Videos/Screencasts/Screencast.png", "w+b");
 
   ret = avformat_find_stream_info(fmt_ctx, 0);
   printf("red=%d\n", ret);
@@ -175,7 +185,7 @@ int main(int argc, char **argv)
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
-  av_seek_frame(fmt_ctx, 0, 120000000, AVSEEK_FLAG_BACKWARD);
+  av_seek_frame(fmt_ctx, 0, 0, AVSEEK_FLAG_BACKWARD);
   AVPacket *p_packet = av_packet_alloc();
   while (1)
   {
@@ -205,7 +215,7 @@ int main(int argc, char **argv)
         break;
         ;
       }
-      ret = frame_to_image(frame, AV_CODEC_ID_MJPEG, buffer, size);
+      ret = frame_to_image(frame, AV_CODEC_ID_PNG, buffer, size);
       if (ret < 0)
       {
         printf("Can not copy image to buffer\n");
