@@ -12,7 +12,7 @@
 #define INBUF_SIZE 4096
 
 static AVFormatContext *fmt_ctx;
-static char *filename = "/home/knightingal/Videos/Screencasts/Screencast from 2024-09-02 21-18-33.mp4";
+static char *filename = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -81,7 +81,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     uint8_t* rgb_buffer = malloc(rgb_size);
     memset(rgb_buffer, 0, rgb_size);
     memcpy(rgb_buffer, rgb_frame->data[0], rgb_size);
-    FILE* rgb_file = fopen("/home/knightingal/Videos/Screencasts/Screencast.bin", "w+b");
+    FILE* rgb_file = fopen("/home/knightingal/demo_video.mp4.bin", "w+b");
     
     fwrite(rgb_buffer, 1, rgb_size, rgb_file);
 
@@ -137,7 +137,6 @@ int main(int argc, char **argv)
   int eof;
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
-  output_file = fopen("/home/knightingal/Videos/Screencasts/Screencast.png", "w+b");
 
   ret = avformat_find_stream_info(fmt_ctx, 0);
   printf("red=%d\n", ret);
@@ -184,9 +183,10 @@ int main(int argc, char **argv)
     }
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
-
-  av_seek_frame(fmt_ctx, 0, 0, AVSEEK_FLAG_BACKWARD);
-  AVPacket *p_packet = av_packet_alloc();
+  AVPacket *p_packet;
+  for (int i = 2; i<4;i++) {
+  av_seek_frame(fmt_ctx, 0, (i+1)*60*1000000, AVSEEK_FLAG_ANY);
+  p_packet = av_packet_alloc();
   while (1)
   {
     ret = av_read_frame(fmt_ctx, p_packet);
@@ -221,15 +221,22 @@ int main(int argc, char **argv)
         printf("Can not copy image to buffer\n");
         break;
       }
+      char* file_name = malloc(35);
+      memcpy(file_name, "/home/knightingal/demo_video_1.png", 35);
+      file_name[29] = '0' + i;
+      output_file = fopen(file_name, "w+b");
       if ((ret = fwrite(buffer, 1, ret, output_file)) < 0)
       {
         fprintf(stderr, "Failed to dump raw data.\n");
         break;
       }
 
+    av_frame_unref(frame);
+    free(frame);
       break;
     }
-    free(frame);
+  }
+    av_packet_unref(p_packet);
   }
   fclose(output_file);
   free(p_packet);
