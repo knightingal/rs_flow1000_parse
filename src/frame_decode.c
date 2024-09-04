@@ -16,6 +16,92 @@ static char *filename = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
+static AVFrame* frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff) {
+  printf("index=%d\n", index);
+  int ret = 0;
+  AVPacket pkt;
+  AVFrame *rgb_frame = NULL;
+  uint8_t *buffer = NULL;
+  struct SwsContext *sws_context = NULL;
+  av_init_packet(&pkt);
+  int dest_width = frame->width / 4;
+  int dest_height = frame->height / 4;
+  rgb_frame = av_frame_alloc();
+  sws_context = sws_getContext(frame->width, frame->height, 
+        (enum AVPixelFormat)frame->format, dest_width, dest_height,
+        ctx->pix_fmt, 1, NULL, NULL, NULL);
+  int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
+  buffer = (unsigned char *)av_malloc(buffer_size);
+  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
+
+  if ((ret = sws_scale(sws_context, (const uint8_t *const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0)
+  {
+    printf("sws_scale failed\n");
+  }
+
+  uint32_t x = index % 4;
+  uint32_t y = index / 4;
+  size_t width_offset = dest_width * 3 * x;
+  size_t height_offset = dest_height * rgb_frame->linesize[0] * y;
+  size_t rgb_data_size = rgb_frame->linesize[0] * frame->height;
+  if (dest_buff == NULL) {
+    dest_buff = (uint8_t *)av_malloc(rgb_data_size);
+  }
+  for (int line = 0; line < dest_height; line++) {
+    memcpy(dest_buff + height_offset + line * rgb_frame->linesize[0] + width_offset, rgb_frame->data[0] + line * rgb_frame->linesize[0], dest_width * 3);
+  }
+  
+  return NULL;
+}
+
+static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size) {
+  int ret = 0;
+  AVPacket pkt;
+  AVCodec *codec = NULL;
+  AVCodecContext *ctx = NULL;
+  AVFrame *rgb_frame = NULL;
+  uint8_t *buffer = NULL;
+  struct SwsContext *sws_context = NULL;
+  av_init_packet(&pkt);
+  codec = avcodec_find_encoder(code_id);
+  ctx = avcodec_alloc_context3(codec);
+  int dest_width = frame_array[0]->width ;
+  int dest_height = frame_array[0]->height ;
+  ctx->width = frame_array[0]->width;
+  ctx->height = frame_array[0]->height;
+  ctx->bit_rate = 3000000;
+  ctx->time_base.num = 1;
+  ctx->time_base.den = 25;
+  ctx->gop_size = 10;
+  ctx->max_b_frames = 0;
+  ctx->pix_fmt = *codec->pix_fmts;
+  ret = avcodec_open2(ctx, codec, NULL);
+  rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
+  rgb_frame->format = ctx->pix_fmt;
+  rgb_frame->width = ctx->width;
+  rgb_frame->height = ctx->height;
+  for (int i = 1; i < 16; i++) {
+    frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
+  }
+  ret = avcodec_send_frame(ctx, rgb_frame);
+  ret = avcodec_receive_packet(ctx, &pkt);
+  memcpy(outbuf, pkt.data, pkt.size);
+  ret = pkt.size;
+  if (rgb_frame) {
+    av_frame_unref(rgb_frame);
+    av_frame_free(&rgb_frame);
+  }
+  if (ctx) {
+    avcodec_close(ctx);
+    avcodec_free_context(&ctx);
+  }
+  return ret;
+
+}
+
+
+
+
 static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
 {
   int ret = 0;
@@ -146,6 +232,8 @@ int main(int argc, char **argv)
   int video_stream_index = -1;
   int audio_stream_index = -1;
   AVCodecContext *dec_ctx;
+  AVCodec *codec;
+  AVStream *video_in_stream;
 
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
   {
@@ -161,6 +249,7 @@ int main(int argc, char **argv)
 
     if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
     {
+      video_in_stream = in_stream;
       int width = in_stream->codecpar->width;
       int height = in_stream->codecpar->height;
       int frame_rate;
@@ -170,76 +259,64 @@ int main(int argc, char **argv)
       }
       int video_frame_count = in_stream->nb_frames;
       printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
-      const AVCodec *codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
+      codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char *codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
       // AVCodecParameters* para = avcodec_parameters_alloc();
 
-      dec_ctx = avcodec_alloc_context3(codec);
-      printf("dec_ctx=%p\n", dec_ctx);
-      avcodec_parameters_to_context(dec_ctx, in_stream->codecpar);
-      ret = avcodec_open2(dec_ctx, codec, NULL);
+      // dec_ctx = avcodec_alloc_context3(codec);
+      // printf("dec_ctx=%p\n", dec_ctx);
+      // avcodec_parameters_to_context(dec_ctx, in_stream->codecpar);
+      // ret = avcodec_open2(dec_ctx, codec, NULL);
       printf("red=%d\n", ret);
     }
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
-  AVPacket *p_packet;
-  for (int i = 2; i<4;i++) {
-  av_seek_frame(fmt_ctx, 0, (i+1)*60*1000000, AVSEEK_FLAG_ANY);
-  p_packet = av_packet_alloc();
-  while (1)
-  {
-    ret = av_read_frame(fmt_ctx, p_packet);
-    printf("red=%d\n", ret);
-    ret = avcodec_send_packet(dec_ctx, p_packet);
-    printf("red=%d\n", ret);
-    AVFrame *frame = av_frame_alloc();
-
-    /* code */
-    ret = avcodec_receive_frame(dec_ctx, frame);
-    printf("red=%d\n", ret);
-    if (ret == 0)
+  AVFrame *frame_array[16];
+  for (int i = 0; i < 16; i++) {
+    av_seek_frame(fmt_ctx, -1, (i*30) * 1000000, AVSEEK_FLAG_BACKWARD);
+    dec_ctx = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
+    AVFrame *p_packet = av_packet_alloc();
+    while (1)
     {
-      printf("read succ \n");
-      int w = frame->width;
-      int h = frame->height;
-      printf("w=%d, h=%d\n", w, h);
-      int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame->width,
-                                          frame->height, 64);
-      printf("size=%d\n", size);
-      uint8_t *buffer = av_malloc(size);
-      if (!buffer)
-      {
-        printf("Can not alloc buffer\n");
-        ret = AVERROR(ENOMEM);
-        break;
-        ;
-      }
-      ret = frame_to_image(frame, AV_CODEC_ID_PNG, buffer, size);
-      if (ret < 0)
-      {
-        printf("Can not copy image to buffer\n");
-        break;
-      }
-      char* file_name = malloc(35);
-      memcpy(file_name, "/home/knightingal/demo_video_1.png", 35);
-      file_name[29] = '0' + i;
-      output_file = fopen(file_name, "w+b");
-      if ((ret = fwrite(buffer, 1, ret, output_file)) < 0)
-      {
-        fprintf(stderr, "Failed to dump raw data.\n");
-        break;
-      }
+      ret = av_read_frame(fmt_ctx, p_packet);
+      printf("red=%d\n", ret);
+      ret = avcodec_send_packet(dec_ctx, p_packet);
+      printf("red=%d\n", ret);
+      AVFrame *frame = av_frame_alloc();
 
-    av_frame_unref(frame);
-    free(frame);
-      break;
+      /* code */
+      ret = avcodec_receive_frame(dec_ctx, frame);
+      printf("red=%d\n", ret);
+      if (ret == 0)
+      {
+        frame_array[i] = frame;
+        printf("read succ \n");
+        int w = frame->width;
+        int h = frame->height;
+        printf("w=%d, h=%d\n", w, h);
+
+        break;
+      }
     }
+    int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
+                                          frame_array[0]->height, 64);
+    printf("size=%d\n", size);
+    uint8_t *buffer = av_malloc(size);
+    if (!buffer)
+    {
+      printf("Can not alloc buffer\n");
+      ret = AVERROR(ENOMEM);
+      break;
+      ;
+    }
+    av_packet_free(&p_packet);
+    avcodec_close(dec_ctx);
+    avcodec_free_context(&dec_ctx);
   }
-    av_packet_unref(p_packet);
-  }
+
   fclose(output_file);
-  free(p_packet);
   free(dec_ctx);
 
   return 0;
