@@ -50,8 +50,17 @@ static AVFrame* frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
   for (int line = 0; line < dest_height; line++) {
     memcpy(dest_buff + height_offset + line * rgb_frame->linesize[0] + width_offset, rgb_frame->data[0] + line * rgb_frame->linesize[0], dest_width * 3);
   }
-  
-  return NULL;
+  if (index == 0) {
+    rgb_frame->data[0] = dest_buff;
+    rgb_frame->format = ctx->pix_fmt;
+    rgb_frame->width = ctx->width;
+    rgb_frame->height = ctx->height;
+    return rgb_frame;
+  } else {
+    av_frame_unref(rgb_frame);
+    av_frame_free(&rgb_frame);
+    return NULL;
+  }
 }
 
 static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size) {
@@ -300,24 +309,33 @@ int main(int argc, char **argv)
         break;
       }
     }
-    int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
-                                          frame_array[0]->height, 64);
-    printf("size=%d\n", size);
-    uint8_t *buffer = av_malloc(size);
-    if (!buffer)
-    {
-      printf("Can not alloc buffer\n");
-      ret = AVERROR(ENOMEM);
-      break;
-      ;
-    }
     av_packet_free(&p_packet);
     avcodec_close(dec_ctx);
     avcodec_free_context(&dec_ctx);
   }
 
+  int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
+                                        frame_array[0]->height, 64);
+  printf("size=%d\n", size);
+  uint8_t *buffer = av_malloc(size);
+  if (!buffer)
+  {
+    printf("Can not alloc buffer\n");
+    ret = AVERROR(ENOMEM);
+  }
+  ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
+  for (int i = 0; i < 16; i++) {
+    av_frame_free(&frame_array[i]);
+  }
+
+  output_file = fopen("demo_video_1.png", "w+b");
+  if (fwrite(buffer, 1, ret, output_file) < 0) {
+    fprintf(stderr, "Failed to dump raw data.\n");
+  }
+
   fclose(output_file);
   free(dec_ctx);
+  avformat_close_input(&fmt_ctx);
 
   return 0;
 }
