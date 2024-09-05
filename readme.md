@@ -21,6 +21,11 @@ netsh interface portproxy add v4tov4 listenport=8082 listenaddress=0.0.0.0 conne
 netsh interface portproxy add v4tov4 listenport=3002 listenaddress=0.0.0.0 connectport=3002 connectaddress=172.23.9.218
 ```
 
+# Build frame_decode
+```
+cc -I/usr/include/ffmpeg -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil frame_decode.c -g -o frame_decode
+```
+
 # TODO
 
 * ~~support sqlite~~
