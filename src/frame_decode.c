@@ -12,7 +12,7 @@
 #define INBUF_SIZE 4096
 
 static AVFormatContext *fmt_ctx;
-static char *filename = "/home/knightingal/demo_video.mp4";
+static char *filename = "/home/knightingal/demo_video_1.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -286,6 +286,7 @@ int main(int argc, char **argv)
     av_seek_frame(fmt_ctx, -1, (i*30) * 1000000, AVSEEK_FLAG_BACKWARD);
     dec_ctx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
+    ret = avcodec_open2(dec_ctx, codec, NULL);
     AVPacket *p_packet = av_packet_alloc();
     while (1)
     {
