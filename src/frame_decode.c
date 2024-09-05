@@ -286,7 +286,7 @@ int main(int argc, char **argv)
     av_seek_frame(fmt_ctx, -1, (i*30) * 1000000, AVSEEK_FLAG_BACKWARD);
     dec_ctx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
-    AVFrame *p_packet = av_packet_alloc();
+    AVPacket *p_packet = av_packet_alloc();
     while (1)
     {
       ret = av_read_frame(fmt_ctx, p_packet);
