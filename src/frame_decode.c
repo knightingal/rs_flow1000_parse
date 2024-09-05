@@ -16,7 +16,8 @@ static char *filename = "/home/knightingal/demo_video_1.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
-static AVFrame* frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff) {
+static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
+{
   printf("index=%d\n", index);
   int ret = 0;
   AVPacket pkt;
@@ -27,9 +28,9 @@ static AVFrame* frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
   int dest_width = frame->width / 4;
   int dest_height = frame->height / 4;
   rgb_frame = av_frame_alloc();
-  sws_context = sws_getContext(frame->width, frame->height, 
-        (enum AVPixelFormat)frame->format, dest_width, dest_height,
-        ctx->pix_fmt, 1, NULL, NULL, NULL);
+  sws_context = sws_getContext(frame->width, frame->height,
+                               (enum AVPixelFormat)frame->format, dest_width, dest_height,
+                               ctx->pix_fmt, 1, NULL, NULL, NULL);
   int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
   buffer = (unsigned char *)av_malloc(buffer_size);
   av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
@@ -44,26 +45,32 @@ static AVFrame* frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
   size_t width_offset = dest_width * 3 * x;
   size_t height_offset = dest_height * rgb_frame->linesize[0] * y;
   size_t rgb_data_size = rgb_frame->linesize[0] * frame->height;
-  if (dest_buff == NULL) {
+  if (dest_buff == NULL)
+  {
     dest_buff = (uint8_t *)av_malloc(rgb_data_size);
   }
-  for (int line = 0; line < dest_height; line++) {
+  for (int line = 0; line < dest_height; line++)
+  {
     memcpy(dest_buff + height_offset + line * rgb_frame->linesize[0] + width_offset, rgb_frame->data[0] + line * rgb_frame->linesize[0], dest_width * 3);
   }
-  if (index == 0) {
+  if (index == 0)
+  {
     rgb_frame->data[0] = dest_buff;
     rgb_frame->format = ctx->pix_fmt;
     rgb_frame->width = ctx->width;
     rgb_frame->height = ctx->height;
     return rgb_frame;
-  } else {
+  }
+  else
+  {
     av_frame_unref(rgb_frame);
     av_frame_free(&rgb_frame);
     return NULL;
   }
 }
 
-static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size) {
+static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
+{
   int ret = 0;
   AVPacket pkt;
   AVCodec *codec = NULL;
@@ -74,8 +81,8 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
   ctx = avcodec_alloc_context3(codec);
-  int dest_width = frame_array[0]->width ;
-  int dest_height = frame_array[0]->height ;
+  int dest_width = frame_array[0]->width;
+  int dest_height = frame_array[0]->height;
   ctx->width = frame_array[0]->width;
   ctx->height = frame_array[0]->height;
   ctx->bit_rate = 3000000;
@@ -89,27 +96,26 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
   rgb_frame->height = ctx->height;
-  for (int i = 1; i < 16; i++) {
+  for (int i = 1; i < 16; i++)
+  {
     frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
   }
   ret = avcodec_send_frame(ctx, rgb_frame);
   ret = avcodec_receive_packet(ctx, &pkt);
   memcpy(outbuf, pkt.data, pkt.size);
   ret = pkt.size;
-  if (rgb_frame) {
+  if (rgb_frame)
+  {
     av_frame_unref(rgb_frame);
     av_frame_free(&rgb_frame);
   }
-  if (ctx) {
+  if (ctx)
+  {
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
   return ret;
-
 }
-
-
-
 
 static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
 {
@@ -137,8 +143,8 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   ctx = avcodec_alloc_context3(codec);
   // int dest_width = frame->width / 4;
   // int dest_height = frame->height / 4;
-  int dest_width = frame->width ;
-  int dest_height = frame->height ;
+  int dest_width = frame->width;
+  int dest_height = frame->height;
   ctx->width = frame->width;
   ctx->height = frame->height;
   ctx->bit_rate = 3000000;
@@ -157,8 +163,8 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   {
     rgb_frame = av_frame_alloc();
     sws_context = sws_getContext(frame->width, frame->height,
-                                (enum AVPixelFormat)frame->format, dest_width, dest_height,
-                                ctx->pix_fmt, 1, NULL, NULL, NULL);
+                                 (enum AVPixelFormat)frame->format, dest_width, dest_height,
+                                 ctx->pix_fmt, 1, NULL, NULL, NULL);
     if (!sws_context)
     {
       printf("sws_getContext failed\n");
@@ -173,11 +179,11 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
       printf("sws_scale failed\n");
     }
     size_t rgb_size = rgb_frame->linesize[0] * frame->height;
-    uint8_t* rgb_buffer = malloc(rgb_size);
+    uint8_t *rgb_buffer = malloc(rgb_size);
     memset(rgb_buffer, 0, rgb_size);
     memcpy(rgb_buffer, rgb_frame->data[0], rgb_size);
-    FILE* rgb_file = fopen("/home/knightingal/demo_video.mp4.bin", "w+b");
-    
+    FILE *rgb_file = fopen("/home/knightingal/demo_video.mp4.bin", "w+b");
+
     fwrite(rgb_buffer, 1, rgb_size, rgb_file);
 
     rgb_frame->format = ctx->pix_fmt;
@@ -282,8 +288,9 @@ int main(int argc, char **argv)
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
   AVFrame *frame_array[16];
-  for (int i = 0; i < 16; i++) {
-    av_seek_frame(fmt_ctx, -1, (i*30) * 1000000, AVSEEK_FLAG_BACKWARD);
+  for (int i = 0; i < 16; i++)
+  {
+    av_seek_frame(fmt_ctx, -1, (i * 30) * 1000000, AVSEEK_FLAG_BACKWARD);
     dec_ctx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
     ret = avcodec_open2(dec_ctx, codec, NULL);
@@ -316,7 +323,7 @@ int main(int argc, char **argv)
   }
 
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
-                                        frame_array[0]->height, 64);
+                                      frame_array[0]->height, 64);
   printf("size=%d\n", size);
   uint8_t *buffer = av_malloc(size);
   if (!buffer)
@@ -325,12 +332,14 @@ int main(int argc, char **argv)
     ret = AVERROR(ENOMEM);
   }
   ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++)
+  {
     av_frame_free(&frame_array[i]);
   }
 
   output_file = fopen("demo_video_1.png", "w+b");
-  if (fwrite(buffer, 1, ret, output_file) < 0) {
+  if (fwrite(buffer, 1, ret, output_file) < 0)
+  {
     fprintf(stderr, "Failed to dump raw data.\n");
   }
 
