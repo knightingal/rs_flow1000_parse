@@ -10,9 +10,10 @@
 #include <libswscale/swscale.h>
 
 #define INBUF_SIZE 4096
+#define PIC_NUM 16
 
 static AVFormatContext *fmt_ctx;
-static char *filename = "/home/knightingal/demo_video_1.mp4";
+static char *filename = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -96,7 +97,7 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
   rgb_frame->height = ctx->height;
-  for (int i = 1; i < 16; i++)
+  for (int i = 1; i < PIC_NUM; i++)
   {
     frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
   }
@@ -249,7 +250,7 @@ int main(int argc, char **argv)
   AVCodecContext *dec_ctx;
   AVCodec *codec;
   AVStream *video_in_stream;
-
+  int i_duratoin;
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
   {
     AVStream *in_stream = fmt_ctx->streams[i];
@@ -274,6 +275,9 @@ int main(int argc, char **argv)
       }
       int video_frame_count = in_stream->nb_frames;
       printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
+      float f_duration = (float)video_frame_count  / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
+      i_duratoin = (int)f_duration;
+      printf("duration=%d\n",i_duratoin );
       codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char *codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
@@ -287,10 +291,15 @@ int main(int argc, char **argv)
     }
   }
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
-  AVFrame *frame_array[16];
-  for (int i = 0; i < 16; i++)
+  avformat_close_input(&fmt_ctx);
+  int sub_duration = i_duratoin / (PIC_NUM + 2);
+  AVFrame *frame_array[PIC_NUM];
+  for (int i = 0; i < PIC_NUM; i++)
   {
-    av_seek_frame(fmt_ctx, -1, (i * 30) * 1000000, AVSEEK_FLAG_BACKWARD);
+    ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
+    ret = avformat_find_stream_info(fmt_ctx, 0);
+    AVStream *video_in_stream = fmt_ctx->streams[0];
+    av_seek_frame(fmt_ctx, -1, (i * 400) * 1000000, AVSEEK_FLAG_BACKWARD);
     dec_ctx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
     ret = avcodec_open2(dec_ctx, codec, NULL);
@@ -320,6 +329,7 @@ int main(int argc, char **argv)
     av_packet_free(&p_packet);
     avcodec_close(dec_ctx);
     avcodec_free_context(&dec_ctx);
+    avformat_close_input(&fmt_ctx);
   }
 
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
@@ -332,7 +342,7 @@ int main(int argc, char **argv)
     ret = AVERROR(ENOMEM);
   }
   ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
-  for (int i = 0; i < 16; i++)
+  for (int i = 0; i < PIC_NUM; i++)
   {
     av_frame_free(&frame_array[i]);
   }
@@ -345,7 +355,6 @@ int main(int argc, char **argv)
 
   fclose(output_file);
   free(dec_ctx);
-  avformat_close_input(&fmt_ctx);
 
   return 0;
 }
