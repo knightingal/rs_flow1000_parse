@@ -22,3 +22,4 @@ mysql = "=25.0.0"
 # sudo dnf install sqlite-devel
 rusqlite = "0.31.0"
 sysinfo = "0.31.0"
+libc = "0.2.0"
