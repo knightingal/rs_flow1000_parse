@@ -293,13 +293,16 @@ int main(int argc, char **argv)
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
   avformat_close_input(&fmt_ctx);
   int sub_duration = i_duratoin / (PIC_NUM + 2);
+  printf("sub_duration=%d", sub_duration);
   AVFrame *frame_array[PIC_NUM];
   for (int i = 0; i < PIC_NUM; i++)
   {
     ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
     ret = avformat_find_stream_info(fmt_ctx, 0);
     AVStream *video_in_stream = fmt_ctx->streams[0];
-    av_seek_frame(fmt_ctx, -1, (i * 400) * 1000000, AVSEEK_FLAG_BACKWARD);
+    int64_t timestamp = (int64_t)((i+1) * sub_duration) * 1000000l;
+    printf("i=%d, timestamp=%lld\n", i,timestamp);
+    av_seek_frame(fmt_ctx, -1, timestamp, AVSEEK_FLAG_BACKWARD);
     dec_ctx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
     ret = avcodec_open2(dec_ctx, codec, NULL);
