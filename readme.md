@@ -26,6 +26,11 @@ netsh interface portproxy add v4tov4 listenport=3002 listenaddress=0.0.0.0 conne
 cc -I/usr/include/ffmpeg -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil frame_decode.c -g -o frame_decode
 ```
 
+# Build simple dll
+```
+gcc -shared -fPIC -o libsimpledll.so simple_dll.c
+```
+
 # TODO
 
 * ~~support sqlite~~
