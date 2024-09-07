@@ -18,9 +18,17 @@ mod test_designation;
 mod designation;
 mod video_name_util;
 
+#[link(name = "simpledll")]
+extern {
+    fn simple_dll_function() -> i32;
+}
 
 #[tokio::main]
 async fn main() {
+  unsafe {
+    let simple = simple_dll_function();
+    println!("simple:{}", simple);
+  }
   println!("{:?}", System::name());
   let use_mysql_env = env::var("USE_MYSQL");
   let db_path_env = env::var("DB_PATH").unwrap();
