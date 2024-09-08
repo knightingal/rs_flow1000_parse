@@ -23,11 +23,18 @@ extern {
     fn simple_dll_function() -> i32;
 }
 
+#[link(name = "frame_decode")]
+extern {
+    fn frame_decode() -> i32;
+}
+
 #[tokio::main]
 async fn main() {
   unsafe {
     let simple = simple_dll_function();
     println!("simple:{}", simple);
+    let decode = frame_decode();
+    println!("decode:{}", decode);
   }
   println!("{:?}", System::name());
   let use_mysql_env = env::var("USE_MYSQL");
