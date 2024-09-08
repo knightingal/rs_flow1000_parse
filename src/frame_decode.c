@@ -275,9 +275,9 @@ int main(int argc, char **argv)
       }
       int video_frame_count = in_stream->nb_frames;
       printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
-      float f_duration = (float)video_frame_count  / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
+      float f_duration = (float)video_frame_count / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
       i_duratoin = (int)f_duration;
-      printf("duration=%d\n",i_duratoin );
+      printf("duration=%d\n", i_duratoin);
       codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char *codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
@@ -294,13 +294,13 @@ int main(int argc, char **argv)
   int sub_duration = i_duratoin / (PIC_NUM + 2);
   printf("sub_duration=%d", sub_duration);
   AVFrame *frame_array[PIC_NUM];
+  dec_ctx = avcodec_alloc_context3(codec);
+  avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
+  ret = avcodec_open2(dec_ctx, codec, NULL);
   for (int i = 0; i < PIC_NUM; i++)
   {
-    int64_t timestamp = (int64_t)((i+1) * sub_duration) * 1000000l;
-    printf("i=%d, timestamp=%lld\n", i,timestamp);
-    dec_ctx = avcodec_alloc_context3(codec);
-    avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
-    ret = avcodec_open2(dec_ctx, codec, NULL);
+    int64_t timestamp = (int64_t)((i + 1) * sub_duration) * 1000000l;
+    printf("i=%d, timestamp=%lld\n", i, timestamp);
     av_seek_frame(fmt_ctx, -1, timestamp, AVSEEK_FLAG_BACKWARD);
     AVPacket *p_packet = av_packet_alloc();
     while (1)
@@ -326,9 +326,10 @@ int main(int argc, char **argv)
       }
     }
     av_packet_free(&p_packet);
-    avcodec_close(dec_ctx);
-    avcodec_free_context(&dec_ctx);
+    avcodec_flush_buffers(dec_ctx);
   }
+  avcodec_close(dec_ctx);
+  avcodec_free_context(&dec_ctx);
 
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
                                       frame_array[0]->height, 64);
