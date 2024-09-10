@@ -359,3 +359,8 @@ int frame_decode()
 
   return 0;
 }
+
+int frame_decode_with_param(const char *url) {
+  printf("url:%s\n",url);
+  return frame_decode();
+}
