@@ -22,11 +22,9 @@ static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
 {
   printf("index=%d\n", index);
   int ret = 0;
-  AVPacket pkt;
   AVFrame *rgb_frame = NULL;
   uint8_t *buffer = NULL;
   struct SwsContext *sws_context = NULL;
-  av_init_packet(&pkt);
   int dest_width = frame->width / 4;
   int dest_height = frame->height / 4;
   rgb_frame = av_frame_alloc();
@@ -74,13 +72,12 @@ static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
 static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
 {
   int ret = 0;
-  AVPacket pkt;
-  AVCodec *codec = NULL;
+  AVPacket *pkt = av_packet_alloc();
+  const AVCodec *codec = NULL;
   AVCodecContext *ctx = NULL;
   AVFrame *rgb_frame = NULL;
   uint8_t *buffer = NULL;
   struct SwsContext *sws_context = NULL;
-  av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
   ctx = avcodec_alloc_context3(codec);
   int dest_width = frame_array[0]->width;
@@ -103,9 +100,9 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
     frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
   }
   ret = avcodec_send_frame(ctx, rgb_frame);
-  ret = avcodec_receive_packet(ctx, &pkt);
-  memcpy(outbuf, pkt.data, pkt.size);
-  ret = pkt.size;
+  ret = avcodec_receive_packet(ctx, pkt);
+  memcpy(outbuf, pkt->data, pkt->size);
+  ret = pkt->size;
   if (rgb_frame)
   {
     av_frame_unref(rgb_frame);
@@ -116,19 +113,21 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
+  if (pkt) {
+    av_packet_free(&pkt);
+  }
   return ret;
 }
 
 static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
 {
   int ret = 0;
-  AVPacket pkt;
-  AVCodec *codec = NULL;
+  AVPacket *pkt = av_packet_alloc();
+  const AVCodec *codec = NULL;
   AVCodecContext *ctx = NULL;
   AVFrame *rgb_frame = NULL;
   uint8_t *buffer = NULL;
   struct SwsContext *sws_context = NULL;
-  av_init_packet(&pkt);
   codec = avcodec_find_encoder(code_id);
   if (!codec)
   {
@@ -201,16 +200,16 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   {
     printf("avcodec_send_frame failed\n");
   }
-  ret = avcodec_receive_packet(ctx, &pkt);
+  ret = avcodec_receive_packet(ctx, pkt);
   if (ret < 0)
   {
     printf("avcodec_receive_packet failed\n");
   }
-  if (pkt.size > 0 && pkt.size <= out_buf_size)
+  if (pkt->size > 0 && pkt->size <= out_buf_size)
   {
-    memcpy(outbuf, pkt.data, pkt.size);
+    memcpy(outbuf, pkt->data, pkt->size);
   }
-  ret = pkt.size;
+  ret = pkt->size;
 
 error:
   if (sws_context)
@@ -231,6 +230,9 @@ error:
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
+  if (pkt) {
+    av_packet_free(&pkt);
+  }
   return ret;
 }
 
@@ -249,7 +251,7 @@ int frame_decode()
   int video_stream_index = -1;
   int audio_stream_index = -1;
   AVCodecContext *dec_ctx;
-  AVCodec *codec;
+  const AVCodec *codec;
   AVStream *video_in_stream;
   int i_duratoin;
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
