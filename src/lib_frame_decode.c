@@ -8,6 +8,7 @@
 #include <libavutil/imgutils.h>
 #include <libavcodec/codec_id.h>
 #include <libswscale/swscale.h>
+#include "lib_frame_decode.h"
 
 #define INBUF_SIZE 4096
 #define PIC_NUM 16
