@@ -14,7 +14,7 @@
 #define PIC_NUM 16
 
 static AVFormatContext *fmt_ctx;
-static char *filename = "/home/knightingal/demo_video.mp4";
+static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -236,10 +236,17 @@ error:
   return ret;
 }
 
-int frame_decode()
+int frame_decode(const char* name_path)
 {
   int ret;
   int eof;
+  char *filename;
+  if (name_path != NULL) {
+    filename = name_path;
+  } else {
+    filename = FILE_NAME;
+  }
+
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
 
@@ -364,5 +371,5 @@ int frame_decode()
 
 int frame_decode_with_param(const char *url) {
   printf("url:%s\n",url);
-  return frame_decode();
+  return frame_decode(url);
 }

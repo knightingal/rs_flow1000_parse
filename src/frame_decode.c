@@ -3,5 +3,5 @@
 
 int main(int argc, char **argv)
 {
-  return frame_decode();
+  return frame_decode(0);
 }
