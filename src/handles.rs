@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fs::{self, DirEntry}};
+use std::{cmp::Ordering, ffi::{c_char, CString}, fs::{self, DirEntry}};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -12,6 +12,11 @@ use crate::{designation::parse_designation, get_mysql_connection, get_sqlite_con
 pub static mut POOL: Option<&Pool> = None;
 pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
+
+#[link(name = "frame_decode")]
+extern {
+    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
+}
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
@@ -33,8 +38,28 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
+
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
+  let file_entry: Option<DirEntry> = fs::read_dir(sub_dir).unwrap()
+    .map(|res| res.unwrap())
+    .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
+  if file_entry.is_none() {
+    return StatusCode::NOT_FOUND;
+  }
+
+  let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
+
+  println!("{}", video_name);
+  let mut img_name = video_name.clone();
+  img_name.push_str(".png");
+  println!("{}", img_name);
+
+  unsafe {
+    let video_name = CString::new(video_name).unwrap();
+    let img_name = CString::new(img_name).unwrap();
+    frame_decode_with_param( video_name.as_ptr(), img_name.as_ptr());
+  }
 
   StatusCode::OK
 }
