@@ -1,7 +1,7 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
 use business_handles::{mp4_dir_handler, mp4_dir_handler1, video_rate, mount_config_handler, video_info_handler,};
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, init_video_handler, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail,  IS_LINUX, POOL, SQLITE_CONN
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, IS_LINUX, POOL, SQLITE_CONN
 };
 use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
@@ -26,7 +26,7 @@ extern {
 
 #[link(name = "frame_decode")]
 extern {
-    fn frame_decode_with_param(file_url: *const c_char) -> i32;
+    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
 }
 
 #[tokio::main]
@@ -34,8 +34,9 @@ async fn main() {
   unsafe {
     let simple = simple_dll_function();
     println!("simple:{}", simple);
-    let file_url = CString::new("/home/knightingal").unwrap();
-    let decode = frame_decode_with_param(file_url.as_ptr());
+    let file_url = CString::new("/mnt/").unwrap();
+    let dest_url = CString::new("/mnt/").unwrap();
+    let decode = frame_decode_with_param(file_url.as_ptr(), dest_url.as_ptr());
     println!("decode:{}", decode);
   }
   println!("{:?}", System::name());
@@ -68,6 +69,7 @@ async fn main() {
   }
 
   let app = Router::new()
+    // mantain
     .route("/", get(root))
     .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
     .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
@@ -79,7 +81,9 @@ async fn main() {
     .route("/all-duplicate-video", get(all_duplicate_video))
     .route("/all-duplicate-cover", get(all_duplicate_cover))
     .route("/video-detail/:id", get(video_detail))
+    .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
 
+    // bussiness
     .route("/mount-config", get(mount_config_handler))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))

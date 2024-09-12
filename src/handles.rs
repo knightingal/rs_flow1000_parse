@@ -33,6 +33,12 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
+pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
+  println!("{}", sub_dir);
+
+  StatusCode::OK
+}
+
 pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
   let conn1 = get_sqlite_connection();
 
