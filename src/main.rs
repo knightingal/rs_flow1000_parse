@@ -7,7 +7,7 @@ use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use std::{env, ffi::{c_char, CString}};
+use std::env;
 
 use sysinfo::System;
 
@@ -24,20 +24,16 @@ extern {
     fn simple_dll_function() -> i32;
 }
 
-#[link(name = "frame_decode")]
-extern {
-    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
-}
 
 #[tokio::main]
 async fn main() {
   unsafe {
     let simple = simple_dll_function();
     println!("simple:{}", simple);
-    let file_url = CString::new("/mnt/").unwrap();
-    let dest_url = CString::new("/mnt/").unwrap();
-    let decode = frame_decode_with_param(file_url.as_ptr(), dest_url.as_ptr());
-    println!("decode:{}", decode);
+    // let file_url = CString::new("/mnt/").unwrap();
+    // let dest_url = CString::new("/mnt/").unwrap();
+    // let decode = frame_decode_with_param(file_url.as_ptr(), dest_url.as_ptr());
+    // println!("decode:{}", decode);
   }
   println!("{:?}", System::name());
   let use_mysql_env = env::var("USE_MYSQL");
