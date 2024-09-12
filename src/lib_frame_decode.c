@@ -15,6 +15,7 @@
 
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
+static char* DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
@@ -236,7 +237,7 @@ error:
   return ret;
 }
 
-int frame_decode(const char* name_path)
+int frame_decode(const char* name_path, const char *dest_path)
 {
   int ret;
   int eof;
@@ -245,6 +246,10 @@ int frame_decode(const char* name_path)
     filename = name_path;
   } else {
     filename = FILE_NAME;
+  }
+  
+  if (dest_path == NULL) {
+    dest_path = DEST_URL;
   }
 
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
@@ -356,7 +361,7 @@ int frame_decode(const char* name_path)
     av_frame_free(&frame_array[i]);
   }
 
-  output_file = fopen("demo_video_1.png", "w+b");
+  output_file = fopen(dest_path, "w+b");
   if (fwrite(buffer, 1, ret, output_file) < 0)
   {
     fprintf(stderr, "Failed to dump raw data.\n");
@@ -369,7 +374,8 @@ int frame_decode(const char* name_path)
   return 0;
 }
 
-int frame_decode_with_param(const char *url) {
+
+int frame_decode_with_param(const char *url, const char* dest_url) {
   printf("url:%s\n",url);
-  return frame_decode(url);
+  return frame_decode(url, dest_url);
 }
