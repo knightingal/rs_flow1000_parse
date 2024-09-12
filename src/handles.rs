@@ -41,7 +41,11 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
-  let file_entry: Option<DirEntry> = fs::read_dir(sub_dir).unwrap()
+  let ret = fs::read_dir(sub_dir);
+  if ret.is_err() {
+    return StatusCode::NOT_FOUND;
+  }
+  let file_entry: Option<DirEntry> = ret.unwrap()
     .map(|res| res.unwrap())
     .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
   if file_entry.is_none() {
