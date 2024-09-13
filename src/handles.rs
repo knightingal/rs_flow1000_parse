@@ -42,18 +42,13 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
-  if path.is_file() {
+  let (video_name, image_name) = if path.is_file() {
     let parent = path.parent().unwrap();
     let video_name = path.file_name().unwrap();
     let image_name = String::from(parent.to_str().unwrap()) + "/" + video_name.to_str().unwrap() + ".png";
-    println!("{}", image_name);
-    unsafe {
-      let video_name = CString::new(sub_dir).unwrap();
-      let img_name = CString::new(image_name).unwrap();
-      frame_decode_with_param( video_name.as_ptr(), img_name.as_ptr());
-    }
+    (sub_dir, image_name)
   } else {
-    let ret = fs::read_dir(sub_dir);
+    let ret = fs::read_dir(&sub_dir);
     if ret.is_err() {
       return StatusCode::NOT_FOUND;
     }
@@ -69,15 +64,15 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
     println!("{}", video_name);
     let mut img_name = video_name.clone();
     img_name.push_str(".png");
-    println!("{}", img_name);
+    (video_name, img_name)
+  };
 
-    unsafe {
-      let video_name = CString::new(video_name).unwrap();
-      let img_name = CString::new(img_name).unwrap();
-      frame_decode_with_param( video_name.as_ptr(), img_name.as_ptr());
-    }
-
+  unsafe {
+    let video_name = CString::new(video_name).unwrap();
+    let img_name = CString::new(image_name).unwrap();
+    frame_decode_with_param( video_name.as_ptr(), img_name.as_ptr());
   }
+
   StatusCode::OK
 }
 
