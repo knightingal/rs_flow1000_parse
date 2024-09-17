@@ -40,6 +40,7 @@ async fn main() {
     let rust_obj = RustObject{a: 1, b: 1024};
 
     let simple = simple_dll_function_with_param(&rust_obj);
+    println!("rust_obj.b:{}", rust_obj.b);
     println!("simple:{}", simple);
     // let file_url = CString::new("/mnt/").unwrap();
     // let dest_url = CString::new("/mnt/").unwrap();

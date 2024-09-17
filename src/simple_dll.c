@@ -17,5 +17,6 @@ int simple_dll_function_with_param(struct rust_object* p_rust_object) {
   int b = p_rust_object->b;
   printf("b: %d\n", b);
   printf("simple_dll_function_with_param \n");
+  p_rust_object->b = 20;
   return 1;
 }
