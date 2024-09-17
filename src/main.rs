@@ -19,9 +19,16 @@ mod test_designation;
 mod designation;
 mod video_name_util;
 
+#[repr(C)]
+struct RustObject {
+  a: i32,
+  b: i32,
+}
+
 #[link(name = "simpledll")]
 extern {
     fn simple_dll_function() -> i32;
+    fn simple_dll_function_with_param(param: &RustObject)->i32;
 }
 
 
@@ -29,6 +36,10 @@ extern {
 async fn main() {
   unsafe {
     let simple = simple_dll_function();
+    println!("simple:{}", simple);
+    let rust_obj = RustObject{a: 1, b: 1024};
+
+    let simple = simple_dll_function_with_param(&rust_obj);
     println!("simple:{}", simple);
     // let file_url = CString::new("/mnt/").unwrap();
     // let dest_url = CString::new("/mnt/").unwrap();
