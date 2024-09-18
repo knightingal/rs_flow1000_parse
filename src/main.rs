@@ -50,14 +50,16 @@ async fn main() {
   println!("{:?}", System::name());
   let use_mysql_env = env::var("USE_MYSQL");
   let db_path_env = env::var("DB_PATH").unwrap();
-  let mut use_mysql: bool = false;
-  match use_mysql_env {
+  let use_mysql = match use_mysql_env {
     Ok(val) => {
       println!("use_mysql:{}", val);
-      use_mysql = val == "true";
+      val == "true"
     },
-    Err(e) => println!("not found:{e}"),
-  }
+    Err(e) => {
+      println!("not found:{e}");
+      false
+    }
+  };
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
