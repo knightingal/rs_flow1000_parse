@@ -42,7 +42,7 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
-  let (video_name, image_name) = if path.is_file() {
+  let (video_name, image_name):(String, String) = if path.is_file() {
     let parent = path.parent().unwrap();
     let video_name = path.file_name().unwrap();
     let image_name = String::from(parent.to_str().unwrap()) + "/" + video_name.to_str().unwrap() + ".png";
