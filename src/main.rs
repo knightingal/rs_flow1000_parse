@@ -28,7 +28,7 @@ struct RustObject {
 #[link(name = "simpledll")]
 extern {
     fn simple_dll_function() -> i32;
-    fn simple_dll_function_with_param(param: &RustObject)->i32;
+    fn simple_dll_function_with_param(param: &RustObject) -> i32;
 }
 
 
@@ -42,24 +42,10 @@ async fn main() {
     let simple = simple_dll_function_with_param(&rust_obj);
     println!("rust_obj.b:{}", rust_obj.b);
     println!("simple:{}", simple);
-    // let file_url = CString::new("/mnt/").unwrap();
-    // let dest_url = CString::new("/mnt/").unwrap();
-    // let decode = frame_decode_with_param(file_url.as_ptr(), dest_url.as_ptr());
-    // println!("decode:{}", decode);
   }
   println!("{:?}", System::name());
-  let use_mysql_env = env::var("USE_MYSQL");
-  let db_path_env = env::var("DB_PATH").unwrap();
-  let use_mysql = match use_mysql_env {
-    Ok(val) => {
-      println!("use_mysql:{}", val);
-      val == "true"
-    },
-    Err(e) => {
-      println!("not found:{e}");
-      false
-    }
-  };
+  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/mnt/flow1000.db"));
+  let use_mysql = env::var("USE_MYSQL").map_or_else(|_|false, |v|v=="true");
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
