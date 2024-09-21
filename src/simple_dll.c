@@ -10,6 +10,11 @@ struct rust_object {
   int b;
 };
 
+struct char_arr_object {
+  char* a;
+  int b;
+};
+
 int simple_dll_function_with_param(struct rust_object* p_rust_object) {
   printf("p_rust_object: %p\n", p_rust_object);
   int a = p_rust_object->a;
@@ -25,6 +30,13 @@ int simple_dll_function_with_param(struct rust_object* p_rust_object) {
 struct rust_object* simple_dll_function_return_struct() {
   struct rust_object* ro = malloc(sizeof(struct rust_object));
   ro->a = 1;
+  ro->b = 10;
+  return ro;
+}
+
+struct char_arr_object* simple_dll_function_return_char_arr() {
+  struct char_arr_object* ro = malloc(sizeof(struct char_arr_object));
+  ro->a = "hello";
   ro->b = 10;
   return ro;
 }
