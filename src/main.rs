@@ -7,7 +7,7 @@ use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use std::env;
+use std::{env, ffi::c_void};
 
 use sysinfo::System;
 
@@ -29,6 +29,7 @@ struct RustObject {
 extern {
     fn simple_dll_function() -> i32;
     fn simple_dll_function_with_param(param: &RustObject) -> i32;
+    fn simple_dll_function_return_struct() -> *mut RustObject;
 }
 
 
@@ -42,10 +43,14 @@ async fn main() {
     let simple = simple_dll_function_with_param(&rust_obj);
     println!("rust_obj.b:{}", rust_obj.b);
     println!("simple:{}", simple);
+
+    let rust_object_point = simple_dll_function_return_struct();
+    println!("rust_object:{}, {}", (*rust_object_point).a, (*rust_object_point).b);
+    libc::free(rust_object_point as *mut c_void);
   }
   println!("{:?}", System::name());
   let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/mnt/flow1000.db"));
-  let use_mysql = env::var("USE_MYSQL").map_or_else(|_|false, |v|v=="true");
+  let use_mysql = env::var("USE_MYSQL").map_or_else(|_|false, |v|v == "true");
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
