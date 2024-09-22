@@ -237,6 +237,10 @@ error:
   return ret;
 }
 
+int video_meta_info() {
+  return 0;
+}
+
 int frame_decode(const char* name_path, const char *dest_path)
 {
   int ret;
