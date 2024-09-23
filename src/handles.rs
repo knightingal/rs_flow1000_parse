@@ -13,9 +13,19 @@ pub static mut POOL: Option<&Pool> = None;
 pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
+#[repr(C)]
+struct VideoMetaInfo {
+  width: i32,
+  height: i32,
+  frame_rate: i32, 
+  video_frame_count: i32,
+  duratoin: i32,
+}
+
 #[link(name = "frame_decode")]
 extern {
     fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
+    fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
 }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
