@@ -237,8 +237,73 @@ error:
   return ret;
 }
 
-int video_meta_info() {
-  return 0;
+struct video_meta_info* video_meta_info(const char* name_path) {
+  struct video_meta_info* p_video_meta_info = malloc(sizeof(struct video_meta_info));
+
+  int ret;
+  int eof;
+  char *filename;
+  if (name_path != NULL) {
+    filename = name_path;
+  } else {
+    filename = FILE_NAME;
+  }
+  
+  ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
+  printf("red=%d\n", ret);
+
+  ret = avformat_find_stream_info(fmt_ctx, 0);
+  printf("red=%d\n", ret);
+  av_dump_format(fmt_ctx, 0, filename, 0);
+  int count = fmt_ctx->nb_streams;
+  printf("number=%d\n", count);
+  int video_stream_index = -1;
+  int audio_stream_index = -1;
+  AVCodecContext *dec_ctx;
+  const AVCodec *codec;
+  AVStream *video_in_stream;
+  int i_duratoin;
+  for (int i = 0; i < fmt_ctx->nb_streams; i++)
+  {
+    AVStream *in_stream = fmt_ctx->streams[i];
+    if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+      video_stream_index = i;
+    }
+    else if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+      audio_stream_index = i;
+    }
+
+    if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+      video_in_stream = in_stream;
+      int width = in_stream->codecpar->width;
+      int height = in_stream->codecpar->height;
+      int frame_rate;
+      if (in_stream->avg_frame_rate.den != 0 && in_stream->avg_frame_rate.num != 0)
+      {
+        frame_rate = in_stream->avg_frame_rate.num / in_stream->avg_frame_rate.den;
+      }
+      int video_frame_count = in_stream->nb_frames;
+      printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
+      float f_duration = (float)video_frame_count / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
+      i_duratoin = (int)f_duration;
+      printf("duration=%d\n", i_duratoin);
+      codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
+      const char *codec_name = codec->long_name;
+      printf("codec_name=%s\n", codec_name);
+      printf("red=%d\n", ret);
+
+      p_video_meta_info->width = width;
+      p_video_meta_info->height = height;
+      p_video_meta_info->frame_rate = frame_rate;
+      p_video_meta_info->video_frame_count = video_frame_count;
+      p_video_meta_info->duratoin = i_duratoin;
+    }
+  }
+
+  return p_video_meta_info;
 }
 
 int frame_decode(const char* name_path, const char *dest_path)
