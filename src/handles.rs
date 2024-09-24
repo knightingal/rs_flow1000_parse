@@ -54,8 +54,8 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
-  let (video_name):(String) = if path.is_file() {
-    (sub_dir)
+  let video_name:String = if path.is_file() {
+    sub_dir
   } else {
     let ret = fs::read_dir(&sub_dir);
     if ret.is_err() {
@@ -71,7 +71,7 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
 
     println!("{}", video_name);
-    (video_name)
+    video_name
   };
 
   let meta_info = unsafe {
