@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ffi::{c_char, CString}, fs::{self, DirEntry}};
+use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -14,10 +14,13 @@ pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
 #[repr(C)]
-struct VideoMetaInfo {
+#[derive(Serialize, Clone)]
+pub struct VideoMetaInfo {
   width: i32,
   height: i32,
+  #[serde(rename = "frameRate")]
   frame_rate: i32, 
+  #[serde(rename = "videoFrameCount")]
   video_frame_count: i32,
   duratoin: i32,
 }
@@ -48,6 +51,38 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
 }
 
+pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
+  println!("{}", sub_dir);
+  let path = std::path::Path::new(&sub_dir);
+  let (video_name):(String) = if path.is_file() {
+    (sub_dir)
+  } else {
+    let ret = fs::read_dir(&sub_dir);
+    if ret.is_err() {
+      return (StatusCode::NOT_FOUND, Json(Option::None));
+    }
+    let file_entry: Option<DirEntry> = ret.unwrap()
+      .map(|res| res.unwrap())
+      .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
+    if file_entry.is_none() {
+      return (StatusCode::NOT_FOUND, Json(Option::None));
+    }
+
+    let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
+
+    println!("{}", video_name);
+    (video_name)
+  };
+
+  let meta_info = unsafe {
+    let video_name = CString::new(video_name).unwrap();
+    let p_meta_info = video_meta_info( video_name.as_ptr());
+    let meta_info = (*p_meta_info).clone();
+    libc::free(p_meta_info as *mut c_void);
+    meta_info
+  };
+  (StatusCode::OK, Json(Option::Some(meta_info)))
+}
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
