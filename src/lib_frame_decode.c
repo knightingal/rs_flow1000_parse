@@ -259,9 +259,6 @@ struct video_meta_info* video_meta_info(const char* name_path) {
   printf("number=%d\n", count);
   int video_stream_index = -1;
   int audio_stream_index = -1;
-  AVCodecContext *dec_ctx;
-  const AVCodec *codec;
-  AVStream *video_in_stream;
   int i_duratoin;
   for (int i = 0; i < fmt_ctx->nb_streams; i++)
   {
@@ -277,7 +274,6 @@ struct video_meta_info* video_meta_info(const char* name_path) {
 
     if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-      video_in_stream = in_stream;
       int width = in_stream->codecpar->width;
       int height = in_stream->codecpar->height;
       int frame_rate;
@@ -290,10 +286,6 @@ struct video_meta_info* video_meta_info(const char* name_path) {
       float f_duration = (float)video_frame_count / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
       i_duratoin = (int)f_duration;
       printf("duration=%d\n", i_duratoin);
-      codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
-      const char *codec_name = codec->long_name;
-      printf("codec_name=%s\n", codec_name);
-      printf("red=%d\n", ret);
 
       p_video_meta_info->width = width;
       p_video_meta_info->height = height;
@@ -303,6 +295,7 @@ struct video_meta_info* video_meta_info(const char* name_path) {
     }
   }
 
+  avformat_close_input(&fmt_ctx);
   return p_video_meta_info;
 }
 
