@@ -7,7 +7,7 @@ use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use std::{env, ffi::{c_char, c_void, CStr, CString}};
+use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future};
 
 use sysinfo::System;
 
@@ -112,28 +112,30 @@ async fn main() {
 }
 
 
-async fn root() -> &'static str {
-  r###################"
-    .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
-    .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
-    .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
-    .route("/users/name/:name/age/:age", post(create_user))
-    .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
-    .route("/parse-designation-all", get(parse_designation_all_handler))
-    .route("/designation-search/:designation_ori", get(designation_search))
-    .route("/all-duplicate-video", get(all_duplicate_video))
-    .route("/all-duplicate-cover", get(all_duplicate_cover))
-    .route("/video-detail/:id", get(video_detail))
-    .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
-    .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
+fn root() -> impl Future<Output = &'static str> {
+  async {
+    r###################"
+      .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
+      .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
+      .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
+      .route("/users/name/:name/age/:age", post(create_user))
+      .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
+      .route("/parse-designation-all", get(parse_designation_all_handler))
+      .route("/designation-search/:designation_ori", get(designation_search))
+      .route("/all-duplicate-video", get(all_duplicate_video))
+      .route("/all-duplicate-cover", get(all_duplicate_cover))
+      .route("/video-detail/:id", get(video_detail))
+      .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
+      .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
 
-    .route("/mount-config", get(mount_config_handler))
-    .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
-    .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
-    .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
-    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
-    .route("/video-rate/:id/:rate", post(video_rate));
-  "###################
+      .route("/mount-config", get(mount_config_handler))
+      .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
+      .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
+      .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
+      .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+      .route("/video-rate/:id/:rate", post(video_rate));
+    "###################
+  }
 }
 
 
