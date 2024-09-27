@@ -25,11 +25,15 @@ pub struct VideoMetaInfo {
   duratoin: i32,
 }
 
-#[link(name = "frame_decode")]
-extern {
-    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
-    fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
-}
+// #[link(name = "frame_decode")]
+// extern {
+    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32 {
+      return 0;
+    }
+    // fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo {
+    //   return *VideoMetaInfo;
+    // }
+// }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
@@ -74,14 +78,14 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     video_name
   };
 
-  let meta_info = unsafe {
-    let video_name = CString::new(video_name).unwrap();
-    let p_meta_info = video_meta_info( video_name.as_ptr());
-    let meta_info = (*p_meta_info).clone();
-    libc::free(p_meta_info as *mut c_void);
-    meta_info
-  };
-  (StatusCode::OK, Json(Option::Some(meta_info)))
+  // let meta_info = unsafe {
+  //   let video_name = CString::new(video_name).unwrap();
+  //   let p_meta_info = video_meta_info( video_name.as_ptr());
+  //   let meta_info = (*p_meta_info).clone();
+  //   libc::free(p_meta_info as *mut c_void);
+  //   meta_info
+  // };
+  (StatusCode::OK, Json(Option::None))
 }
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
