@@ -46,6 +46,8 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~disable mysql if not needed~~
 
-* parse video size, insert to db
+* ~~parse video size~~
+
+* insert to db
 
 * parse video meta info, insert to db
