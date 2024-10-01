@@ -62,7 +62,7 @@ async fn main() {
     libc::free(char_arr_object_point as *mut c_void);
   }
   println!("{:?}", System::name());
-  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/mnt/flow1000.db"));
+  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/mp41000.db"));
   let use_mysql = env::var("USE_MYSQL").map_or_else(|_|false, |v|v == "true");
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
