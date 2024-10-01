@@ -57,7 +57,7 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
   let (video_name, file_size):(String, u64) = if path.is_file() {
-    let file_size = path.metadata().unwrap().len();
+    let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
     (sub_dir, file_size)
   } else {
     let ret = fs::read_dir(&sub_dir);
@@ -74,7 +74,7 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
 
     let video_file = File::open(&video_name).unwrap();
-    let file_size = video_file.metadata().unwrap().len();
+    let file_size = video_file.metadata().map_or_else(|_|{0}, |m|{m.len()});
     println!("{}", video_name);
     (video_name, file_size)
   };
