@@ -64,17 +64,17 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     if ret.is_err() {
       return (StatusCode::NOT_FOUND, Json(Option::None));
     }
-    let file_entry: Option<DirEntry> = ret.unwrap()
+    let file_entry_opt: Option<DirEntry> = ret.unwrap()
       .map(|res| res.unwrap())
       .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
-    if file_entry.is_none() {
+    if file_entry_opt.is_none() {
       return (StatusCode::NOT_FOUND, Json(Option::None));
     }
+    let file_entry = file_entry_opt.unwrap();
 
-    let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
+    let file_size = file_entry.metadata().map_or_else(|_|{0}, |m|{m.len()});
+    let video_name: String = file_entry.path().into_os_string().into_string().unwrap();
 
-    let video_file = File::open(&video_name).unwrap();
-    let file_size = video_file.metadata().map_or_else(|_|{0}, |m|{m.len()});
     println!("{}", video_name);
     (video_name, file_size)
   };
