@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry, File}};
+use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -23,6 +23,7 @@ pub struct VideoMetaInfo {
   #[serde(rename = "videoFrameCount")]
   video_frame_count: i32,
   duratoin: i32,
+  size: u64,
 }
 
 #[link(name = "frame_decode")]
@@ -82,8 +83,9 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
   let meta_info = unsafe {
     let video_name = CString::new(video_name).unwrap();
     let p_meta_info = video_meta_info( video_name.as_ptr());
-    let meta_info = (*p_meta_info).clone();
+    let mut meta_info = (*p_meta_info).clone();
     libc::free(p_meta_info as *mut c_void);
+    meta_info.size = file_size;
     meta_info
   };
   (StatusCode::OK, Json(Some(meta_info)))
