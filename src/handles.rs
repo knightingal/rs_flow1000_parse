@@ -13,25 +13,11 @@ pub static mut POOL: Option<&Pool> = None;
 pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
-#[repr(C)]
-#[derive(Serialize, Clone)]
-pub struct VideoMetaInfo {
-  width: i32,
-  height: i32,
-  #[serde(rename = "frameRate")]
-  frame_rate: i32, 
-  #[serde(rename = "videoFrameCount")]
-  video_frame_count: i32,
-  duratoin: i32,
-  size: u64,
-}
 
 #[link(name = "frame_decode")]
 extern {
     fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
     fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
-    //   return *VideoMetaInfo;
-    // }
 }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
@@ -596,4 +582,17 @@ pub struct MountConfig {
   pub url_prefix: String,
   #[serde(rename = "apiVersion")]
   pub api_version: u32,
+}
+
+#[repr(C)]
+#[derive(Serialize, Clone)]
+pub struct VideoMetaInfo {
+  width: i32,
+  height: i32,
+  #[serde(rename = "frameRate")]
+  frame_rate: i32, 
+  #[serde(rename = "videoFrameCount")]
+  video_frame_count: i32,
+  duratoin: i32,
+  size: u64,
 }
