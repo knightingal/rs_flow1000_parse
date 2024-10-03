@@ -48,19 +48,29 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     (sub_dir, file_size)
   } else {
     let ret = fs::read_dir(&sub_dir);
-    if ret.is_err() {
-      return (StatusCode::NOT_FOUND, Json(Option::None));
-    }
-    let file_entry_opt: Option<DirEntry> = ret.unwrap()
-      .map(|res| res.unwrap())
-      .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
-    if file_entry_opt.is_none() {
-      return (StatusCode::NOT_FOUND, Json(Option::None));
-    }
-    let file_entry = file_entry_opt.unwrap();
+    let file_entry_opt: Option<DirEntry> = match ret {
+      Ok(dir) => 
+          dir.map(|res| res.unwrap())
+          .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4")),
+      Err(_) => {
+        return (StatusCode::NOT_FOUND, Json(Option::None));
+      }
+    };
+    
+    let file_entry = match file_entry_opt {
+      Some(file_entry) => file_entry,
+      None => {
+        return (StatusCode::NOT_FOUND, Json(Option::None));
+      }
+    };
 
-    let file_size = file_entry.metadata().map_or_else(|_|{0}, |m|{m.len()});
-    let video_name: String = file_entry.path().into_os_string().into_string().unwrap();
+    let file_size = file_entry.metadata().map_or_else(|_|0, |m|m.len());
+    let video_name: String = match file_entry.path().into_os_string().into_string() {
+      Ok(video_name) => video_name,
+      Err(_) => {
+        return (StatusCode::NOT_FOUND, Json(Option::None));
+      }
+    };
 
     println!("{}", video_name);
     (video_name, file_size)
