@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}};
+use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry, File}};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -63,8 +63,9 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
 pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
-  let video_name:String = if path.is_file() {
-    sub_dir
+  let (video_name, file_size):(String, u64) = if path.is_file() {
+    let file_size = path.metadata().unwrap().len();
+    (sub_dir, file_size)
   } else {
     let ret = fs::read_dir(&sub_dir);
     if ret.is_err() {
@@ -79,18 +80,20 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
 
     let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
 
+    let video_file = File::open(&video_name).unwrap();
+    let file_size = video_file.metadata().unwrap().len();
     println!("{}", video_name);
-    video_name
+    (video_name, file_size)
   };
 
-  // let meta_info = unsafe {
-  //   let video_name = CString::new(video_name).unwrap();
-  //   let p_meta_info = video_meta_info( video_name.as_ptr());
-  //   let meta_info = (*p_meta_info).clone();
-  //   libc::free(p_meta_info as *mut c_void);
-  //   meta_info
-  // };
-  (StatusCode::OK, Json(Option::None))
+  let meta_info = unsafe {
+    let video_name = CString::new(video_name).unwrap();
+    let p_meta_info = video_meta_info( video_name.as_ptr());
+    let meta_info = (*p_meta_info).clone();
+    libc::free(p_meta_info as *mut c_void);
+    meta_info
+  };
+  (StatusCode::OK, Json(Some(meta_info)))
 }
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
