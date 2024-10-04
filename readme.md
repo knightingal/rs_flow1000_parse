@@ -51,3 +51,5 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 * insert to db
 
 * parse video meta info, insert to db
+
+* api version down to dir level
