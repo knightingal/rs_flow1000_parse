@@ -19,6 +19,10 @@ extern {
     fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
     fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
 }
+#[link(name="avformat")]
+extern { }
+#[link(name="swscale")]
+extern { }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
@@ -35,6 +39,11 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>
       base_index: 0,
       rate: Option::Some(0),
       video_size: Option::Some(0),
+      height:0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
     }}).unwrap();
 
   (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
@@ -160,6 +169,11 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         designation_num: row.get_unwrap(6),
         rate: Option::None,
         video_size: Option::Some(0),
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
       })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -207,7 +221,12 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
         dir_path: row.get_unwrap(3),
         base_index: row.get_unwrap(4), 
         video_size: Option::Some(0),
-        rate: Option::None
+        rate: Option::None,
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
       })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -240,6 +259,11 @@ pub async fn designation_search(Path(designation_ori): Path<String>) -> (StatusC
           base_index: row.get_unwrap(4),
           rate: Option::Some(0),
           video_size: Option::Some(0),
+          height:0,
+          width: 0,
+          frame_rate: 0,
+          video_frame_count: 0,
+          duration: 0,
     })
   }).unwrap().map(|it| it.unwrap());
   let selected_video:Vec<VideoEntity> = selected_video_iter.collect();
@@ -305,6 +329,11 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
       base_index: 0,
       video_size: Option::Some(0),
       rate: Option::None,
+      height:0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
     })
   }).unwrap().map(|it| it.unwrap()).collect();
 
@@ -352,7 +381,12 @@ pub async fn parse_designation_all_handler()
         dir_path: String::new(),
         base_index: 0,
         video_size: Option::Some(0),
-        rate: Option::None
+        rate: Option::None,
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
       };
     }).unwrap();
 
@@ -421,6 +455,11 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
         base_index,
         rate, 
         video_size: Option::Some(0),
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
       };
     }).unwrap();
 
@@ -559,6 +598,13 @@ pub struct VideoEntity {
   pub rate: Option<u32>,
   #[serde(rename = "videoSize")]
   pub video_size: Option<u64>,
+  pub width: i32,
+  pub height: i32,
+  #[serde(rename = "frameRate")]
+  pub frame_rate: i32,
+  #[serde(rename = "videoFrameCount")]
+  pub video_frame_count: i32,
+  pub duration: i32,
 }
 
 

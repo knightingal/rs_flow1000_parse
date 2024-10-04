@@ -36,7 +36,12 @@ pub async fn video_info_handler(Path((base_index, sub_dir)): Path<(u32, String)>
       dir_path: String::new(),
       base_index: 0,
       video_size: row.get_unwrap(4),
-      rate: row.get_unwrap(3)
+      rate: row.get_unwrap(3),
+      height:0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
     })
   }).unwrap().map(|it| it.unwrap());
 
@@ -167,6 +172,11 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
         base_index: 0,
         rate: row.get_unwrap(3),
         video_size: Option::Some(0),
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
       }
     )
   });
