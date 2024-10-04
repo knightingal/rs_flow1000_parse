@@ -25,15 +25,15 @@ pub struct VideoMetaInfo {
   duration: i32,
 }
 
-// #[link(name = "frame_decode")]
-// extern {
-    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32 {
-      return 0;
-    }
-    // fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo {
-    //   return *VideoMetaInfo;
-    // }
-// }
+#[link(name = "frame_decode")]
+extern {
+    fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
+    fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
+}
+#[link(name="avformat")]
+extern { }
+#[link(name="swscale")]
+extern { }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
   let mut conn1 = get_mysql_connection();
