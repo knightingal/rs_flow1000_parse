@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}};
+use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -397,7 +397,7 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
     video_info 
   where 
     video_size is null").unwrap();
-  let file_names_it = stmt.query_map(named_params! {}, |row| {
+  let file_names: Vec<(i32, String)> = stmt.query_map(named_params! {}, |row| {
     let file_name: String = row.get_unwrap("video_file_name");
     let dir_path: String = row.get_unwrap("dir_path");
     let base_index: u32 = row.get_unwrap("base_index");
@@ -410,10 +410,11 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
     println!("{}", full_name);
 
     Result::Ok((id, full_name))
-  }).unwrap().map(|it|it.unwrap());
+  }).unwrap().map(|it|it.unwrap()).collect();
 
-  let _ = async {
-
+  thread::spawn(move || {
+    println!("thread process");
+    let sqlite_conn = get_sqlite_connection();
     let mut stmt = sqlite_conn.prepare("update 
       video_info 
     set 
@@ -422,7 +423,7 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
       id=:id").unwrap();
 
 
-    file_names_it.for_each(|(id,file_name)| {
+    file_names.into_iter().for_each(|(id,file_name)| {
       let path = std::path::Path::new(&file_name);
       let exist = path.exists();
       if !exist {
@@ -441,7 +442,8 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
       };
       let _ = stmt.execute(named_params! {":duration":meta_info.duratoin, ":video_frame_count": meta_info.video_frame_count, ":id": id});
     });
-  };
+
+  });
 
   StatusCode::OK
 }
