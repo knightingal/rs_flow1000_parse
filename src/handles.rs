@@ -361,10 +361,59 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
   (StatusCode::OK, header, Json(selected_video))
 }
 
-pub async fn parse_meta_info_all_handler() -> StatusCode {
+pub async fn parse_meta_info_all_handler() -> (StatusCode, Json<Vec<String>>) {
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut sql = String::from("select id, ");
+  let dir_path_name: &str;
+  unsafe {
+    dir_path_name = if *IS_LINUX.unwrap() {
+      "dir_path"
+    } else {
+      "win_dir_path"
+    }
+  }
+  sql += dir_path_name;
+  sql += " , url_prefix, api_version from mp4_base_dir ";
+
+  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
+  let mount_config_iter = stmt.query_map(named_params! {}, |row| {
+    Ok(MountConfig{
+        id: row.get_unwrap("id"),
+        dir_path: row.get_unwrap(dir_path_name),
+        url_prefix: row.get_unwrap("url_prefix"),
+        api_version: row.get_unwrap("api_version"),
+    })
+  }).unwrap().map(|it| it.unwrap());
+
+  let mount_config_list:Vec<MountConfig> = mount_config_iter.collect();
 
 
-  StatusCode::OK
+  println!("call query video_file_name");
+
+  let mut stmt = sqlite_conn.prepare("select 
+    id, video_file_name, base_index, dir_path
+  from 
+    video_info 
+  where 
+    video_size is null").unwrap();
+  let file_names:Vec<String> = stmt.query_map(named_params! {}, |row| {
+    let file_name: String = row.get_unwrap("video_file_name");
+    let dir_path: String = row.get_unwrap("dir_path");
+    let base_index: u32 = row.get_unwrap("base_index");
+    println!("get file_name:{}", file_name);
+    let mut full_name = mount_config_list.iter().find(|it| it.id == base_index).unwrap().dir_path.clone(); 
+    full_name.push_str(&dir_path);
+    full_name.push('/');
+    full_name.push_str(&file_name);
+    println!("{}", full_name);
+
+
+    Result::Ok(full_name)
+  }).unwrap().map(|it|it.unwrap()).collect();
+
+
+  (StatusCode::OK, Json(file_names))
 }
 
 pub async fn parse_designation_all_handler() 
