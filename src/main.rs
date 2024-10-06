@@ -1,7 +1,7 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
 use business_handles::{mp4_dir_handler, mp4_dir_handler1, video_rate, mount_config_handler, video_info_handler,};
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, POOL, SQLITE_CONN
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, POOL, SQLITE_CONN
 };
 use hyper::StatusCode;
 use mysql::{Pool, PooledConn};
@@ -97,6 +97,7 @@ async fn main() {
     .route("/video-detail/:id", get(video_detail))
     .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
+    .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
 
     // bussiness
     .route("/mount-config", get(mount_config_handler))
@@ -127,6 +128,7 @@ fn root() -> impl Future<Output = &'static str> {
       .route("/video-detail/:id", get(video_detail))
       .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
       .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
+      .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
 
       .route("/mount-config", get(mount_config_handler))
       .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))

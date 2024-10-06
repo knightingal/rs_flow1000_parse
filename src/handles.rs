@@ -361,6 +361,12 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
   (StatusCode::OK, header, Json(selected_video))
 }
 
+pub async fn parse_meta_info_all_handler() -> StatusCode {
+
+
+  StatusCode::OK
+}
+
 pub async fn parse_designation_all_handler() 
     -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
 
