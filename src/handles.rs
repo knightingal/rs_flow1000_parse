@@ -361,7 +361,7 @@ pub async fn parse_designation_handler(Path((base_index, sub_dir)): Path<(u32, S
   (StatusCode::OK, header, Json(selected_video))
 }
 
-pub async fn parse_meta_info_all_handler() -> (StatusCode, Json<Vec<String>>) {
+pub async fn parse_meta_info_all_handler() -> StatusCode {
   let sqlite_conn = get_sqlite_connection();
 
   let mut sql = String::from("select id, ");
@@ -397,10 +397,11 @@ pub async fn parse_meta_info_all_handler() -> (StatusCode, Json<Vec<String>>) {
     video_info 
   where 
     video_size is null").unwrap();
-  let file_names:Vec<String> = stmt.query_map(named_params! {}, |row| {
+  let file_names_it = stmt.query_map(named_params! {}, |row| {
     let file_name: String = row.get_unwrap("video_file_name");
     let dir_path: String = row.get_unwrap("dir_path");
     let base_index: u32 = row.get_unwrap("base_index");
+    let id: i32 = row.get_unwrap("id");
     println!("get file_name:{}", file_name);
     let mut full_name = mount_config_list.iter().find(|it| it.id == base_index).unwrap().dir_path.clone(); 
     full_name.push_str(&dir_path);
@@ -408,12 +409,41 @@ pub async fn parse_meta_info_all_handler() -> (StatusCode, Json<Vec<String>>) {
     full_name.push_str(&file_name);
     println!("{}", full_name);
 
+    Result::Ok((id, full_name))
+  }).unwrap().map(|it|it.unwrap());
 
-    Result::Ok(full_name)
-  }).unwrap().map(|it|it.unwrap()).collect();
+  let _ = async {
+
+    let mut stmt = sqlite_conn.prepare("update 
+      video_info 
+    set 
+      duration=:duration, video_frame_count=:video_frame_count
+    where 
+      id=:id").unwrap();
 
 
-  (StatusCode::OK, Json(file_names))
+    file_names_it.for_each(|(id,file_name)| {
+      let path = std::path::Path::new(&file_name);
+      let exist = path.exists();
+      if !exist {
+        return;
+      }
+      let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
+
+      println!("parse file:{}", file_name);
+      let meta_info = unsafe {
+        let video_name = CString::new(file_name).unwrap();
+        let p_meta_info = video_meta_info(video_name.as_ptr());
+        let mut meta_info = (*p_meta_info).clone();
+        libc::free(p_meta_info as *mut c_void);
+        meta_info.size = file_size;
+        meta_info
+      };
+      let _ = stmt.execute(named_params! {":duration":meta_info.duratoin, ":video_frame_count": meta_info.video_frame_count, ":id": id});
+    });
+  };
+
+  StatusCode::OK
 }
 
 pub async fn parse_designation_all_handler() 
