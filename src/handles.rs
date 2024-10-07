@@ -414,14 +414,18 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
 
   thread::spawn(move || {
     println!("thread process");
-    let sqlite_conn = get_sqlite_connection();
-    let mut stmt = sqlite_conn.prepare("update 
+    let sqlite_conn: &Connection = get_sqlite_connection();
+    let mut stmt: rusqlite::Statement<'_> = sqlite_conn.prepare("update 
       video_info 
     set 
-      duration=:duration, video_frame_count=:video_frame_count
+      video_size = :video_size,
+      width = :width,
+      height = :height,
+      frame_rate = :frame_rate,
+      video_frame_count=:video_frame_count,
+      duration=:duration 
     where 
       id=:id").unwrap();
-
 
     file_names.into_iter().for_each(|(id,file_name)| {
       let path = std::path::Path::new(&file_name);
@@ -440,7 +444,15 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
         meta_info.size = file_size;
         meta_info
       };
-      let _ = stmt.execute(named_params! {":duration":meta_info.duratoin, ":video_frame_count": meta_info.video_frame_count, ":id": id});
+      let _ = stmt.execute(named_params! {
+        ":width": meta_info.width,
+        ":height": meta_info.height,
+        ":frame_rate": meta_info.frame_rate,
+        ":video_size": meta_info.size,
+        ":duration":meta_info.duratoin, 
+        ":video_frame_count": meta_info.video_frame_count, 
+        ":id": id
+      });
     });
 
   });
