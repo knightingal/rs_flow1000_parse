@@ -23,28 +23,30 @@ extern { }
 extern { }
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<VideoEntity>>) {
-  // let mut conn1 = get_mysql_connection();
-  // let selected_video = conn1.exec_map(
-  //   "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
-  //     "id" => id,
-  //   }, |(id, video_file_name, cover_file_name)| {VideoEntity{
-  //     id, 
-  //     video_file_name, 
-  //     cover_file_name,
-  //     designation_char: String::new(), 
-  //     designation_num: String::new(),
-  //     dir_path: String::new(),
-  //     base_index: 0,
-  //     rate: Option::Some(0),
-  //     video_size: Option::Some(0),
-  //     height:0,
-  //     width: 0,
-  //     frame_rate: 0,
-  //     video_frame_count: 0,
-  //     duration: 0,
-  //   }}).unwrap();
+  let conn = get_sqlite_connection();
+  let video_entity = conn.query_row("select id, video_file_name, cover_file_name from video_info where id = :id", 
+    named_params! {":id":id}, |row| {
+      Result::Ok(
+        VideoEntity{
+        id: row.get_unwrap("id"),
+        video_file_name: row.get_unwrap("video_file_name"),
+        cover_file_name: row.get_unwrap("cover_file_name"),
+        designation_char: String::new(), 
+        designation_num: String::new(),
+        dir_path: String::new(),
+        base_index: 0,
+        rate: Option::Some(0),
+        video_size: Option::Some(0),
+        height:0,
+        width: 0,
+        frame_rate: 0,
+        video_frame_count: 0,
+        duration: 0,
+      }
+    )
+  }).unwrap();
 
-  (StatusCode::OK, Json(Option::None))
+  (StatusCode::OK, Json(Option::Some(video_entity)))
 }
 
 pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
