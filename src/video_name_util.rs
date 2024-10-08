@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde_derive::Serialize;
 
 
 pub fn parse_video_cover(dir_list: &Vec<(String, u64)>) -> Vec<VideoCover> {

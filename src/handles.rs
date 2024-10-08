@@ -2,14 +2,12 @@ use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, t
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
-use mysql::{params, prelude::Queryable, Pool, Row};
 use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_mysql_connection, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
+use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
 
 
-pub static mut POOL: Option<&Pool> = None;
 pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
@@ -24,29 +22,29 @@ extern { }
 #[link(name="swscale")]
 extern { }
 
-pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<VideoEntity>) {
-  let mut conn1 = get_mysql_connection();
-  let selected_video = conn1.exec_map(
-    "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
-      "id" => id,
-    }, |(id, video_file_name, cover_file_name)| {VideoEntity{
-      id, 
-      video_file_name, 
-      cover_file_name,
-      designation_char: String::new(), 
-      designation_num: String::new(),
-      dir_path: String::new(),
-      base_index: 0,
-      rate: Option::Some(0),
-      video_size: Option::Some(0),
-      height:0,
-      width: 0,
-      frame_rate: 0,
-      video_frame_count: 0,
-      duration: 0,
-    }}).unwrap();
+pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<VideoEntity>>) {
+  // let mut conn1 = get_mysql_connection();
+  // let selected_video = conn1.exec_map(
+  //   "select id, video_file_name, cover_file_name from video_info where id = :id ", params! {
+  //     "id" => id,
+  //   }, |(id, video_file_name, cover_file_name)| {VideoEntity{
+  //     id, 
+  //     video_file_name, 
+  //     cover_file_name,
+  //     designation_char: String::new(), 
+  //     designation_num: String::new(),
+  //     dir_path: String::new(),
+  //     base_index: 0,
+  //     rate: Option::Some(0),
+  //     video_size: Option::Some(0),
+  //     height:0,
+  //     width: 0,
+  //     frame_rate: 0,
+  //     video_frame_count: 0,
+  //     duration: 0,
+  //   }}).unwrap();
 
-  (StatusCode::OK, Json(selected_video.get(0).unwrap().clone()))
+  (StatusCode::OK, Json(Option::None))
 }
 
 pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
@@ -463,126 +461,126 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
 pub async fn parse_designation_all_handler() 
     -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
 
-  let mut conn = unsafe {
-    POOL.unwrap().get_conn().unwrap()
-  };
+  // let mut conn = unsafe {
+  //   POOL.unwrap().get_conn().unwrap()
+  // };
 
-  let selected_video: Vec<VideoEntity> = conn.query_map(
-    "select id, video_file_name, cover_file_name from video_info ", |(id, video_file_name, cover_file_name)| {
-      let designation = parse_designation(&video_file_name);
+  // let selected_video: Vec<VideoEntity> = conn.query_map(
+  //   "select id, video_file_name, cover_file_name from video_info ", |(id, video_file_name, cover_file_name)| {
+  //     let designation = parse_designation(&video_file_name);
 
-      return VideoEntity{
-        id, 
-        video_file_name, 
-        cover_file_name, 
-        designation_char: designation.char_final.unwrap(), 
-        designation_num: designation.num_final.unwrap(),
-        dir_path: String::new(),
-        base_index: 0,
-        video_size: Option::Some(0),
-        rate: Option::None,
-        height:0,
-        width: 0,
-        frame_rate: 0,
-        video_frame_count: 0,
-        duration: 0,
-      };
-    }).unwrap();
+  //     return VideoEntity{
+  //       id, 
+  //       video_file_name, 
+  //       cover_file_name, 
+  //       designation_char: designation.char_final.unwrap(), 
+  //       designation_num: designation.num_final.unwrap(),
+  //       dir_path: String::new(),
+  //       base_index: 0,
+  //       video_size: Option::Some(0),
+  //       rate: Option::None,
+  //       height:0,
+  //       width: 0,
+  //       frame_rate: 0,
+  //       video_frame_count: 0,
+  //       duration: 0,
+  //     };
+  //   }).unwrap();
 
-  selected_video.iter().for_each(|video| {
-    let _:Vec<Row> = conn.exec("update video_info set designation_char=:char, designation_num=:num where id=:id", params! {
-      "char" => video.designation_char.clone(),
-      "num" => video.designation_num.clone(),
-      "id" => video.id
-    }).unwrap();
+  // selected_video.iter().for_each(|video| {
+  //   let _:Vec<Row> = conn.exec("update video_info set designation_char=:char, designation_num=:num where id=:id", params! {
+  //     "char" => video.designation_char.clone(),
+  //     "num" => video.designation_num.clone(),
+  //     "id" => video.id
+  //   }).unwrap();
 
-  });
+  // });
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(selected_video))
+  (StatusCode::OK, header, Json(vec![]))
 }
 
 pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
-  let mut conn = get_mysql_connection();
-  let sqlite_conn = get_sqlite_connection();
-  let mount_config: Vec<MountConfig> = conn.query_map(
-    "select id, dir_path,url_prefix,api_version from mp4_base_dir ", 
-    |(id, dir_path,url_prefix,api_version)| {
-      return MountConfig{
-        id, 
-        dir_path,
-        url_prefix,
-        api_version
-      };
-    }).unwrap();
+  // let mut conn = get_mysql_connection();
+  // let sqlite_conn = get_sqlite_connection();
+  // let mount_config: Vec<MountConfig> = conn.query_map(
+  //   "select id, dir_path,url_prefix,api_version from mp4_base_dir ", 
+  //   |(id, dir_path,url_prefix,api_version)| {
+  //     return MountConfig{
+  //       id, 
+  //       dir_path,
+  //       url_prefix,
+  //       api_version
+  //     };
+  //   }).unwrap();
 
 
-  (&mount_config).into_iter().for_each(|video_entity| {
-    sqlite_conn.execute("insert into mp4_base_dir (
-      id, dir_path,url_prefix,api_version
-    ) values (
-      ?1, ?2, ?3, ?4
-    )", 
-    rusqlite::params![video_entity.id, video_entity.dir_path, video_entity.url_prefix, video_entity.api_version]).unwrap();
-  });
+  // (&mount_config).into_iter().for_each(|video_entity| {
+  //   sqlite_conn.execute("insert into mp4_base_dir (
+  //     id, dir_path,url_prefix,api_version
+  //   ) values (
+  //     ?1, ?2, ?3, ?4
+  //   )", 
+  //   rusqlite::params![video_entity.id, video_entity.dir_path, video_entity.url_prefix, video_entity.api_version]).unwrap();
+  // });
 
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(mount_config))
+  (StatusCode::OK, header, Json(vec![]))
 }
 
 pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  let mut conn = get_mysql_connection();
-  let sqlite_conn = get_sqlite_connection();
+  // let mut conn = get_mysql_connection();
+  // let sqlite_conn = get_sqlite_connection();
 
-  let selected_video: Vec<VideoEntity> = conn.query_map(
-    "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num, designation_char from video_info ", 
-    |(id, dir_path, base_index, rate, video_file_name, cover_file_name, designation_num, designation_char)| {
-      return VideoEntity{
-        id, 
-        video_file_name, 
-        cover_file_name, 
-        designation_char, 
-        designation_num,
-        dir_path,
-        base_index,
-        rate, 
-        video_size: Option::Some(0),
-        height:0,
-        width: 0,
-        frame_rate: 0,
-        video_frame_count: 0,
-        duration: 0,
-      };
-    }).unwrap();
+  // let selected_video: Vec<VideoEntity> = conn.query_map(
+  //   "select id, dir_path,base_index,rate, video_file_name, cover_file_name, designation_num, designation_char from video_info ", 
+  //   |(id, dir_path, base_index, rate, video_file_name, cover_file_name, designation_num, designation_char)| {
+  //     return VideoEntity{
+  //       id, 
+  //       video_file_name, 
+  //       cover_file_name, 
+  //       designation_char, 
+  //       designation_num,
+  //       dir_path,
+  //       base_index,
+  //       rate, 
+  //       video_size: Option::Some(0),
+  //       height:0,
+  //       width: 0,
+  //       frame_rate: 0,
+  //       video_frame_count: 0,
+  //       duration: 0,
+  //     };
+  //   }).unwrap();
 
-  (&selected_video).into_iter().for_each(|video_entity| {
-    sqlite_conn.execute("insert into video_info (
-      id, dir_path, base_index,rate, video_file_name, cover_file_name, designation_num, designation_char
-    ) values (
-      ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
-    )", rusqlite::params![
-      video_entity.id, 
-      video_entity.dir_path, 
-      video_entity.base_index, 
-      video_entity.rate, 
-      video_entity.video_file_name, 
-      video_entity.cover_file_name, 
-      video_entity.designation_num, 
-      video_entity.designation_char]).unwrap();
-  });
+  // (&selected_video).into_iter().for_each(|video_entity| {
+  //   sqlite_conn.execute("insert into video_info (
+  //     id, dir_path, base_index,rate, video_file_name, cover_file_name, designation_num, designation_char
+  //   ) values (
+  //     ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+  //   )", rusqlite::params![
+  //     video_entity.id, 
+  //     video_entity.dir_path, 
+  //     video_entity.base_index, 
+  //     video_entity.rate, 
+  //     video_entity.video_file_name, 
+  //     video_entity.cover_file_name, 
+  //     video_entity.designation_num, 
+  //     video_entity.designation_char]).unwrap();
+  // });
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
   header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  (StatusCode::OK, header, Json(selected_video))
+  (StatusCode::OK, header, Json(vec![]))
 }
 
 pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>) 

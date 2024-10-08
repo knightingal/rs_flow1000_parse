@@ -1,10 +1,9 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
 use business_handles::{mp4_dir_handler, mp4_dir_handler1, video_rate, mount_config_handler, video_info_handler,};
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, POOL, SQLITE_CONN
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, SQLITE_CONN
 };
 use hyper::StatusCode;
-use mysql::{Pool, PooledConn};
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
 use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future};
@@ -67,14 +66,6 @@ async fn main() {
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
-  if use_mysql {
-    let url = "mysql://root:000000@localhost:3306/mp4viewer";
-    // let pool = Pool::new(url).unwrap();
-    let box_pool = Box::new(Pool::new(url).unwrap());
-    unsafe {
-      POOL = Some(Box::leak(box_pool));
-    }
-  }
   let lite_conn = Box::new(Connection::open(db_path_env).unwrap());
   let is_linux = Box::new(System::name().unwrap().contains("Linux"));
   unsafe {
@@ -148,12 +139,6 @@ fn get_sqlite_connection() -> &'static Connection {
   return conn;
 }
 
-fn get_mysql_connection() -> PooledConn {
-  let conn = unsafe {
-      POOL.unwrap().get_conn().unwrap()
-  };
-  return conn;
-}
 
 async fn create_user(Path((name,age)): Path<(String, u32)>, Json(payload): Json<CreateUser>) -> (StatusCode, Json<User>) {
   let name:String = name;
