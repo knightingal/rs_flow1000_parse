@@ -48,9 +48,9 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~parse video size~~
 
-* insert to db
+* ~~insert to db~~
 
-* parse video meta info, insert to db
+* ~~parse video meta info, insert to db~~
 
 * trans video steam
 
