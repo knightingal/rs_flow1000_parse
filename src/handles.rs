@@ -414,45 +414,9 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
 
   thread::spawn(move || {
     println!("thread process");
-    let sqlite_conn: &Connection = get_sqlite_connection();
-    let mut stmt: rusqlite::Statement<'_> = sqlite_conn.prepare("update 
-      video_info 
-    set 
-      video_size = :video_size,
-      width = :width,
-      height = :height,
-      frame_rate = :frame_rate,
-      video_frame_count=:video_frame_count,
-      duration=:duration 
-    where 
-      id=:id").unwrap();
 
     file_names.into_iter().for_each(|(id,file_name)| {
-      let path = std::path::Path::new(&file_name);
-      let exist = path.exists();
-      if !exist {
-        return;
-      }
-      let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
-
-      println!("parse file:{}", file_name);
-      let meta_info = unsafe {
-        let video_name = CString::new(file_name).unwrap();
-        let p_meta_info = video_meta_info(video_name.as_ptr());
-        let mut meta_info = (*p_meta_info).clone();
-        libc::free(p_meta_info as *mut c_void);
-        meta_info.size = file_size;
-        meta_info
-      };
-      let _ = stmt.execute(named_params! {
-        ":width": meta_info.width,
-        ":height": meta_info.height,
-        ":frame_rate": meta_info.frame_rate,
-        ":video_size": meta_info.size,
-        ":duration":meta_info.duratoin, 
-        ":video_frame_count": meta_info.video_frame_count, 
-        ":id": id
-      });
+      parse_and_update_meta_info_by_id(id, file_name);
     });
 
   });
@@ -676,6 +640,46 @@ fn check_exist_by_video_file_name(dir_path: &String, base_index: u32, video_file
   }).unwrap();
 
   count != 0
+}
+
+pub fn parse_and_update_meta_info_by_id(id: i32,file_name: String) {
+  let sqlite_conn: &Connection = get_sqlite_connection();
+  let mut stmt: rusqlite::Statement<'_> = sqlite_conn.prepare("update 
+    video_info 
+  set 
+    video_size = :video_size,
+    width = :width,
+    height = :height,
+    frame_rate = :frame_rate,
+    video_frame_count=:video_frame_count,
+    duration=:duration 
+  where 
+    id=:id").unwrap();
+  let path = std::path::Path::new(&file_name);
+  let exist = path.exists();
+  if !exist {
+    return;
+  }
+  let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
+
+  println!("parse file:{}", file_name);
+  let meta_info = unsafe {
+    let video_name = CString::new(file_name).unwrap();
+    let p_meta_info = video_meta_info(video_name.as_ptr());
+    let mut meta_info = (*p_meta_info).clone();
+    libc::free(p_meta_info as *mut c_void);
+    meta_info.size = file_size;
+    meta_info
+  };
+  let _ = stmt.execute(named_params! {
+    ":width": meta_info.width,
+    ":height": meta_info.height,
+    ":frame_rate": meta_info.frame_rate,
+    ":video_size": meta_info.size,
+    ":duration":meta_info.duratoin, 
+    ":video_frame_count": meta_info.video_frame_count, 
+    ":id": id
+  });
 }
 
 #[derive(Serialize, Clone)]
