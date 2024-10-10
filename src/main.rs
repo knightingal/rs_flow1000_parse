@@ -127,6 +127,12 @@ fn root() -> impl Future<Output = &'static str> {
       .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
       .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
       .route("/video-rate/:id/:rate", post(video_rate));
+      
+      github.com 140.82.116.4
+      github.githubassets.com 185.199.110.154,185.199.111.154,185.199.109.154,185.199.108.154
+      avatars.githubusercontent.com 185.199.111.133,185.199.109.133,185.199.108.133,185.199.110.133
+      collector.github.com 140.82.112.22
+      api.github.com 140.82.113.6
     "###################
   }
 }
