@@ -85,15 +85,23 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
     (video_name, file_size)
   };
 
+  let mut meta_info = parse_video_meta_info(&video_name);
+  meta_info.size = file_size;
+
+  (StatusCode::OK, Json(Some(meta_info)))
+}
+
+fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {
+
   let meta_info = unsafe {
-    let video_name = CString::new(video_name).unwrap();
+    let video_name = CString::new(video_name.as_str()).unwrap();
     let p_meta_info = video_meta_info( video_name.as_ptr());
-    let mut meta_info = (*p_meta_info).clone();
+    let meta_info = (*p_meta_info).clone();
     libc::free(p_meta_info as *mut c_void);
-    meta_info.size = file_size;
+    // meta_info.size = file_size;
     meta_info
   };
-  (StatusCode::OK, Json(Some(meta_info)))
+  meta_info
 }
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
@@ -568,17 +576,26 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   dir_path += &sub_dir_param;
 
   let file_names: Vec<(String, u64)> = parse_dir_path(&dir_path).unwrap();
+  dir_path += "/";
+
   let video_cover_list = parse_video_cover(&file_names);
 
   for video_cover_entry in video_cover_list.iter() {
+    let mut dir_path_tmp = dir_path.clone();
+    dir_path_tmp += "/";
+    dir_path_tmp += video_cover_entry.video_file_name.as_str();
+    let meta_info = parse_video_meta_info(&dir_path_tmp);
+    let path = std::path::Path::new(&dir_path_tmp);
+    let size = path.metadata().map_or_else(|_|{0}, |m|m.len());
+
     let designation = parse_designation(&video_cover_entry.video_file_name);
     let exist = check_exist_by_video_file_name(&sub_dir_param, base_index, &video_cover_entry.video_file_name);
 
     if !exist {
       let _ = sqlite_conn.execute("insert into video_info(
-        dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num, video_size
+        dir_path, base_index, video_file_name, cover_file_name, designation_char, designation_num, video_size, width, height
       ) values (
-        :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, video_size
+        :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, :video_size, :width, :height
       )", named_params! {
         ":dir_path": sub_dir_param, 
         ":base_index": base_index, 
@@ -586,14 +603,18 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
         ":cover_file_name": video_cover_entry.cover_file_name,
         ":designation_char": designation.char_final, 
         ":designation_num": designation.num_final,
-        "video_size": video_cover_entry.video_size,
+        ":video_size": size,
+        ":width": meta_info.width,
+        ":height": meta_info.height,
       });
     } else {
       let _ = sqlite_conn.execute("update video_info set 
         cover_file_name=:cover_file_name, 
         designation_char=:designation_char, 
         designation_num=:designation_num, 
-        video_size=:video_size
+        video_size=:video_size,
+        height=:height,
+        width=:width
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
       ", named_params! {
@@ -603,7 +624,9 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
         ":cover_file_name": video_cover_entry.cover_file_name,
         ":designation_char": designation.char_final, 
         ":designation_num": designation.num_final,
-        "video_size": video_cover_entry.video_size,
+        ":video_size": size,
+        ":width": meta_info.width,
+        ":height": meta_info.height,
       });
 
     }
