@@ -619,7 +619,10 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
         designation_num=:designation_num, 
         video_size=:video_size,
         height=:height,
-        width=:width
+        width=:width,
+        duration=:duration,
+        frame_rate=:frame_rate,
+        video_frame_count=:video_frame_count
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
       ", named_params! {
@@ -632,6 +635,9 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
         ":video_size": size,
         ":width": meta_info.width,
         ":height": meta_info.height,
+        ":duration": meta_info.duratoin,
+        ":frame_rate": meta_info.frame_rate,
+        ":video_frame_count": meta_info.video_frame_count,
       });
 
     }
