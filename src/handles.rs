@@ -1,11 +1,11 @@
-use std::{cmp::Ordering, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread};
+use std::{cmp::Ordering, ffi::{c_char, CString}, fs::{self, DirEntry}, thread};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
 use rusqlite::{named_params, Connection};
 use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, VideoCover}};
+use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}};
 
 
 pub static mut SQLITE_CONN: Option<&Connection> = None;
@@ -15,7 +15,6 @@ pub static mut IS_LINUX: Option<&bool> = None;
 #[link(name = "frame_decode")]
 extern {
     fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
-    fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
 }
 #[link(name="avformat")]
 extern { }
@@ -91,18 +90,6 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
   (StatusCode::OK, Json(Some(meta_info)))
 }
 
-fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {
-
-  let meta_info = unsafe {
-    let video_name = CString::new(video_name.as_str()).unwrap();
-    let p_meta_info = video_meta_info( video_name.as_ptr());
-    let meta_info = (*p_meta_info).clone();
-    libc::free(p_meta_info as *mut c_void);
-    // meta_info.size = file_size;
-    meta_info
-  };
-  meta_info
-}
 
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
@@ -697,19 +684,13 @@ pub fn parse_and_update_meta_info_by_id(id: i32,file_name: String) {
   let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
 
   println!("parse file:{}", file_name);
-  let meta_info = unsafe {
-    let video_name = CString::new(file_name).unwrap();
-    let p_meta_info = video_meta_info(video_name.as_ptr());
-    let mut meta_info = (*p_meta_info).clone();
-    libc::free(p_meta_info as *mut c_void);
-    meta_info.size = file_size;
-    meta_info
-  };
+
+  let meta_info = parse_video_meta_info(&file_name);
   let _ = stmt.execute(named_params! {
     ":width": meta_info.width,
     ":height": meta_info.height,
     ":frame_rate": meta_info.frame_rate,
-    ":video_size": meta_info.size,
+    ":video_size": file_size,
     ":duration":meta_info.duratoin, 
     ":video_frame_count": meta_info.video_frame_count, 
     ":id": id
@@ -775,17 +756,4 @@ pub struct MountConfig {
   pub url_prefix: String,
   #[serde(rename = "apiVersion")]
   pub api_version: u32,
-}
-
-#[repr(C)]
-#[derive(Serialize, Clone)]
-pub struct VideoMetaInfo {
-  width: i32,
-  height: i32,
-  #[serde(rename = "frameRate")]
-  frame_rate: i32, 
-  #[serde(rename = "videoFrameCount")]
-  video_frame_count: i32,
-  duratoin: i32,
-  size: u64,
 }

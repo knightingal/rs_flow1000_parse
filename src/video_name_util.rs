@@ -1,5 +1,25 @@
+use std::ffi::{c_char, c_void, CString};
+
 use serde_derive::Serialize;
 
+
+#[link(name = "frame_decode")]
+extern {
+    fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
+}
+
+pub fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {
+
+  let meta_info = unsafe {
+    let video_name = CString::new(video_name.as_str()).unwrap();
+    let p_meta_info = video_meta_info( video_name.as_ptr());
+    let meta_info = (*p_meta_info).clone();
+    libc::free(p_meta_info as *mut c_void);
+    // meta_info.size = file_size;
+    meta_info
+  };
+  meta_info
+}
 
 pub fn parse_video_cover(dir_list: &Vec<(String, u64)>) -> Vec<VideoCover> {
   let mut video_cover_list: Vec<VideoCover> = Vec::new();
@@ -121,4 +141,17 @@ pub struct VideoCover {
   pub video_file_name: String,
   pub cover_file_name: String,
   pub video_size: u64,
+}
+
+#[repr(C)]
+#[derive(Serialize, Clone)]
+pub struct VideoMetaInfo {
+  pub width: i32,
+  pub height: i32,
+  #[serde(rename = "frameRate")]
+  pub frame_rate: i32, 
+  #[serde(rename = "videoFrameCount")]
+  pub video_frame_count: i32,
+  pub duratoin: i32,
+  pub size: u64,
 }
