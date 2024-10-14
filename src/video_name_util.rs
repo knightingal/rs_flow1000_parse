@@ -1,11 +1,18 @@
-use std::ffi::{c_char, c_void, CString};
+use std::{ffi::{c_char, c_void, CString}, ptr::null_mut};
 
 use serde_derive::Serialize;
 
 
+#[cfg(reallink)]
 #[link(name = "frame_decode")]
 extern {
     fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
+}
+
+
+#[cfg(mocklink)]
+fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo {
+  return null_mut();
 }
 
 pub fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {

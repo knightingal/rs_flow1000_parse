@@ -12,14 +12,24 @@ pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
 
+#[cfg(reallink)]
 #[link(name = "frame_decode")]
 extern {
     fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
 }
+
+#[cfg(reallink)]
 #[link(name="avformat")]
 extern { }
+
+#[cfg(reallink)]
 #[link(name="swscale")]
 extern { }
+
+#[cfg(mocklink)]
+fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32 {
+  return 0;
+}
 
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<VideoEntity>>) {
   let conn = get_sqlite_connection();
