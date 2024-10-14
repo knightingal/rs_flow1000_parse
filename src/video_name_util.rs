@@ -1,4 +1,4 @@
-use std::{ffi::{c_char, c_void, CString}, ptr::null_mut};
+use std::ffi::{c_char, c_void, CString};
 
 use serde_derive::Serialize;
 
@@ -11,7 +11,7 @@ extern {
 
 
 #[cfg(mocklink)]
-fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo {
+fn video_meta_info(_: *const c_char) -> *mut VideoMetaInfo {
   return null_mut();
 }
 
@@ -19,10 +19,9 @@ pub fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {
 
   let meta_info = unsafe {
     let video_name = CString::new(video_name.as_str()).unwrap();
-    let p_meta_info = video_meta_info( video_name.as_ptr());
+    let p_meta_info = video_meta_info(video_name.as_ptr());
     let meta_info = (*p_meta_info).clone();
     libc::free(p_meta_info as *mut c_void);
-    // meta_info.size = file_size;
     meta_info
   };
   meta_info

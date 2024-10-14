@@ -6,7 +6,7 @@ use handles::{
 use hyper::StatusCode;
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future, ptr::null_mut};
+use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future,};
 
 use sysinfo::System;
 
@@ -46,18 +46,24 @@ fn simple_dll_function() -> i32 {
 }
 
 #[cfg(mocklink)]
-fn simple_dll_function_with_param(param: &RustObject) -> i32 {
+fn simple_dll_function_with_param(_: &RustObject) -> i32 {
   return 0;
 }
 
 #[cfg(mocklink)]
 fn simple_dll_function_return_struct() -> *mut RustObject {
-  return null_mut();
+  // return null_mut();
+  let mut b_ro = Box::new(RustObject{a:1, b:2});
+  let p_ro = b_ro.as_mut();
+  p_ro
 }
 
 #[cfg(mocklink)]
 fn simple_dll_function_return_char_arr() -> *mut CharArrObject {
-  return null_mut();
+  let video_name = CString::new("0").unwrap();
+  let mut b_ro = Box::new(CharArrObject{a: video_name.as_ptr(), b:2});
+  let p_ro = b_ro.as_mut();
+  p_ro
 }
 
 #[tokio::main]
@@ -71,15 +77,17 @@ async fn main() {
     println!("rust_obj.b:{}", rust_obj.b);
     println!("simple:{}", simple);
 
-    // let rust_object_point = simple_dll_function_return_struct();
-    // println!("rust_object:{}, {}", (*rust_object_point).a, (*rust_object_point).b);
-    // libc::free(rust_object_point as *mut c_void);
+    if cfg!(reallink) {
+      let rust_object_point = simple_dll_function_return_struct();
+      println!("rust_object:{}, {}", (*rust_object_point).a, (*rust_object_point).b);
+      libc::free(rust_object_point as *mut c_void);
 
-    // let char_arr_object_point = simple_dll_function_return_char_arr();
-    // let a_string = CString::from(CStr::from_ptr((*char_arr_object_point).a));
-    
-    // println!("rust_object:{:?}", a_string);
-    // libc::free(char_arr_object_point as *mut c_void);
+      let char_arr_object_point = simple_dll_function_return_char_arr();
+      let a_string = CString::from(CStr::from_ptr((*char_arr_object_point).a));
+      
+      println!("rust_object:{:?}", a_string);
+      libc::free(char_arr_object_point as *mut c_void);
+    }
   }
   println!("{:?}", System::name());
   let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/mp41000.db"));

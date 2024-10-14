@@ -8,4 +8,6 @@ fn main() {
   } else {
     println!("cargo::rustc-cfg=mocklink");
   }
+  println!("cargo::rustc-check-cfg=cfg(reallink)");
+  println!("cargo::rustc-check-cfg=cfg(mocklink)");
 }

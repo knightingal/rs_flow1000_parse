@@ -27,7 +27,7 @@ extern { }
 extern { }
 
 #[cfg(mocklink)]
-fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32 {
+fn frame_decode_with_param(_: *const c_char, _: *const c_char) -> i32 {
   return 0;
 }
 
@@ -129,11 +129,20 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
     (video_name, img_name)
   };
 
+  #[cfg(reallink)]
   unsafe {
     let video_name = CString::new(video_name).unwrap();
     let img_name = CString::new(image_name).unwrap();
-    frame_decode_with_param( video_name.as_ptr(), img_name.as_ptr());
+    frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
   }
+
+  #[cfg(mocklink)]
+  {
+    let video_name = CString::new(video_name).unwrap();
+    let img_name = CString::new(image_name).unwrap();
+    frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
+  }
+
 
   StatusCode::OK
 }
