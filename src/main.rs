@@ -96,7 +96,7 @@ async fn main() {
   println!("db_path:{}", db_path_env);
 
   let lite_conn = Box::new(Connection::open(db_path_env).unwrap());
-  let is_linux = Box::new(System::name().unwrap().contains("Linux"));
+  let is_linux = Box::new(System::name().unwrap().contains("Linux") || System::name().unwrap() == "Deepin") ;
   unsafe {
     SQLITE_CONN = Some(Box::leak(lite_conn));
     IS_LINUX = Some(Box::leak(is_linux));
