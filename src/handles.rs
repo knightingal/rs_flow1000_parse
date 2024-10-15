@@ -219,7 +219,14 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
 
   for duplicate_entity in &mut duplicate_entity_list {
     let mut stmt = conn1.prepare(
-      "select id, video_file_name, cover_file_name, dir_path, base_index from video_info where designation_char=:char and designation_num=:num "
+      r"select 
+        id, video_file_name, cover_file_name, 
+        dir_path, base_index, rate,
+        video_size, width, height,duration,frame_rate,video_frame_count
+      from 
+        video_info 
+      where 
+        designation_char=:char and designation_num=:num "
     ).unwrap();
 
     let selected_video:Vec<VideoEntity> = stmt.query_map(
@@ -234,13 +241,13 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
         designation_num: String::new(),
         dir_path: row.get_unwrap(3),
         base_index: row.get_unwrap(4), 
-        video_size: Option::Some(0),
-        rate: Option::None,
-        height:0,
-        width: 0,
-        frame_rate: 0,
-        video_frame_count: 0,
-        duration: 0,
+        video_size: row.get_unwrap("video_size"),
+        rate: row.get_unwrap("rate"),
+        height:row.get_unwrap("height"),
+        width: row.get_unwrap("width"),
+        frame_rate: row.get_unwrap("frame_rate"),
+        video_frame_count: row.get_unwrap("video_frame_count"),
+        duration: row.get_unwrap("duration"),
       })}).unwrap().map(|it| it.unwrap()).collect();
     duplicate_entity.video_info_list = selected_video;
   }
@@ -600,7 +607,8 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
     if !exist {
       let _ = sqlite_conn.execute("insert into video_info(
         dir_path, base_index, video_file_name, cover_file_name, designation_char, 
-        designation_num, video_size, width, height,duration,frame_rate,video_frame_count
+        designation_num, 
+        video_size, width, height,duration,frame_rate,video_frame_count
       ) values (
         :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, 
         :video_size, :width, :height,:duration,:frame_rate,:video_frame_count
