@@ -1,6 +1,7 @@
 use std::ffi::{c_char, c_void, CString};
 
 use serde_derive::Serialize;
+use std::ptr::null_mut;
 
 
 #[cfg(reallink)]
