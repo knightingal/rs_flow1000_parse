@@ -54,4 +54,4 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * trans video steam
 
-* api version down to dir level
+* ~~api version down to dir level~~
