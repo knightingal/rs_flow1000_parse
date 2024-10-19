@@ -3,9 +3,8 @@ use std::{cmp::Ordering, ffi::{c_char, CString}, fs::{self, DirEntry}, thread};
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
 use rusqlite::{named_params, Connection};
-use serde_derive::Serialize;
 
-use crate::{designation::parse_designation, get_sqlite_connection, video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}};
+use crate::{designation::parse_designation, entity::*, get_sqlite_connection, video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}};
 
 
 pub static mut SQLITE_CONN: Option<&Connection> = None;
@@ -722,65 +721,4 @@ pub fn parse_and_update_meta_info_by_id(id: i32,file_name: String) {
     ":video_frame_count": meta_info.video_frame_count, 
     ":id": id
   });
-}
-
-#[derive(Serialize, Clone)]
-pub struct VideoEntity {
-  pub id: u32,
-  #[serde(rename = "videoFileName")]
-  pub video_file_name: String,
-  #[serde(rename = "coverFileName")]
-  pub cover_file_name: String,
-  #[serde(rename = "designationChar")]
-  pub designation_char: String,
-  #[serde(rename = "designationNum")]
-  pub designation_num: String,
-  #[serde(rename = "dirPath")]
-  pub dir_path: String,
-  #[serde(rename = "baseIndex")]
-  pub base_index: u32,
-  #[serde(rename = "rate")]
-  pub rate: Option<u32>,
-  #[serde(rename = "videoSize")]
-  pub video_size: Option<u64>,
-  pub width: i32,
-  pub height: i32,
-  #[serde(rename = "frameRate")]
-  pub frame_rate: i32,
-  #[serde(rename = "videoFrameCount")]
-  pub video_frame_count: i32,
-  pub duration: i32,
-}
-
-
-#[derive(Serialize, Clone)]
-pub struct DuplicateCoverEntity {
-  count: u32,
-  #[serde(rename = "coverFileName")]
-  cover_file_name: String,
-  #[serde(rename = "videoInfo")]
-  video_info_list: Vec<VideoEntity>,
-}
-
-#[derive(Serialize, Clone)]
-pub struct DuplicateEntity {
-  count: u32,
-  #[serde(rename = "designationChar")]
-  designation_char: String,
-  #[serde(rename = "designationNum")]
-  designation_num: String,
-
-  #[serde(rename = "videoInfo")]
-  video_info_list: Vec<VideoEntity>,
-}
-
-#[derive(Serialize)]
-pub struct MountConfig {
-  pub id: u32,
-  #[serde(rename = "baseDir")]
-  pub dir_path: String,
-  #[serde(rename = "urlPrefix")]
-  pub url_prefix: String,
-  #[serde(rename = "apiVersion")]
-  pub api_version: u32,
 }

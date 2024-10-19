@@ -13,6 +13,7 @@ use sysinfo::System;
 mod test_main;
 mod test_aes;
 mod handles;
+mod entity;
 mod business_handles;
 mod test_designation;
 mod designation;

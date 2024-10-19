@@ -5,7 +5,7 @@ use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
 use rusqlite::{named_params, Connection};
 
-use crate::handles::{MountConfig, VideoEntity, IS_LINUX, SQLITE_CONN};
+use crate::{entity::*, handles::{IS_LINUX, SQLITE_CONN}};
 
 fn get_sqlite_connection() -> &'static Connection {
   let conn: &Connection = unsafe {
