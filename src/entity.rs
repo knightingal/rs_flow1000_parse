@@ -45,7 +45,6 @@ pub struct DuplicateEntity {
   pub designation_char: String,
   #[serde(rename = "designationNum")]
   pub designation_num: String,
-
   #[serde(rename = "videoInfo")]
   pub video_info_list: Vec<VideoEntity>,
 }
@@ -59,4 +58,19 @@ pub struct MountConfig {
   pub url_prefix: String,
   #[serde(rename = "apiVersion")]
   pub api_version: u32,
+}
+
+#[derive(Serialize)]
+pub struct TagEntity {
+  pub id: u32,
+  pub tab: String,
+}
+
+#[derive(Serialize)]
+pub struct VideoTagEntity {
+  pub id: u32,
+  #[serde(rename = "tagId")]
+  pub tag_id: u32,
+  #[serde(rename = "videoId")]
+  pub video_id: u32,
 }
