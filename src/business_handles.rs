@@ -191,9 +191,15 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
 pub async fn add_tag(tag_name: &String) -> (StatusCode, HeaderMap, Json<TagEntity>) {
 
   let sqlite_conn = get_sqlite_connection();
-  // sqlite_conn.execute("insert into ", params)
 
-  let tag_entity = TagEntity {id: 0, tag: String::from("1") };
+  let _ = sqlite_conn.execute("insert into tag (tag) values (:tag)", named_params! {":tag": tag_name});
+
+  let tag_entity: TagEntity = sqlite_conn.query_row("select id, tag from tag where tag=:tag", named_params! {":tag": tag_name}, |row| {
+    Result::Ok(
+      TagEntity {id: row.get_unwrap("id"), tag: row.get_unwrap("tag")}
+    )
+  }).unwrap();
+  
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
