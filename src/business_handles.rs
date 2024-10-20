@@ -192,7 +192,14 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
 
   let sqlite_conn = get_sqlite_connection();
 
-  let _ = sqlite_conn.execute("insert into tag (tag) values (:tag)", named_params! {":tag": tag_name});
+  let count: usize = sqlite_conn.query_row("select count(id) from tag where tag = :tag", named_params! {":tag": tag_name}, |row| {
+    Result::Ok(row.get_unwrap(0))
+  }).unwrap();
+
+  if count == 0 {
+    let _ = sqlite_conn.execute("insert into tag (tag) values (:tag)", named_params! {":tag": tag_name});
+  }
+
 
   let tag_entity: TagEntity = sqlite_conn.query_row("select id, tag from tag where tag=:tag", named_params! {":tag": tag_name}, |row| {
     Result::Ok(
