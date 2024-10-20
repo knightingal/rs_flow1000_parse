@@ -63,7 +63,7 @@ pub struct MountConfig {
 #[derive(Serialize)]
 pub struct TagEntity {
   pub id: u32,
-  pub tab: String,
+  pub tag: String,
 }
 
 #[derive(Serialize)]

@@ -188,6 +188,19 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
+pub async fn add_tag(tag_name: &String) -> (StatusCode, HeaderMap, Json<TagEntity>) {
+
+  let sqlite_conn = get_sqlite_connection();
+  // sqlite_conn.execute("insert into ", params)
+
+  let tag_entity = TagEntity {id: 0, tag: String::from("1") };
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+
+  (StatusCode::OK, header, Json(tag_entity) )
+}
+
 fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
   let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
