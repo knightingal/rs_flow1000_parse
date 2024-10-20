@@ -91,7 +91,7 @@ async fn main() {
     }
   }
   println!("{:?}", System::name());
-  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/mp41000.db"));
+  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/source/keys/mp41000.db"));
   let use_mysql = env::var("USE_MYSQL").map_or_else(|_|false, |v|v == "true");
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
