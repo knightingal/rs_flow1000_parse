@@ -188,7 +188,7 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
-pub async fn add_tag(tag_name: String) -> (StatusCode, HeaderMap, Json<TagEntity>) {
+pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
 
   let sqlite_conn = get_sqlite_connection();
 
