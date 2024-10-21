@@ -214,6 +214,24 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   (StatusCode::OK, header, Json(tag_entity))
 }
 
+pub async fn query_tags() -> (StatusCode, HeaderMap, Json<Vec<TagEntity>>) {
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn.prepare("select id, tag from tag").unwrap();
+
+  let tags: Vec<TagEntity> = stmt.query_map({}, |row| {
+    Result::Ok(
+      TagEntity {id: row.get_unwrap("id"), tag: row.get_unwrap("tag")}
+    )
+  }).unwrap().map(|it| it.unwrap()).collect();
+
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+
+  (StatusCode::OK, header, Json(tags))
+}
+
 fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
   let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
