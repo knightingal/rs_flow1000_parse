@@ -1,5 +1,5 @@
 use axum::{extract::Path, routing::{get, post}, Json, Router};
-use business_handles::{add_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, video_info_handler, video_rate};
+use business_handles::{add_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, video_info_handler, video_rate};
 use handles::{
   all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, SQLITE_CONN
 };
@@ -127,7 +127,8 @@ async fn main() {
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/video-rate/:id/:rate", post(video_rate))
-    .route("/add-tag/:tag", post(add_tag));
+    .route("/add-tag/:tag", post(add_tag))
+    .route("/query-tags", get(query_tags));
     // .with_state(pool)
     // ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
