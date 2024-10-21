@@ -1,5 +1,5 @@
 
-use std::{cmp::Ordering, fs::{self, DirEntry}, future::Future, process::Output};
+use std::{cmp::Ordering, fs::{self, DirEntry}, future::Future, pin::Pin, task::{Context, Poll}};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
@@ -215,7 +215,17 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
 }
 
 pub fn query_tags() -> impl Future<Output = (StatusCode, HeaderMap, Json<Vec<TagEntity>>)> {
-  async {
+  QueryTagsFuture {}
+}
+
+struct QueryTagsFuture {
+
+}
+
+impl Future for QueryTagsFuture {
+  type Output = (StatusCode, HeaderMap, Json<Vec<TagEntity>>);
+
+  fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
     let sqlite_conn = get_sqlite_connection();
 
     let mut stmt = sqlite_conn.prepare("select id, tag from tag").unwrap();
@@ -229,8 +239,7 @@ pub fn query_tags() -> impl Future<Output = (StatusCode, HeaderMap, Json<Vec<Tag
     let mut header = HeaderMap::new();
     header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
     header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-
-    (StatusCode::OK, header, Json(tags))
+    Poll::Ready((StatusCode::OK, header, Json(tags)))
   }
 }
 
