@@ -60,7 +60,7 @@ pub struct MountConfig {
   pub api_version: u32,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct TagEntity {
   pub id: u32,
   pub tag: String,

@@ -1,9 +1,10 @@
 
-use std::{cmp::Ordering, fs::{self, DirEntry}, future::Future, pin::Pin, task::{Context, Poll}};
+use std::{cmp::Ordering, fs::{self, DirEntry}, future::Future, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}, thread};
 
 use axum::{extract::Path, Json};
 use hyper::{HeaderMap, StatusCode};
 use rusqlite::{named_params, Connection};
+use tokio::task;
 
 use crate::{entity::*, handles::{IS_LINUX, SQLITE_CONN}};
 
@@ -188,7 +189,7 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
-pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
+pub async fn add_tag(Path(tag_name): Path<String>) -> Json<TagEntity> {
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -211,35 +212,53 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
 
-  (StatusCode::OK, header, Json(tag_entity))
+  Json(tag_entity)
 }
 
 pub fn query_tags() -> QueryTagsFuture {
-  QueryTagsFuture {}
+  QueryTagsFuture { st: Arc::new(Mutex::new(St{done: false, reps: Json(vec![])}))}
 }
 
 pub struct QueryTagsFuture {
+  st: Arc<Mutex<St>>
+}
 
+struct St {
+  done: bool,
+  reps: Json<Vec<TagEntity>>,
 }
 
 impl Future for QueryTagsFuture {
-  type Output = (StatusCode, HeaderMap, Json<Vec<TagEntity>>);
+  type Output = Json<Vec<TagEntity>>;
 
-  fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
-    let sqlite_conn = get_sqlite_connection();
+  fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
+    let st = self.st.lock().unwrap();
+    if st.done == true {
+      Poll::Ready(st.reps.clone())
+    } else {
+      let st = self.st.clone();
+      let waker = ctx.waker().clone();
 
-    let mut stmt = sqlite_conn.prepare("select id, tag from tag").unwrap();
+      task::spawn( async move {
+        let sqlite_conn = get_sqlite_connection();
 
-    let tags: Vec<TagEntity> = stmt.query_map({}, |row| {
-      Result::Ok(
-        TagEntity {id: row.get_unwrap("id"), tag: row.get_unwrap("tag")}
-      )
-    }).unwrap().map(|it| it.unwrap()).collect();
+        let mut stmt = sqlite_conn.prepare("select id, tag from tag").unwrap();
 
-    let mut header = HeaderMap::new();
-    header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-    header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
-    Poll::Ready((StatusCode::OK, header, Json(tags)))
+        let tags: Vec<TagEntity> = stmt.query_map({}, |row| {
+          Result::Ok(
+            TagEntity {id: row.get_unwrap("id"), tag: row.get_unwrap("tag")}
+          )
+        }).unwrap().map(|it| it.unwrap()).collect();
+        let mut st = st.lock().unwrap();
+        st.done = true;
+        let json = Json(tags);
+        // let resp: hyper::Response<axum::body::Body> = json.into_response();
+        // let b = resp.boxed_unsync();
+        st.reps = json;
+        waker.wake();
+      });
+      Poll::Pending
+    }
   }
 }
 
