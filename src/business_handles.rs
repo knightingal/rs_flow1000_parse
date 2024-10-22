@@ -214,11 +214,11 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   (StatusCode::OK, header, Json(tag_entity))
 }
 
-pub fn query_tags() -> impl Future<Output = (StatusCode, HeaderMap, Json<Vec<TagEntity>>)> {
+pub fn query_tags() -> QueryTagsFuture {
   QueryTagsFuture {}
 }
 
-struct QueryTagsFuture {
+pub struct QueryTagsFuture {
 
 }
 
