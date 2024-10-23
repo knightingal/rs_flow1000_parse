@@ -216,7 +216,7 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> Json<TagEntity> {
 }
 
 pub fn query_tags() -> QueryTagsFuture {
-  QueryTagsFuture { st: Arc::new(Mutex::new(St{done: false, reps: Json(vec![])}))}
+  QueryTagsFuture { st: Arc::new(Mutex::new(St{done: false, reps: vec![]}))}
 }
 
 pub struct QueryTagsFuture {
@@ -225,7 +225,7 @@ pub struct QueryTagsFuture {
 
 struct St {
   done: bool,
-  reps: Json<Vec<TagEntity>>,
+  reps: Vec<TagEntity>,
 }
 
 impl Future for QueryTagsFuture {
@@ -234,7 +234,7 @@ impl Future for QueryTagsFuture {
   fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
     let st = self.st.lock().unwrap();
     if st.done == true {
-      Poll::Ready(st.reps.clone())
+      Poll::Ready(Json(st.reps.clone()))
     } else {
       let st = self.st.clone();
       let waker = ctx.waker().clone();
@@ -251,10 +251,7 @@ impl Future for QueryTagsFuture {
         }).unwrap().map(|it| it.unwrap()).collect();
         let mut st = st.lock().unwrap();
         st.done = true;
-        let json = Json(tags);
-        // let resp: hyper::Response<axum::body::Body> = json.into_response();
-        // let b = resp.boxed_unsync();
-        st.reps = json;
+        st.reps = tags;
         waker.wake();
       });
       Poll::Pending
