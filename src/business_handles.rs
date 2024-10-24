@@ -229,12 +229,15 @@ struct St {
 }
 
 impl Future for QueryTagsFuture {
-  type Output = Json<Vec<TagEntity>>;
+  type Output = (StatusCode, HeaderMap, Json<Vec<TagEntity>>);
 
   fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
     let st = self.st.lock().unwrap();
     if st.done == true {
-      Poll::Ready(Json(st.reps.clone()))
+      let mut header = HeaderMap::new();
+      header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+      header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
+      Poll::Ready((StatusCode::OK, header, Json(st.reps.clone())))
     } else {
       let st = self.st.clone();
       let waker = ctx.waker().clone();
