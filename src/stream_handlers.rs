@@ -71,15 +71,12 @@ impl futures_core::Stream for FileStream {
   ) -> std::task::Poll<Option<Self::Item>> {
     let mut buf = [0u8; 1024];
     let read_result = self.file.read(&mut buf);
-    if read_result.is_ok() {
-      let read_len = read_result.unwrap();
-      if read_len > 0 {
-        return std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&buf).slice(0..read_len))));
-      } else {
-        return std::task::Poll::Ready(None);
-      }
-    } else {
-      return std::task::Poll::Ready(None);
+    match read_result {
+      Ok(read_len) => match read_len > 0 {
+        true => std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&buf).slice(0..read_len)))),
+        false => std::task::Poll::Ready(None),
+      },
+      Err(_) => std::task::Poll::Ready(None),
     }
   }
 }
