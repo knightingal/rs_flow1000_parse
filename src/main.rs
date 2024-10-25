@@ -1,4 +1,4 @@
-use axum::{extract::Path, routing::{get, post}, Json, Router};
+use axum::{body::Bytes, extract::Path, routing::{get, post}, Json, Router};
 use business_handles::{add_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, video_info_handler, video_rate};
 use handles::{
   all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, SQLITE_CONN
@@ -6,7 +6,10 @@ use handles::{
 use hyper::StatusCode;
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future,};
+use stream_handlers::mock_stream_hander;
+use tower_http::trace::TraceLayer;
+use tracing::Span;
+use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future, time::Duration,};
 
 use sysinfo::System;
 
@@ -17,6 +20,7 @@ mod entity;
 mod business_handles;
 mod test_designation;
 mod designation;
+mod stream_handlers;
 mod video_name_util;
 
 #[repr(C)]
@@ -128,7 +132,15 @@ async fn main() {
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/video-rate/:id/:rate", post(video_rate))
     .route("/add-tag/:tag", post(add_tag))
-    .route("/query-tags", get(query_tags));
+    .route("/query-tags", get(query_tags))
+
+    // demo
+    .route("/mock-steam", get(mock_stream_hander))
+    .layer(TraceLayer::new_for_http().on_body_chunk(
+      |chunk: &Bytes, _latency: Duration, _span: &Span| {
+          tracing::debug!("streaming {} bytes", chunk.len());
+      },
+  ));
     // .with_state(pool)
     // ;
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8082").await.unwrap();
@@ -161,6 +173,8 @@ fn root() -> impl Future<Output = &'static str> {
       .route("/video-rate/:id/:rate", post(video_rate))
       .route("/add-tag/:tag", post(add_tag))
       .route("/query-tags", get(query_tags));
+
+      .route("/mock-steam", get(mock_stream_hander))
       
       github.com 140.82.116.4
       github.githubassets.com 185.199.110.154,185.199.111.154,185.199.109.154,185.199.108.154
