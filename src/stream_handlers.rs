@@ -57,7 +57,7 @@ struct FileStream {
 
 impl FileStream {
   fn new() -> Self {
-    let file = File::open("Cargo.toml").unwrap();
+    let file = File::open("/home/knightingal/source/jflow1000-server/src/main/java/org/nanking/knightingal/controller/ApkConfigController.java").unwrap();
     FileStream { file }
   }
 }
