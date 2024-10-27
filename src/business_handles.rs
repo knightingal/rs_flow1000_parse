@@ -189,7 +189,7 @@ pub async fn video_rate(Path((id, rate)): Path<(u32, u32)>) -> (StatusCode, Head
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
-pub async fn add_tag(Path(tag_name): Path<String>) -> Json<TagEntity> {
+pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -211,8 +211,9 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> Json<TagEntity> {
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert("content-type", "application/json; charset=utf-8".parse().unwrap());
 
-  Json(tag_entity)
+  (StatusCode::OK, header, Json(tag_entity))
 }
 
 pub fn query_tags() -> QueryTagsFuture {
