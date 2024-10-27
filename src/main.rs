@@ -174,9 +174,11 @@ fn root() -> impl Future<Output = &'static str> {
       .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
       .route("/video-rate/:id/:rate", post(video_rate))
       .route("/add-tag/:tag", post(add_tag))
-      .route("/query-tags", get(query_tags));
+      .route("/query-tags", get(query_tags))
 
       .route("/mock-steam", get(mock_stream_hander))
+      .route("/file-steam", get(file_stream_hander))
+      .route("/demo.mp4", get(video_stream_hander));
       
       github.com 140.82.116.4
       github.githubassets.com 185.199.110.154,185.199.111.154,185.199.109.154,185.199.108.154
