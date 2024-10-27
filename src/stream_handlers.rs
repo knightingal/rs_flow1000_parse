@@ -1,7 +1,7 @@
 //! Interface for stream.
 //!
 //! This module contains basic code to investigate and validate stream response based axum 
-use std::{fs::File, io::Read};
+use std::{env, fs::File, io::Read};
 
 use axum::{
   body::{Body, Bytes},
@@ -104,7 +104,9 @@ struct VideoStream {
 
 impl VideoStream {
   fn new() -> Self {
-    let file = File::open("video-path.mp4").unwrap();
+
+    let db_path_env = env::var("DEMO_VIDEO").unwrap();
+    let file = File::open(db_path_env).unwrap();
     Self { file }
   }
 }
