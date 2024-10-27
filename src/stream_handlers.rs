@@ -1,3 +1,6 @@
+//! Interface for stream.
+//!
+//! This module contains basic code to investigate and validate stream response based axum 
 use std::{fs::File, io::Read};
 
 use axum::{
