@@ -193,11 +193,10 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
 
   let sqlite_conn = get_sqlite_connection();
 
-  let count: usize = sqlite_conn.query_row("select count(id) from tag where tag = :tag", named_params! {":tag": tag_name}, |row| {
-    Result::Ok(row.get_unwrap(0))
-  }).unwrap();
+  let mut stmt = sqlite_conn.prepare("select count(id) from tag where tag = :tag").unwrap();
+  let exist = stmt.exists(named_params! {":tag": tag_name}).unwrap_or(false);
 
-  if count == 0 {
+  if !exist {
     let _ = sqlite_conn.execute("insert into tag (tag) values (:tag)", named_params! {":tag": tag_name});
   }
 
