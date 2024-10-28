@@ -1,12 +1,22 @@
 //! Interface for stream.
 //!
-//! This module contains basic code to investigate and validate stream response based axum 
-use std::{env, fs::File, io::{Read, Seek}};
+//! This module contains basic code to investigate and validate stream response based axum
+use std::{
+  env,
+  fs::File,
+  io::{Read, Seek},
+};
 
 use axum::{
-  body::{Body, Bytes}, extract::Request, response::Response, Error
+  body::{Body, Bytes},
+  extract::Request,
+  response::Response,
+  Error,
 };
-use hyper::{header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE}, HeaderMap, StatusCode};
+use hyper::{
+  header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE},
+  HeaderMap, StatusCode,
+};
 
 pub async fn mock_stream_hander() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
@@ -27,32 +37,28 @@ pub async fn file_stream_hander() -> Response {
 }
 
 pub async fn video_stream_hander(req: Request) -> Response {
-
   let db_path_env = env::var("DEMO_VIDEO").unwrap();
   let path = std::path::Path::new(&db_path_env);
-  let file_size = path.metadata().map_or_else(|_| {0}, |m|{m.len()});
+  let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
   // let file_size = 100000u64;
   let range_header = req.headers().get(RANGE);
-  
-  let (start, end, content_length, part) = 
-  match range_header {
+
+  let (start, end, content_length, part) = match range_header {
     Some(range_header) => {
       let (_, value) = range_header.to_str().unwrap().split_once("=").unwrap();
 
       let (start, end) = value.split_once("-").unwrap();
-      let start:u64 = start.parse().unwrap();
-      let end:u64 = end.parse().unwrap_or(file_size - 1);
+      let start: u64 = start.parse().unwrap();
+      let end: u64 = end.parse().unwrap_or(file_size - 1);
       (start, end, file_size - start, true)
     }
-    _ => {
-      (0, file_size - 1, file_size, false)
-    }
+    _ => (0, file_size - 1, file_size, false),
   };
 
   let status_code = match part {
-      true => StatusCode::PARTIAL_CONTENT,
-      false => StatusCode::OK,
-    };
+    true => StatusCode::PARTIAL_CONTENT,
+    false => StatusCode::OK,
+  };
   let mut response_builder = Response::builder().status(status_code);
   let mock_stream = VideoStream::new(start);
 
@@ -61,7 +67,12 @@ pub async fn video_stream_hander(req: Request) -> Response {
   header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
   if part {
-    header.insert(CONTENT_RANGE, format!("bytes {}-{}/{}", start, end, file_size).parse().unwrap());
+    header.insert(
+      CONTENT_RANGE,
+      format!("bytes {}-{}/{}", start, end, file_size)
+        .parse()
+        .unwrap(),
+    );
   }
   *response_builder.headers_mut().unwrap() = header;
   response_builder
@@ -125,14 +136,12 @@ impl futures_core::Stream for FileStream {
   }
 }
 
-
 struct VideoStream {
   file: File,
 }
 
 impl VideoStream {
   fn new(start: u64) -> Self {
-
     let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(db_path_env).unwrap();
     let _ = file.seek(std::io::SeekFrom::Start(start));
