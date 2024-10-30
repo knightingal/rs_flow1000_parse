@@ -9,7 +9,7 @@ use std::{
 
 use axum::{
   body::{Body, Bytes},
-  extract::{Path, Request},
+  extract::Path,
   response::Response,
   Error,
 };
@@ -39,41 +39,43 @@ pub async fn file_stream_hander() -> Response {
     .unwrap()
 }
 
-pub async fn video_stream_hander(      headers: HeaderMap,
+pub async fn video_stream_hander(
+  headers: HeaderMap,
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> Response {
-
   let file_path = if sub_dir.len() > 0 {
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
-  if sub_dir_param.ends_with("/") {
-    sub_dir_param.truncate(sub_dir_param.len() - 1);
-  }
-  let sqlite_conn = get_sqlite_connection();
-  let mut sql = String::from("select id, ");
-  let dir_path_name: &str;
-  unsafe {
-    dir_path_name = if *IS_LINUX.unwrap() {
-      "dir_path"
-    } else {
-      "win_dir_path"
+    let mut sub_dir_param = String::from("/");
+    sub_dir_param += &sub_dir;
+    if sub_dir_param.ends_with("/") {
+      sub_dir_param.truncate(sub_dir_param.len() - 1);
     }
-  }
-  sql += dir_path_name;
-  sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
-  let mount_config = sqlite_conn.query_row(sql.as_str(), named_params! {":id": base_index}, |row| {
-      Ok(MountConfig {
-        id: row.get_unwrap("id"),
-        dir_path: row.get_unwrap(dir_path_name),
-        url_prefix: row.get_unwrap("url_prefix"),
-        api_version: row.get_unwrap("api_version"),
+    let sqlite_conn = get_sqlite_connection();
+    let mut sql = String::from("select id, ");
+    let dir_path_name: &str;
+    unsafe {
+      dir_path_name = if *IS_LINUX.unwrap() {
+        "dir_path"
+      } else {
+        "win_dir_path"
+      }
+    }
+    sql += dir_path_name;
+    sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
+    let mount_config = sqlite_conn
+      .query_row(sql.as_str(), named_params! {":id": base_index}, |row| {
+        Ok(MountConfig {
+          id: row.get_unwrap("id"),
+          dir_path: row.get_unwrap(dir_path_name),
+          url_prefix: row.get_unwrap("url_prefix"),
+          api_version: row.get_unwrap("api_version"),
+        })
       })
-    }).unwrap();
-  let file_path = mount_config.dir_path + sub_dir_param.as_str();
-  file_path
+      .unwrap();
+    let file_path = mount_config.dir_path + sub_dir_param.as_str();
+    file_path
   } else {
-  let db_path_env = env::var("DEMO_VIDEO").unwrap();
-  db_path_env
+    let db_path_env = env::var("DEMO_VIDEO").unwrap();
+    db_path_env
   };
 
   let path = std::path::Path::new(&file_path);
