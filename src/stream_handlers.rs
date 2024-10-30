@@ -9,7 +9,7 @@ use std::{
 
 use axum::{
   body::{Body, Bytes},
-  extract::Request,
+  extract::{Path, Request},
   response::Response,
   Error,
 };
@@ -17,6 +17,9 @@ use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE},
   HeaderMap, StatusCode,
 };
+use rusqlite::named_params;
+
+use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX};
 
 pub async fn mock_stream_hander() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
@@ -36,12 +39,46 @@ pub async fn file_stream_hander() -> Response {
     .unwrap()
 }
 
-pub async fn video_stream_hander(req: Request) -> Response {
+pub async fn video_stream_hander(      headers: HeaderMap,
+  Path((base_index, sub_dir)): Path<(u32, String)>,
+) -> Response {
+
+  let file_path = if sub_dir.len() > 0 {
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+  if sub_dir_param.ends_with("/") {
+    sub_dir_param.truncate(sub_dir_param.len() - 1);
+  }
+  let sqlite_conn = get_sqlite_connection();
+  let mut sql = String::from("select id, ");
+  let dir_path_name: &str;
+  unsafe {
+    dir_path_name = if *IS_LINUX.unwrap() {
+      "dir_path"
+    } else {
+      "win_dir_path"
+    }
+  }
+  sql += dir_path_name;
+  sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
+  let mount_config = sqlite_conn.query_row(sql.as_str(), named_params! {":id": base_index}, |row| {
+      Ok(MountConfig {
+        id: row.get_unwrap("id"),
+        dir_path: row.get_unwrap(dir_path_name),
+        url_prefix: row.get_unwrap("url_prefix"),
+        api_version: row.get_unwrap("api_version"),
+      })
+    }).unwrap();
+  let file_path = mount_config.dir_path + sub_dir_param.as_str();
+  file_path
+  } else {
   let db_path_env = env::var("DEMO_VIDEO").unwrap();
-  let path = std::path::Path::new(&db_path_env);
+  db_path_env
+  };
+
+  let path = std::path::Path::new(&file_path);
   let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
-  // let file_size = 100000u64;
-  let range_header = req.headers().get(RANGE);
+  let range_header = headers.get(RANGE);
 
   let (start, end, content_length, part) = match range_header {
     Some(range_header) => {
@@ -60,7 +97,7 @@ pub async fn video_stream_hander(req: Request) -> Response {
     false => StatusCode::OK,
   };
   let mut response_builder = Response::builder().status(status_code);
-  let mock_stream = VideoStream::new(start);
+  let mock_stream = VideoStream::new(start, file_path);
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -141,9 +178,9 @@ struct VideoStream {
 }
 
 impl VideoStream {
-  fn new(start: u64) -> Self {
-    let db_path_env = env::var("DEMO_VIDEO").unwrap();
-    let mut file = File::open(db_path_env).unwrap();
+  fn new(start: u64, file_path: String) -> Self {
+    // let db_path_env = env::var("DEMO_VIDEO").unwrap();
+    let mut file = File::open(file_path).unwrap();
     let _ = file.seek(std::io::SeekFrom::Start(start));
     Self { file }
   }

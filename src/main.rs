@@ -137,7 +137,7 @@ async fn main() {
     // demo
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
-    .route("/demo.mp4", get(video_stream_hander))
+    .route("/demo/:base_index/*sub_dir", get(video_stream_hander))
     .layer(TraceLayer::new_for_http().on_body_chunk(
       |chunk: &Bytes, _latency: Duration, _span: &Span| {
           tracing::debug!("streaming {} bytes", chunk.len());
