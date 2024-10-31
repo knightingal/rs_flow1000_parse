@@ -6,7 +6,7 @@ use handles::{
 use hyper::StatusCode;
 use rusqlite::Connection;
 use serde_derive::{Deserialize, Serialize};
-use stream_handlers::{file_stream_hander, mock_stream_hander, video_stream_hander};
+use stream_handlers::{file_stream_hander, image_stream_hander, mock_stream_hander, video_stream_hander};
 use tower_http::trace::TraceLayer;
 use tracing::Span;
 use std::{env, ffi::{c_char, c_void, CStr, CString}, future::Future, time::Duration,};
@@ -138,6 +138,7 @@ async fn main() {
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
     .route("/video-stream/:base_index/*sub_dir", get(video_stream_hander))
+    .route("/image-stream/:base_index/*sub_dir", get(image_stream_hander))
     .layer(TraceLayer::new_for_http().on_body_chunk(
       |chunk: &Bytes, _latency: Duration, _span: &Span| {
           tracing::debug!("streaming {} bytes", chunk.len());
