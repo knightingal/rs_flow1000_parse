@@ -82,6 +82,7 @@ fn only_one_matched(src: &String, img_file_name_list: &Vec<&String>, start: usiz
 }
 
 fn sub_string_matched(src: &String, target: &String, start: usize, end: usize) -> bool {
+  println!("parse {} to {}", src, target);
   let target_len = target.chars().count();
 
   for i in 0..target_len {
@@ -89,7 +90,14 @@ fn sub_string_matched(src: &String, target: &String, start: usize, end: usize) -
     let mut src_iter = src.chars().skip(start);
     let mut matched = true;
     for _ in start..end {
-      if src_iter.next().unwrap() != target_iter.next().unwrap()  {
+      let src_iter_opt = src_iter.next();
+      let target_iter_opt = target_iter.next();
+      if src_iter_opt.is_none() || target_iter_opt.is_none() {
+        matched = false;
+        break;
+      }
+
+      if src_iter_opt.unwrap() != target_iter_opt.unwrap()  {
         matched = false;
         break;
       }
