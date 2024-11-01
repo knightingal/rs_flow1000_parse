@@ -7,7 +7,6 @@ use rusqlite::{named_params, Connection};
 use crate::{designation::parse_designation, entity::*, get_sqlite_connection, video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}};
 
 
-pub static mut SQLITE_CONN: Option<&Connection> = None;
 pub static mut IS_LINUX: Option<&bool> = None;
 
 
@@ -576,9 +575,7 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
-  let sqlite_conn = unsafe {
-    SQLITE_CONN.unwrap()
-  };
+  let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn.prepare("select dir_path from mp4_base_dir where id = :id").unwrap();
   let mut dir_path: String = stmt.query_row(named_params! {":id": base_index}, |row| {
@@ -666,9 +663,7 @@ pub async fn init_video_handler(Path((base_index, sub_dir)): Path<(u32, String)>
 }
 
 fn check_exist_by_video_file_name(dir_path: &String, base_index: u32, video_file_name: &String) -> bool {
-  let sqlite_conn = unsafe {
-    SQLITE_CONN.unwrap()
-  };
+  let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(
   "select 
     count(id) 
@@ -690,7 +685,7 @@ fn check_exist_by_video_file_name(dir_path: &String, base_index: u32, video_file
 }
 
 pub fn parse_and_update_meta_info_by_id(id: i32,file_name: String) {
-  let sqlite_conn: &Connection = get_sqlite_connection();
+  let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn.prepare("update 
     video_info 
   set 

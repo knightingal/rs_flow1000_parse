@@ -1,7 +1,7 @@
 use axum::{body::Bytes, extract::Path, routing::{get, post}, Json, Router};
 use business_handles::{add_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, video_info_handler, video_rate};
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX, SQLITE_CONN
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX
 };
 use hyper::StatusCode;
 use rusqlite::Connection;
@@ -100,10 +100,8 @@ async fn main() {
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
-  let lite_conn = Box::new(Connection::open(db_path_env).unwrap());
   let is_linux = Box::new(System::name().unwrap().contains("Linux") || System::name().unwrap() == "Deepin") ;
   unsafe {
-    SQLITE_CONN = Some(Box::leak(lite_conn));
     IS_LINUX = Some(Box::leak(is_linux));
   }
 
@@ -191,10 +189,9 @@ fn root() -> impl Future<Output = &'static str> {
 }
 
 
-fn get_sqlite_connection() -> &'static Connection {
-  let conn: &Connection = unsafe {
-    SQLITE_CONN.unwrap()
-  };
+fn get_sqlite_connection() -> Connection {
+  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/source/keys/mp41000.db"));
+  let conn = Connection::open(db_path_env).unwrap();
   return conn;
 }
 

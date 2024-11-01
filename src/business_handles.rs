@@ -1,10 +1,5 @@
 use std::{
-  cmp::Ordering,
-  fs::{self, DirEntry},
-  future::Future,
-  pin::Pin,
-  sync::{Arc, Mutex},
-  task::{Context, Poll},
+  cmp::Ordering, env, fs::{self, DirEntry}, future::Future, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}
 };
 
 use axum::{extract::Path, Json};
@@ -17,11 +12,12 @@ use tokio::task;
 
 use crate::{
   entity::*,
-  handles::{IS_LINUX, SQLITE_CONN},
+  handles::IS_LINUX,
 };
 
-fn get_sqlite_connection() -> &'static Connection {
-  let conn: &Connection = unsafe { SQLITE_CONN.unwrap() };
+fn get_sqlite_connection() -> Connection {
+  let db_path_env = env::var("DB_PATH").unwrap_or_else(|_|String::from("/home/knightingal/source/keys/mp41000.db"));
+  let conn = Connection::open(db_path_env).unwrap();
   return conn;
 }
 
