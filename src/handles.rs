@@ -102,45 +102,45 @@ pub async fn video_meta_info_handler(Path(sub_dir): Path<String>) -> (StatusCode
 pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
-  let (video_name, image_name):(String, String) = if path.is_file() {
+  let names:  Vec<(String, String)> = if path.is_file() {
     let parent = path.parent().unwrap();
     let video_name = path.file_name().unwrap();
     let image_name = String::from(parent.to_str().unwrap()) + "/" + video_name.to_str().unwrap() + ".png";
-    (sub_dir, image_name)
+    vec![(sub_dir, image_name)]
   } else {
     let ret = fs::read_dir(&sub_dir);
     if ret.is_err() {
       return StatusCode::NOT_FOUND;
     }
-    let file_entry: Option<DirEntry> = ret.unwrap()
+    let file_entrys: Vec<(String, String)> = ret.unwrap()
       .map(|res| res.unwrap())
-      .find(|res| res.file_name().into_string().unwrap().ends_with(".mp4"));
-    if file_entry.is_none() {
-      return StatusCode::NOT_FOUND;
-    }
-
-    let video_name: String = file_entry.unwrap().path().into_os_string().into_string().unwrap();
-
-    println!("{}", video_name);
-    let mut img_name = video_name.clone();
-    img_name.push_str(".png");
-    (video_name, img_name)
+      .filter(|res| res.file_name().into_string().unwrap().ends_with(".mp4"))
+      .map(|f|{
+        let video_name = f.path().into_os_string().into_string().unwrap();
+        let mut img_name = video_name.clone();
+        img_name.push_str(".png");
+        (video_name, img_name)
+      }).collect();
+    file_entrys
   };
 
-  #[cfg(reallink)]
-  unsafe {
-    let video_name = CString::new(video_name).unwrap();
-    let img_name = CString::new(image_name).unwrap();
-    frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
-  }
-
-  #[cfg(mocklink)]
-  {
-    let video_name = CString::new(video_name).unwrap();
-    let img_name = CString::new(image_name).unwrap();
-    frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
-  }
-
+    let names_iter = names.iter();
+    names_iter.for_each(|names| {
+      let video_name = &names.0;
+      let image_name = &names.1;
+      #[cfg(reallink)]
+      unsafe {
+        let video_name = CString::new(video_name.as_str()).unwrap();
+        let img_name = CString::new(image_name.as_str()).unwrap();
+        frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
+      }
+      #[cfg(mocklink)]
+      {
+        let video_name = CString::new(video_name.as_str()).unwrap();
+        let img_name = CString::new(image_name.as_str()).unwrap();
+        frame_decode_with_param(video_name.as_ptr(), img_name.as_ptr());
+      }
+    });
 
   StatusCode::OK
 }
