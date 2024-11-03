@@ -14,7 +14,7 @@ use axum::{
   Error,
 };
 use hyper::{
-  header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE},
+  header::{ACCEPT_RANGES, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE},
   HeaderMap, StatusCode,
 };
 use rusqlite::named_params;
@@ -160,6 +160,7 @@ pub async fn video_stream_hander(
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
   header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
+  header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
   if part {
     header.insert(
       CONTENT_RANGE,
