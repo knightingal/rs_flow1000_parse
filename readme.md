@@ -52,6 +52,6 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~parse video meta info, insert to db~~
 
-* trans video steam
+* ~~trans video steam~~
 
 * ~~api version down to dir level~~
