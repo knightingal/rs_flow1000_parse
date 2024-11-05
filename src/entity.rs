@@ -1,5 +1,3 @@
-
-
 use serde_derive::Serialize;
 #[derive(Serialize, Clone)]
 pub struct VideoEntity {
@@ -28,7 +26,6 @@ pub struct VideoEntity {
   pub video_frame_count: i32,
   pub duration: i32,
 }
-
 
 #[derive(Serialize, Clone)]
 pub struct DuplicateCoverEntity {
@@ -67,10 +64,13 @@ pub struct TagEntity {
   pub tag: String,
 }
 impl Clone for TagEntity {
-  fn clone(&self) -> TagEntity{
+  fn clone(&self) -> TagEntity {
     println!("clone TagEntity");
-    TagEntity{id: self.id, tag: self.tag.clone()}
-  }  
+    TagEntity {
+      id: self.id,
+      tag: self.tag.clone(),
+    }
+  }
 }
 
 #[derive(Serialize)]

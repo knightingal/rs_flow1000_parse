@@ -14,7 +14,9 @@ use axum::{
   Error,
 };
 use hyper::{
-  header::{ACCEPT_RANGES, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE},
+  header::{
+    ACCEPT_RANGES, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE,
+  },
   HeaderMap, StatusCode,
 };
 use rusqlite::named_params;
@@ -39,9 +41,7 @@ pub async fn file_stream_hander() -> Response {
     .unwrap()
 }
 
-pub async fn image_stream_hander(
-  Path((base_index, sub_dir)): Path<(u32, String)>,
-) -> Response {
+pub async fn image_stream_hander(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {
@@ -83,7 +83,6 @@ pub async fn image_stream_hander(
   header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
 
-
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = 0;
   let mock_stream = VideoStream::new(start, file_path);
@@ -92,7 +91,6 @@ pub async fn image_stream_hander(
     .body(Body::from_stream(mock_stream))
     .unwrap()
 }
-
 
 pub async fn video_stream_hander(
   headers: HeaderMap,
