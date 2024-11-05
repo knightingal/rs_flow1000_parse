@@ -284,6 +284,19 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   (StatusCode::OK, header, Json(tag_entity))
 }
 
+pub async fn bind_tag(Path((tag_id, video_id)): Path<(u32, u32)>)-> (StatusCode, HeaderMap) {
+  println!("tag_id:{}, video_id:{}", tag_id, video_id);
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(
+    CONTENT_TYPE,
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header)
+}
+
 pub fn query_tags() -> QueryTagsFuture {
   QueryTagsFuture {
     st: Arc::new(Mutex::new(St {
