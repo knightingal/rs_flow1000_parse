@@ -5,7 +5,7 @@ use axum::{
   Json, Router,
 };
 use business_handles::{
-  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, video_info_handler, video_rate
+  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, query_tags_by_video, video_info_handler, video_rate
 };
 use handles::{
   all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
@@ -175,6 +175,7 @@ async fn main() {
     .route("/query-tags", get(query_tags))
 
     .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
+    .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
     // demo
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
