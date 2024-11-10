@@ -201,32 +201,37 @@ async fn main() {
 fn root() -> impl Future<Output = &'static str> {
   async {
     r###################"
-      .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
-      .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
-      .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
-      .route("/users/name/:name/age/:age", post(create_user))
-      .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
-      .route("/parse-designation-all", get(parse_designation_all_handler))
-      .route("/designation-search/:designation_ori", get(designation_search))
-      .route("/all-duplicate-video", get(all_duplicate_video))
-      .route("/all-duplicate-cover", get(all_duplicate_cover))
-      .route("/video-detail/:id", get(video_detail))
-      .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
-      .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
-      .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
+    .route("/", get(root))
+    .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
+    .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
+    .route("/sync-mysql2sqlite-mount-config", get(sync_mysql2sqlite_mount_config))
+    .route("/users/name/:name/age/:age", post(create_user))
+    .route("/parse-designation/:base_index/*sub_dir", get(parse_designation_handler))
+    .route("/parse-designation-all", get(parse_designation_all_handler))
+    .route("/designation-search/:designation_ori", get(designation_search))
+    .route("/all-duplicate-video", get(all_duplicate_video))
+    .route("/all-duplicate-cover", get(all_duplicate_cover))
+    .route("/video-detail/:id", get(video_detail))
+    .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
+    .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
+    .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
+    // bussiness
+    .route("/mount-config", get(mount_config_handler))
+    .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
+    .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
+    .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
+    .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
+    .route("/video-rate/:id/:rate", post(video_rate))
+    .route("/add-tag/:tag", post(add_tag))
+    .route("/query-tags", get(query_tags))
 
-      .route("/mount-config", get(mount_config_handler))
-      .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
-      .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
-      .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
-      .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
-      .route("/video-rate/:id/:rate", post(video_rate))
-      .route("/add-tag/:tag", post(add_tag))
-      .route("/query-tags", get(query_tags))
-
-      .route("/mock-steam", get(mock_stream_hander))
-      .route("/file-steam", get(file_stream_hander))
-      .route("/demo.mp4", get(video_stream_hander));
+    .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
+    .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
+    // demo
+    .route("/mock-steam", get(mock_stream_hander))
+    .route("/file-steam", get(file_stream_hander))
+    .route("/video-stream/:base_index/*sub_dir", get(video_stream_hander))
+    .route("/image-stream/:base_index/*sub_dir", get(image_stream_hander))
       
       github.com 140.82.116.4
       github.githubassets.com 185.199.110.154,185.199.111.154,185.199.109.154,185.199.108.154
