@@ -248,7 +248,7 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
-    .prepare("select count(id) from tag where tag = :tag")
+    .prepare("select tag from tag where tag = :tag")
     .unwrap();
   let exist = stmt
     .exists(named_params! {":tag": tag_name})
