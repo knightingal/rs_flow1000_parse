@@ -65,7 +65,6 @@ pub struct TagEntity {
 }
 impl Clone for TagEntity {
   fn clone(&self) -> TagEntity {
-    println!("clone TagEntity");
     TagEntity {
       id: self.id,
       tag: self.tag.clone(),
