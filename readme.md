@@ -59,3 +59,5 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 * statistic interface
 
 * tab mark
+
+* video snapshot interface
