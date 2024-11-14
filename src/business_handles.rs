@@ -335,6 +335,20 @@ pub async fn query_tags_by_video(Path(video_id): Path<u32> )-> (StatusCode, Head
   (StatusCode::OK, header, Json::from(tag_vec))
 }
 
+pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
+  let statistic = StatisticEntity{video_size:0, cover_size:0};
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(
+    CONTENT_TYPE,
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header, Json::from(statistic))
+
+}
+
 pub fn query_tags() -> QueryTagsFuture {
   QueryTagsFuture {
     st: Arc::new(Mutex::new(St {

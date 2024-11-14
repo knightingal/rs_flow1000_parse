@@ -80,3 +80,11 @@ pub struct VideoTagEntity {
   #[serde(rename = "videoId")]
   pub video_id: u32,
 }
+
+#[derive(Serialize)]
+pub struct StatisticEntity {
+  #[serde(rename = "videoSize")]
+  pub video_size: u32,
+  #[serde(rename = "coverSize")]
+  pub cover_size: u32,
+}
