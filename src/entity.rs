@@ -84,7 +84,7 @@ pub struct VideoTagEntity {
 #[derive(Serialize)]
 pub struct StatisticEntity {
   #[serde(rename = "videoSize")]
-  pub video_size: u32,
+  pub video_size: u64,
   #[serde(rename = "coverSize")]
-  pub cover_size: u32,
+  pub cover_size: u64,
 }
