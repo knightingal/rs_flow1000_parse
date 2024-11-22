@@ -496,32 +496,45 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
   let mut stmt = sqlite_conn
     .prepare(
       "select 
-    id, video_file_name, base_index, dir_path
+    id, video_file_name, base_index, dir_path, cover_file_name
   from 
     video_info 
   where 
-    video_size is null",
+    cover_size is null",
     )
     .unwrap();
-  let file_names: Vec<(i32, String)> = stmt
+  let file_names: Vec<(i32, String, String)> = stmt
     .query_map(named_params! {}, |row| {
-      let file_name: String = row.get_unwrap("video_file_name");
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
       let dir_path: String = row.get_unwrap("dir_path");
       let base_index: u32 = row.get_unwrap("base_index");
       let id: i32 = row.get_unwrap("id");
-      println!("get file_name:{}", file_name);
-      let mut full_name = mount_config_list
+      println!("get file_name:{}, {}", video_file_name, cover_file_name);
+      let mut video_full_name = mount_config_list
         .iter()
         .find(|it| it.id == base_index)
         .unwrap()
         .dir_path
         .clone();
-      full_name.push_str(&dir_path);
-      full_name.push('/');
-      full_name.push_str(&file_name);
-      println!("{}", full_name);
+      video_full_name.push_str(&dir_path);
+      video_full_name.push('/');
+      video_full_name.push_str(&video_file_name);
 
-      Result::Ok((id, full_name))
+      let mut cover_full_name = mount_config_list
+        .iter()
+        .find(|it| it.id == base_index)
+        .unwrap()
+        .dir_path
+        .clone();
+      cover_full_name.push_str(&dir_path);
+      cover_full_name.push('/');
+      cover_full_name.push_str(&cover_file_name);
+
+
+      println!("{}", cover_full_name);
+
+      Result::Ok((id, video_full_name, cover_full_name))
     })
     .unwrap()
     .map(|it| it.unwrap())
@@ -530,8 +543,8 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
   thread::spawn(move || {
     println!("thread process");
 
-    file_names.into_iter().for_each(|(id, file_name)| {
-      parse_and_update_meta_info_by_id(id, file_name);
+    file_names.into_iter().for_each(|(id, video_file_name, cover_file_name)| {
+      parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
     });
   });
 
@@ -808,7 +821,7 @@ fn check_exist_by_video_file_name(
   count != 0
 }
 
-pub fn parse_and_update_meta_info_by_id(id: i32, file_name: String) {
+pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_file_name: String) {
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn
     .prepare(
@@ -825,21 +838,31 @@ pub fn parse_and_update_meta_info_by_id(id: i32, file_name: String) {
     id=:id",
     )
     .unwrap();
-  let path = std::path::Path::new(&file_name);
+
+
+  let path = std::path::Path::new(&video_file_name);
   let exist = path.exists();
   if !exist {
     return;
   }
-  let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+  let video_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
-  println!("parse file:{}", file_name);
+  let path = std::path::Path::new(&cover_file_name);
+  let exist = path.exists();
+  if !exist {
+    return;
+  }
+  let cover_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
-  let meta_info = parse_video_meta_info(&file_name);
+  println!("parse file:{}", video_file_name);
+
+  let meta_info = parse_video_meta_info(&video_file_name);
   let _ = stmt.execute(named_params! {
     ":width": meta_info.width,
     ":height": meta_info.height,
     ":frame_rate": meta_info.frame_rate,
-    ":video_size": file_size,
+    ":video_size": video_file_size,
+    ":cover_size": cover_file_size,
     ":duration":meta_info.duratoin,
     ":video_frame_count": meta_info.video_frame_count,
     ":id": id
