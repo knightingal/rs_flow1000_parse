@@ -18,6 +18,8 @@ pub struct VideoEntity {
   pub rate: Option<u32>,
   #[serde(rename = "videoSize")]
   pub video_size: Option<u64>,
+  #[serde(rename = "coverSize")]
+  pub cover_size: Option<u64>,
   pub width: i32,
   pub height: i32,
   #[serde(rename = "frameRate")]
@@ -25,6 +27,28 @@ pub struct VideoEntity {
   #[serde(rename = "videoFrameCount")]
   pub video_frame_count: i32,
   pub duration: i32,
+}
+
+impl VideoEntity {
+  fn new(id: u32, video_file_name: String, cover_file_name: String) -> VideoEntity {
+    VideoEntity {
+      id: id,
+      video_file_name: video_file_name,
+      cover_file_name: cover_file_name,
+      designation_char: String::new(),
+      designation_num: String::new(),
+      dir_path: String::new(),
+      base_index: 0,
+      rate: Option::Some(0),
+      video_size: Option::Some(0),
+      height: 0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
+      cover_size: Option::Some(0),
+    }
+  }
 }
 
 #[derive(Serialize, Clone)]

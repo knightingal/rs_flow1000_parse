@@ -54,6 +54,7 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<Video
           base_index: 0,
           rate: Option::Some(0),
           video_size: Option::Some(0),
+          cover_size: Option::Some(0),
           height: 0,
           width: 0,
           frame_rate: 0,
@@ -204,6 +205,7 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
             designation_num: row.get_unwrap(6),
             rate: Option::None,
             video_size: Option::Some(0),
+            cover_size: Option::Some(0),
             height: 0,
             width: 0,
             frame_rate: 0,
@@ -251,7 +253,7 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
         r"select 
         id, video_file_name, cover_file_name, 
         dir_path, base_index, rate,
-        video_size, width, height,duration,frame_rate,video_frame_count
+        video_size, cover_size, width, height,duration,frame_rate,video_frame_count
       from 
         video_info 
       where 
@@ -275,6 +277,7 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
             dir_path: row.get_unwrap(3),
             base_index: row.get_unwrap(4),
             video_size: row.get_unwrap("video_size"),
+            cover_size: row.get_unwrap("cover_size"),
             rate: row.get_unwrap("rate"),
             height: row.get_unwrap("height"),
             width: row.get_unwrap("width"),
@@ -327,6 +330,7 @@ pub async fn designation_search(
           base_index: row.get_unwrap(4),
           rate: Option::Some(0),
           video_size: Option::Some(0),
+          cover_size: Option::Some(0),
           height: 0,
           width: 0,
           frame_rate: 0,
@@ -414,6 +418,7 @@ pub async fn parse_designation_handler(
           dir_path: String::new(),
           base_index: 0,
           video_size: Option::Some(0),
+          cover_size: Option::Some(0),
           rate: Option::None,
           height: 0,
           width: 0,

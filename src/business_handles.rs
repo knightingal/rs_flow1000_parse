@@ -57,6 +57,7 @@ pub async fn video_info_handler(
           frame_rate: 0,
           video_frame_count: 0,
           duration: 0,
+          cover_size: row.get_unwrap(5),
         })
       },
     )
@@ -225,6 +226,7 @@ pub async fn video_rate(
         base_index: 0,
         rate: row.get_unwrap(3),
         video_size: Option::Some(0),
+        cover_size: Option::Some(0),
         height: 0,
         width: 0,
         frame_rate: 0,
