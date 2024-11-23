@@ -57,7 +57,7 @@ pub async fn video_info_handler(
           frame_rate: 0,
           video_frame_count: 0,
           duration: 0,
-          cover_size: row.get_unwrap(5),
+          cover_size: Some(0),
         })
       },
     )

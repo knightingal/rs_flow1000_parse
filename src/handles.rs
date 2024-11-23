@@ -829,6 +829,7 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
     video_info 
   set 
     video_size = :video_size,
+    cover_size = :cover_size,
     width = :width,
     height = :height,
     frame_rate = :frame_rate,
