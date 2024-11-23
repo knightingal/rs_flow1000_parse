@@ -339,13 +339,16 @@ pub async fn query_tags_by_video(Path(video_id): Path<u32> )-> (StatusCode, Head
 
 pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
   let sqlite_conn = get_sqlite_connection();
-  let mut stmt =sqlite_conn.prepare("select video_size from video_info").unwrap();
-  let sizes: Vec<u64> =  stmt.query_map({}, |row| {
-    Ok(row.get_unwrap("video_size"))
+  let mut stmt =sqlite_conn.prepare("select video_size, cover_size from video_info").unwrap();
+  let sizes: Vec<(u64, u64)> =  stmt.query_map({}, |row| {
+    Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
   }).unwrap().map(|it| it.unwrap()).collect();
 
-  let sum = sizes.into_iter().reduce(|acc, e| acc + e).unwrap();
-  let statistic = StatisticEntity{video_size:sum, cover_size:0};
+  let sum = sizes.into_iter().reduce(|acc, e| (acc.0 + e.0, acc.1 + e.1)).unwrap();
+  let statistic = StatisticEntity{
+    video_size:sum.0, 
+    cover_size:sum.1
+  };
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
