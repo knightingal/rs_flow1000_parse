@@ -56,7 +56,9 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~api version down to dir level~~
 
-* statistic interface
+* ~~statistic interface~~
+
+* move cover file to main partition
 
 * tab mark
 
