@@ -45,10 +45,10 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<Video
       named_params! {":id":id},
       |row| {
         Result::Ok(VideoEntity::new_by_file_name(
-          id, 
-          row.get_unwrap("video_file_name"), 
-          row.get_unwrap("cover_file_name"))
-        )
+          id,
+          row.get_unwrap("video_file_name"),
+          row.get_unwrap("cover_file_name"),
+        ))
       },
     )
     .unwrap();
@@ -173,8 +173,9 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
     .collect();
 
   for duplicate_entity in &mut duplicate_entity_list {
-    let mut stmt = conn1.prepare(
-      "select 
+    let mut stmt = conn1
+      .prepare(
+        "select 
         id, 
         video_file_name, 
         cover_file_name, 
@@ -184,8 +185,9 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         designation_num 
       from 
         video_info 
-      where cover_file_name=:cover_file_name "
-    ).unwrap();
+      where cover_file_name=:cover_file_name ",
+      )
+      .unwrap();
 
     let selected_video: Vec<VideoEntity> = stmt
       .query_map(
@@ -194,14 +196,14 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         },
         |row| {
           Ok(VideoEntity::new_by_for_duplicate_cover(
-            row.get_unwrap(0), 
+            row.get_unwrap(0),
             row.get_unwrap(1),
             row.get_unwrap(2),
-            row.get_unwrap(3), 
-            row.get_unwrap(4), 
+            row.get_unwrap(3),
+            row.get_unwrap(4),
             row.get_unwrap(5),
             row.get_unwrap(6),
-            ))
+          ))
         },
       )
       .unwrap()
@@ -258,7 +260,7 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
           ":num" : &duplicate_entity.designation_num,
         },
         |row| {
-          Ok(VideoEntity::new_for_meta_info( 
+          Ok(VideoEntity::new_for_meta_info(
             row.get_unwrap(0),
             row.get_unwrap(1),
             row.get_unwrap(2),
@@ -389,7 +391,7 @@ pub async fn parse_designation_handler(
       },
       |row| {
         let designation = parse_designation(&row.get_unwrap(1));
-        return Ok(VideoEntity::new_by_for_duplicate_cover( 
+        return Ok(VideoEntity::new_by_for_duplicate_cover(
           row.get_unwrap(0),
           row.get_unwrap(1),
           row.get_unwrap(2),
@@ -503,7 +505,6 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
       cover_full_name.push('/');
       cover_full_name.push_str(&cover_file_name);
 
-
       println!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name))
@@ -515,9 +516,11 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
   thread::spawn(move || {
     println!("thread process");
 
-    file_names.into_iter().for_each(|(id, video_file_name, cover_file_name)| {
-      parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
-    });
+    file_names
+      .into_iter()
+      .for_each(|(id, video_file_name, cover_file_name)| {
+        parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
+      });
   });
 
   StatusCode::OK
@@ -812,7 +815,6 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
     )
     .unwrap();
 
-
   let path = std::path::Path::new(&video_file_name);
   let exist = path.exists();
   if !exist {
@@ -844,5 +846,4 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
 
 pub fn move_cover() {
   let sqlite_conn = get_sqlite_connection();
-
 }

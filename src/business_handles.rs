@@ -41,7 +41,7 @@ pub async fn video_info_handler(
     .query_map(
       named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index},
       |row| {
-        Ok(VideoEntity::new_for_base_info( 
+        Ok(VideoEntity::new_for_base_info(
           row.get_unwrap(0),
           row.get_unwrap(1),
           row.get_unwrap(2),
@@ -296,15 +296,21 @@ pub async fn bind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode
   }
 }
 
-pub async fn query_tags_by_video(Path(video_id): Path<u32> )-> (StatusCode, HeaderMap, Json<Vec<u32>>) {
+pub async fn query_tags_by_video(
+  Path(video_id): Path<u32>,
+) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
     .prepare("select id, tag_id from video_tag where video_id = :video_id")
     .unwrap();
-  let tag_vec: Vec<u32> = stmt.query_map(named_params! {":video_id": video_id}, |row| {
-    Ok(row.get_unwrap("tag_id"))
-  }).unwrap().map(|it| it.unwrap()).collect();
+  let tag_vec: Vec<u32> = stmt
+    .query_map(named_params! {":video_id": video_id}, |row| {
+      Ok(row.get_unwrap("tag_id"))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -318,15 +324,24 @@ pub async fn query_tags_by_video(Path(video_id): Path<u32> )-> (StatusCode, Head
 
 pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
   let sqlite_conn = get_sqlite_connection();
-  let mut stmt =sqlite_conn.prepare("select video_size, cover_size from video_info").unwrap();
-  let sizes: Vec<(u64, u64)> =  stmt.query_map({}, |row| {
-    Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
-  }).unwrap().map(|it| it.unwrap()).collect();
+  let mut stmt = sqlite_conn
+    .prepare("select video_size, cover_size from video_info")
+    .unwrap();
+  let sizes: Vec<(u64, u64)> = stmt
+    .query_map({}, |row| {
+      Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
 
-  let sum = sizes.into_iter().reduce(|acc, e| (acc.0 + e.0, acc.1 + e.1)).unwrap();
-  let statistic = StatisticEntity{
-    video_size:sum.0, 
-    cover_size:sum.1
+  let sum = sizes
+    .into_iter()
+    .reduce(|acc, e| (acc.0 + e.0, acc.1 + e.1))
+    .unwrap();
+  let statistic = StatisticEntity {
+    video_size: sum.0,
+    cover_size: sum.1,
   };
 
   let mut header = HeaderMap::new();
