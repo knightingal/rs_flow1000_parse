@@ -44,23 +44,11 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<Video
       "select id, video_file_name, cover_file_name from video_info where id = :id",
       named_params! {":id":id},
       |row| {
-        Result::Ok(VideoEntity {
-          id: row.get_unwrap("id"),
-          video_file_name: row.get_unwrap("video_file_name"),
-          cover_file_name: row.get_unwrap("cover_file_name"),
-          designation_char: String::new(),
-          designation_num: String::new(),
-          dir_path: String::new(),
-          base_index: 0,
-          rate: Option::Some(0),
-          video_size: Option::Some(0),
-          cover_size: Option::Some(0),
-          height: 0,
-          width: 0,
-          frame_rate: 0,
-          video_frame_count: 0,
-          duration: 0,
-        })
+        Result::Ok(VideoEntity::new_by_file_name(
+          id, 
+          row.get_unwrap("video_file_name"), 
+          row.get_unwrap("cover_file_name"))
+        )
       },
     )
     .unwrap();
@@ -186,7 +174,17 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
 
   for duplicate_entity in &mut duplicate_entity_list {
     let mut stmt = conn1.prepare(
-      "select id, video_file_name, cover_file_name, dir_path, base_index, designation_char, designation_num from video_info where cover_file_name=:cover_file_name "
+      "select 
+        id, 
+        video_file_name, 
+        cover_file_name, 
+        dir_path, 
+        base_index, 
+        designation_char, 
+        designation_num 
+      from 
+        video_info 
+      where cover_file_name=:cover_file_name "
     ).unwrap();
 
     let selected_video: Vec<VideoEntity> = stmt
@@ -195,23 +193,15 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
           ":cover_file_name": &duplicate_entity.cover_file_name
         },
         |row| {
-          Ok(VideoEntity {
-            id: row.get_unwrap(0),
-            video_file_name: row.get_unwrap(1),
-            cover_file_name: row.get_unwrap(2),
-            dir_path: row.get_unwrap(3),
-            base_index: row.get_unwrap(4),
-            designation_char: row.get_unwrap(5),
-            designation_num: row.get_unwrap(6),
-            rate: Option::None,
-            video_size: Option::Some(0),
-            cover_size: Option::Some(0),
-            height: 0,
-            width: 0,
-            frame_rate: 0,
-            video_frame_count: 0,
-            duration: 0,
-          })
+          Ok(VideoEntity::new_by_for_duplicate_cover(
+            row.get_unwrap(0), 
+            row.get_unwrap(1),
+            row.get_unwrap(2),
+            row.get_unwrap(3), 
+            row.get_unwrap(4), 
+            row.get_unwrap(5),
+            row.get_unwrap(6),
+            ))
         },
       )
       .unwrap()
@@ -268,23 +258,21 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
           ":num" : &duplicate_entity.designation_num,
         },
         |row| {
-          Ok(VideoEntity {
-            id: row.get_unwrap(0),
-            video_file_name: row.get_unwrap(1),
-            cover_file_name: row.get_unwrap(2),
-            designation_char: String::new(),
-            designation_num: String::new(),
-            dir_path: row.get_unwrap(3),
-            base_index: row.get_unwrap(4),
-            video_size: row.get_unwrap("video_size"),
-            cover_size: row.get_unwrap("cover_size"),
-            rate: row.get_unwrap("rate"),
-            height: row.get_unwrap("height"),
-            width: row.get_unwrap("width"),
-            frame_rate: row.get_unwrap("frame_rate"),
-            video_frame_count: row.get_unwrap("video_frame_count"),
-            duration: row.get_unwrap("duration"),
-          })
+          Ok(VideoEntity::new_for_meta_info( 
+            row.get_unwrap(0),
+            row.get_unwrap(1),
+            row.get_unwrap(2),
+            row.get_unwrap(3),
+            row.get_unwrap(4),
+            row.get_unwrap("video_size"),
+            row.get_unwrap("cover_size"),
+            row.get_unwrap("rate"),
+            row.get_unwrap("height"),
+            row.get_unwrap("width"),
+            row.get_unwrap("frame_rate"),
+            row.get_unwrap("video_frame_count"),
+            row.get_unwrap("duration"),
+          ))
         },
       )
       .unwrap()
@@ -305,7 +293,7 @@ pub async fn designation_search(
   let mut stmt = conn1
     .prepare(
       "select 
-    id, video_file_name, cover_file_name, dir_path, base_index 
+    id, video_file_name, cover_file_name, dir_path, base_index, designation_char, designation_num
   from 
     video_info 
   where 
@@ -320,23 +308,15 @@ pub async fn designation_search(
           ":num" : designation.num_final.unwrap(),
       },
       |row| {
-        Ok(VideoEntity {
-          id: row.get_unwrap(0),
-          video_file_name: row.get_unwrap(1),
-          cover_file_name: row.get_unwrap(2),
-          designation_char: String::new(),
-          designation_num: String::new(),
-          dir_path: row.get_unwrap(3),
-          base_index: row.get_unwrap(4),
-          rate: Option::Some(0),
-          video_size: Option::Some(0),
-          cover_size: Option::Some(0),
-          height: 0,
-          width: 0,
-          frame_rate: 0,
-          video_frame_count: 0,
-          duration: 0,
-        })
+        Ok(VideoEntity::new_by_for_duplicate_cover(
+          row.get_unwrap(0),
+          row.get_unwrap(1),
+          row.get_unwrap(2),
+          row.get_unwrap(3),
+          row.get_unwrap(4),
+          row.get_unwrap(5),
+          row.get_unwrap(6),
+        ))
       },
     )
     .unwrap()
@@ -409,23 +389,15 @@ pub async fn parse_designation_handler(
       },
       |row| {
         let designation = parse_designation(&row.get_unwrap(1));
-        return Ok(VideoEntity {
-          id: row.get_unwrap(0),
-          video_file_name: row.get_unwrap(1),
-          cover_file_name: row.get_unwrap(2),
-          designation_char: designation.char_final.unwrap(),
-          designation_num: designation.num_final.unwrap(),
-          dir_path: String::new(),
-          base_index: 0,
-          video_size: Option::Some(0),
-          cover_size: Option::Some(0),
-          rate: Option::None,
-          height: 0,
-          width: 0,
-          frame_rate: 0,
-          video_frame_count: 0,
-          duration: 0,
-        });
+        return Ok(VideoEntity::new_by_for_duplicate_cover( 
+          row.get_unwrap(0),
+          row.get_unwrap(1),
+          row.get_unwrap(2),
+          String::new(),
+          0,
+          designation.char_final.unwrap(),
+          designation.num_final.unwrap(),
+        ));
       },
     )
     .unwrap()
@@ -868,4 +840,9 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
     ":video_frame_count": meta_info.video_frame_count,
     ":id": id
   });
+}
+
+pub fn move_cover() {
+  let sqlite_conn = get_sqlite_connection();
+
 }

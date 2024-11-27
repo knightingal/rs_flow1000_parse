@@ -27,10 +27,11 @@ pub struct VideoEntity {
   #[serde(rename = "videoFrameCount")]
   pub video_frame_count: i32,
   pub duration: i32,
+  pub moved: Option<u8> ,
 }
 
 impl VideoEntity {
-  fn new(id: u32, video_file_name: String, cover_file_name: String) -> VideoEntity {
+  pub fn new_by_file_name(id: u32, video_file_name: String, cover_file_name: String) -> VideoEntity {
     VideoEntity {
       id: id,
       video_file_name: video_file_name,
@@ -47,6 +48,97 @@ impl VideoEntity {
       video_frame_count: 0,
       duration: 0,
       cover_size: Option::Some(0),
+      moved: Option::Some(0)
+    }
+  }
+
+  pub fn new_for_meta_info(
+    id: u32, 
+      video_file_name: String, 
+      cover_file_name: String,
+      dir_path: String,
+      base_index: u32,
+      video_size: Option<u64>,
+      cover_size: Option<u64>,
+      rate: Option<u32>,
+      height: i32,
+      width: i32,
+      frame_rate: i32,
+      video_frame_count: i32,
+      duration: i32,
+    ) -> VideoEntity {
+    VideoEntity {
+    id, 
+      video_file_name, 
+      cover_file_name,
+      designation_char:String::new(),
+      designation_num:String::new(),
+      dir_path,
+      base_index,
+      video_size,
+      cover_size,
+      rate,
+      height,
+      width,
+      frame_rate,
+      video_frame_count,
+      duration,
+
+      moved: Option::Some(0)
+    }
+  }
+
+  pub fn new_for_base_info(id: u32, 
+      video_file_name: String, 
+      cover_file_name: String,
+      video_size: Option<u64>,
+      rate: Option<u32>,
+    ) -> VideoEntity {
+    VideoEntity {
+      id: id,
+      video_file_name: video_file_name,
+      cover_file_name: cover_file_name,
+          designation_char: String::new(),
+          designation_num: String::new(),
+          dir_path: String::new(),
+          base_index: 0,
+      rate: rate,
+      video_size: video_size,
+      height: 0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
+      cover_size: Option::Some(0),
+      moved: Option::Some(0)
+    }
+  }
+
+  pub fn new_by_for_duplicate_cover(id: u32, 
+      video_file_name: String, 
+      cover_file_name: String,
+      dir_path: String,
+      base_index: u32,
+      designation_char: String,
+      designation_num: String,
+    ) -> VideoEntity {
+    VideoEntity {
+      id: id,
+      video_file_name: video_file_name,
+      cover_file_name: cover_file_name,
+      dir_path: dir_path,
+      base_index: base_index,
+      designation_char: designation_char,
+      designation_num: designation_num,
+      rate: Option::Some(0),
+      video_size: Option::Some(0),
+      height: 0,
+      width: 0,
+      frame_rate: 0,
+      video_frame_count: 0,
+      duration: 0,
+      cover_size: Option::Some(0),
+      moved: Option::Some(0)
     }
   }
 }

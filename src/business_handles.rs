@@ -41,24 +41,13 @@ pub async fn video_info_handler(
     .query_map(
       named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index},
       |row| {
-        Ok(VideoEntity {
-          // id: row.get(0)?,
-          id: row.get_unwrap(0),
-          video_file_name: row.get_unwrap(1),
-          cover_file_name: row.get_unwrap(2),
-          designation_char: String::new(),
-          designation_num: String::new(),
-          dir_path: String::new(),
-          base_index: 0,
-          video_size: row.get_unwrap(4),
-          rate: row.get_unwrap(3),
-          height: 0,
-          width: 0,
-          frame_rate: 0,
-          video_frame_count: 0,
-          duration: 0,
-          cover_size: Some(0),
-        })
+        Ok(VideoEntity::new_for_base_info( 
+          row.get_unwrap(0),
+          row.get_unwrap(1),
+          row.get_unwrap(2),
+          row.get_unwrap(4),
+          row.get_unwrap(3),
+        ))
       },
     )
     .unwrap()
@@ -216,23 +205,13 @@ pub async fn video_rate(
         ":id" : id,
     },
     |row| {
-      Result::Ok(VideoEntity {
-        id: row.get_unwrap(0),
-        video_file_name: row.get_unwrap(1),
-        cover_file_name: row.get_unwrap(2),
-        designation_char: String::new(),
-        designation_num: String::new(),
-        dir_path: String::new(),
-        base_index: 0,
-        rate: row.get_unwrap(3),
-        video_size: Option::Some(0),
-        cover_size: Option::Some(0),
-        height: 0,
-        width: 0,
-        frame_rate: 0,
-        video_frame_count: 0,
-        duration: 0,
-      })
+      Result::Ok(VideoEntity::new_for_base_info(
+        row.get_unwrap(0),
+        row.get_unwrap(1),
+        row.get_unwrap(2),
+        Option::Some(0),
+        row.get_unwrap(3),
+      ))
     },
   );
 
