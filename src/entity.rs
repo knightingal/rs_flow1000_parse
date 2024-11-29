@@ -1,5 +1,6 @@
 use serde_derive::Serialize;
 #[derive(Serialize, Clone)]
+#[derive(Debug)]
 pub struct VideoEntity {
   pub id: u32,
   #[serde(rename = "videoFileName")]
@@ -35,6 +36,8 @@ impl VideoEntity {
     id: u32,
     video_file_name: String,
     cover_file_name: String,
+    dir_path: String,
+    base_index:u32, 
   ) -> VideoEntity {
     VideoEntity {
       id,
@@ -42,8 +45,8 @@ impl VideoEntity {
       cover_file_name,
       designation_char: String::new(),
       designation_num: String::new(),
-      dir_path: String::new(),
-      base_index: 0,
+      dir_path,
+      base_index,
       rate: Option::Some(0),
       video_size: Option::Some(0),
       height: 0,
