@@ -5,7 +5,8 @@ use axum::{
   Json, Router,
 };
 use business_handles::{
-  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, query_tags_by_video, statistic_handle, video_info_handler, video_rate
+  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags,
+  query_tags_by_video, statistic_handle, unbind_tag, video_info_handler, video_rate,
 };
 use handles::{
   all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
@@ -173,8 +174,8 @@ async fn main() {
     .route("/video-rate/:id/:rate", post(video_rate))
     .route("/add-tag/:tag", post(add_tag))
     .route("/query-tags", get(query_tags))
-
     .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
+    .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag))
     .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
     .route("/statistic", get(statistic_handle))
     // demo
@@ -227,6 +228,7 @@ fn root() -> impl Future<Output = &'static str> {
     .route("/query-tags", get(query_tags))
 
     .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
+    .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag))
     .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
     // demo
     .route("/mock-steam", get(mock_stream_hander))

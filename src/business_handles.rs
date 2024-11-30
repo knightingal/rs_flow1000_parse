@@ -296,6 +296,37 @@ pub async fn bind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode
   }
 }
 
+
+pub async fn unbind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
+  println!("tag_id:{}, video_id:{}", tag_id, video_id);
+
+  let sqlite_conn = get_sqlite_connection();
+
+  let ret = sqlite_conn.execute(
+    "delete from video_tag where video_id=:video_id and tag_id=:tag_id",
+    named_params! {":tag_id": tag_id, ":video_id": video_id},
+  );
+  if ret.is_err() {
+    let mut header = HeaderMap::new();
+    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+    header.insert(
+      CONTENT_TYPE,
+      "application/json; charset=utf-8".parse().unwrap(),
+    );
+
+    (StatusCode::INTERNAL_SERVER_ERROR, header)
+  } else {
+    let mut header = HeaderMap::new();
+    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+    header.insert(
+      CONTENT_TYPE,
+      "application/json; charset=utf-8".parse().unwrap(),
+    );
+
+    (StatusCode::OK, header)
+  }
+}
+
 pub async fn query_tags_by_video(
   Path(video_id): Path<u32>,
 ) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
