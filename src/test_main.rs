@@ -2,11 +2,17 @@
 mod tests {
   use std::{fs::File, io::{Read, Seek, SeekFrom, Write}};
 
+use crate::handles::move_cover;
+
   #[test]
   fn it_works() {
     assert_eq!(2 + 2, 4);
   }
 
+  #[test]
+  fn move_cover_test() {
+    move_cover();
+  }
 
   #[test]
   fn create_large_file() -> std::io::Result<()> {
