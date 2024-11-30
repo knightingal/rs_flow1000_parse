@@ -43,4 +43,9 @@ mod tests {
     println!("{:02x},{:02x},{:02x},{:02x},", buf[0], buf[1], buf[2], buf[3]);
     Ok(())
   }
+
+  #[test]
+  fn test_move_cover() {
+
+  }
 }
