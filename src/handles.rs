@@ -690,7 +690,13 @@ pub async fn init_video_handler(
     dir_path_tmp += video_cover_entry.video_file_name.as_str();
     let meta_info = parse_video_meta_info(&dir_path_tmp);
     let path = std::path::Path::new(&dir_path_tmp);
-    let size = path.metadata().map_or_else(|_| 0, |m| m.len());
+    let video_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+
+    let mut dir_path_tmp = dir_path.clone();
+    dir_path_tmp += "/";
+    dir_path_tmp += video_cover_entry.cover_file_name.as_str();
+    let path = std::path::Path::new(&dir_path_tmp);
+    let cover_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
     let designation = parse_designation(&video_cover_entry.video_file_name);
     let exist = check_exist_by_video_file_name(
@@ -703,10 +709,10 @@ pub async fn init_video_handler(
       let _ = sqlite_conn.execute("insert into video_info(
         dir_path, base_index, video_file_name, cover_file_name, designation_char, 
         designation_num, 
-        video_size, width, height,duration,frame_rate,video_frame_count
+        video_size, width, height,duration,frame_rate,video_frame_count,cover_size
       ) values (
         :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, 
-        :video_size, :width, :height,:duration,:frame_rate,:video_frame_count
+        :video_size, :width, :height,:duration,:frame_rate,:video_frame_count,:cover_size
       )", named_params! {
         ":dir_path": sub_dir_param, 
         ":base_index": base_index, 
@@ -714,7 +720,8 @@ pub async fn init_video_handler(
         ":cover_file_name": video_cover_entry.cover_file_name,
         ":designation_char": designation.char_final, 
         ":designation_num": designation.num_final,
-        ":video_size": size,
+        ":video_size": video_size,
+        ":cover_size": cover_size,
         ":width": meta_info.width,
         ":height": meta_info.height,
         ":duration": meta_info.duratoin,
@@ -728,6 +735,7 @@ pub async fn init_video_handler(
         designation_char=:designation_char, 
         designation_num=:designation_num, 
         video_size=:video_size,
+        cover_size=:cover_size,
         height=:height,
         width=:width,
         duration=:duration,
@@ -743,7 +751,8 @@ pub async fn init_video_handler(
           ":cover_file_name": video_cover_entry.cover_file_name,
           ":designation_char": designation.char_final,
           ":designation_num": designation.num_final,
-          ":video_size": size,
+          ":video_size": video_size,
+          ":cover_size": cover_size,
           ":width": meta_info.width,
           ":height": meta_info.height,
           ":duration": meta_info.duratoin,
