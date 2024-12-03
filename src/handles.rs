@@ -156,8 +156,8 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
 
   let mut stmt = conn1
     .prepare(
-      "select count, cover_file_name from(
-      select count(vi.id) as count, vi.cover_file_name from video_info vi group by cover_file_name
+      "select count, cover_file_name, dir_path from(
+      select count(vi.id) as count, vi.cover_file_name, vi.dir_path from video_info vi group by cover_file_name, dir_path
     ) t where t.count > 1",
     )
     .unwrap();
@@ -168,6 +168,7 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         count: row.get_unwrap(0),
         cover_file_name: row.get_unwrap(1),
         video_info_list: vec![],
+        dir_path: row.get_unwrap("dir_path")
       })
     })
     .unwrap()
@@ -187,14 +188,15 @@ pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity
         designation_num 
       from 
         video_info 
-      where cover_file_name=:cover_file_name ",
+      where cover_file_name=:cover_file_name and dir_path=:dir_path ",
       )
       .unwrap();
 
     let selected_video: Vec<VideoEntity> = stmt
       .query_map(
         named_params! {
-          ":cover_file_name": &duplicate_entity.cover_file_name
+          ":cover_file_name": &duplicate_entity.cover_file_name,
+          ":dir_path": &duplicate_entity.dir_path
         },
         |row| {
           Ok(VideoEntity::new_by_for_duplicate_cover(

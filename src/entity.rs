@@ -159,6 +159,8 @@ pub struct DuplicateCoverEntity {
   pub cover_file_name: String,
   #[serde(rename = "videoInfo")]
   pub video_info_list: Vec<VideoEntity>,
+  #[serde(rename = "dirPath")]
+  pub dir_path: String,
 }
 
 #[derive(Serialize, Clone)]
