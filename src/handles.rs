@@ -478,7 +478,7 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
   from 
     video_info 
   where 
-    cover_size is null",
+    cover_size is null or cover_size=''",
     )
     .unwrap();
   let file_names: Vec<(i32, String, String)> = stmt
