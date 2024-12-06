@@ -1,13 +1,10 @@
 use std::{
-  cmp::Ordering,
-  ffi::{c_char, CString},
-  fs::{self, DirEntry},
-  thread,
+  cmp::Ordering, collections::HashMap, ffi::{c_char, CString}, fs::{self, DirEntry}, thread
 };
 
-use axum::{extract::Path, Json};
+use axum::{extract::{Path, Query}, Json};
 use hyper::{HeaderMap, StatusCode};
-use rusqlite::{named_params, Connection};
+use rusqlite::{named_params, params_from_iter, Connection, Params};
 
 use crate::{
   designation::parse_designation,
@@ -151,19 +148,33 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
   StatusCode::OK
 }
 
-pub async fn all_duplicate_cover() -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
+pub async fn all_duplicate_cover(Query(params):Query<HashMap<String, String>>) -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
+
+  let dir_path_param = params.get("dir_path");
   let conn1 = get_sqlite_connection();
+
+  let mut where_state = String::from("");
+
+  let mut query_param: Vec<String> = vec![];
+  if dir_path_param.is_some() {
+    where_state.push_str("where vi.dir_path = ? ");
+    query_param.push(dir_path_param.unwrap().clone()); 
+  }
+
+
+  let sql = format!("select count, cover_file_name, dir_path from(
+      select count(vi.id) as count, vi.cover_file_name, vi.dir_path from video_info  vi {} group by cover_file_name, dir_path
+    ) t where t.count > 1", where_state);
+  
 
   let mut stmt = conn1
     .prepare(
-      "select count, cover_file_name, dir_path from(
-      select count(vi.id) as count, vi.cover_file_name, vi.dir_path from video_info vi group by cover_file_name, dir_path
-    ) t where t.count > 1",
+      &sql,
     )
     .unwrap();
 
   let mut duplicate_entity_list: Vec<DuplicateCoverEntity> = stmt
-    .query_map(named_params! {}, |row| {
+    .query_map(params_from_iter(query_param.iter()), |row| {
       Ok(DuplicateCoverEntity {
         count: row.get_unwrap(0),
         cover_file_name: row.get_unwrap(1),
