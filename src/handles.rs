@@ -151,14 +151,27 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
 pub async fn all_duplicate_cover(Query(params):Query<HashMap<String, String>>) -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
 
   let dir_path_param = params.get("dir_path");
+  let base_index_param = params.get("base_index");
   let conn1 = get_sqlite_connection();
 
   let mut where_state = String::from("");
 
-  let mut query_param: Vec<String> = vec![];
+  let mut query_param: Vec<&String> = vec![];
+  if dir_path_param.is_some() || base_index_param.is_some() {
+    where_state.push_str(" where ");
+
+  }
+
   if dir_path_param.is_some() {
-    where_state.push_str("where vi.dir_path = ? ");
-    query_param.push(dir_path_param.unwrap().clone()); 
+    where_state.push_str(" vi.dir_path = ? ");
+    query_param.push(dir_path_param.unwrap()); 
+  }
+  if base_index_param.is_some() {
+    if query_param.len() > 0 {
+      where_state.push_str(" and ");
+    }
+    where_state.push_str(" vi.base_index = ? ");
+    query_param.push(base_index_param.unwrap()); 
   }
 
 
