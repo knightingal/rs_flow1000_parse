@@ -242,7 +242,7 @@ struct video_meta_info* video_meta_info(const char* name_path) {
 
   int ret;
   int eof;
-  char *filename;
+  const char *filename;
   if (name_path != NULL) {
     filename = name_path;
   } else {
@@ -303,7 +303,7 @@ int frame_decode(const char* name_path, const char *dest_path)
 {
   int ret;
   int eof;
-  char *filename;
+  const char *filename;
   if (name_path != NULL) {
     filename = name_path;
   } else {

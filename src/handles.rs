@@ -4,7 +4,7 @@ use std::{
 
 use axum::{extract::{Path, Query}, Json};
 use hyper::{HeaderMap, StatusCode};
-use rusqlite::{named_params, params_from_iter, Connection, Params};
+use rusqlite::{named_params, params_from_iter, Connection};
 
 use crate::{
   designation::parse_designation,
