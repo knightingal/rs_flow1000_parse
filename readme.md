@@ -63,3 +63,5 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 * tab mark
 
 * video snapshot interface
+
+* tab in dialog 
