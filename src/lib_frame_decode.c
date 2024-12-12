@@ -413,7 +413,7 @@ struct video_meta_info* video_meta_info(const char* name_path) {
   return p_video_meta_info;
 }
 
-int snapshot_video(const char* name_path, const uint64_t snap_time) {
+struct snapshot_st snapshot_video(const char* name_path, const uint64_t snap_time) {
   int ret;
   int eof;
   const char *filename;
@@ -467,12 +467,6 @@ int snapshot_video(const char* name_path, const uint64_t snap_time) {
       codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
       const char *codec_name = codec->long_name;
       printf("codec_name=%s\n", codec_name);
-      // AVCodecParameters* para = avcodec_parameters_alloc();
-
-      // dec_ctx = avcodec_alloc_context3(codec);
-      // printf("dec_ctx=%p\n", dec_ctx);
-      // avcodec_parameters_to_context(dec_ctx, in_stream->codecpar);
-      // ret = avcodec_open2(dec_ctx, codec, NULL);
       printf("red=%d\n", ret);
     }
   }
@@ -533,20 +527,22 @@ int snapshot_video(const char* name_path, const uint64_t snap_time) {
     av_frame_free(&frame_array[i]);
   }
 
-  output_file = fopen(DEST_URL, "w+b");
-  if (fwrite(buffer, 1, ret, output_file) < 0)
-  {
-    fprintf(stderr, "Failed to dump raw data.\n");
-  }
-  av_free(buffer);
+  // output_file = fopen(DEST_URL, "w+b");
+  // if (fwrite(buffer, 1, ret, output_file) < 0)
+  // {
+  //   fprintf(stderr, "Failed to dump raw data.\n");
+  // }
+  // av_free(buffer);
   
 
-  fclose(output_file);
+  // fclose(output_file);
   free(dec_ctx);
   avformat_close_input(&fmt_ctx);
+  struct snapshot_st st = {
+    buffer, ret
+  };
 
-  return 0;
-
+  return st;
 }
 
 int frame_decode(const char* name_path, const char *dest_path)
