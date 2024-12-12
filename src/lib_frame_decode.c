@@ -73,6 +73,18 @@ static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
   }
 }
 
+static void init_AVCodecContext(AVCodecContext *ctx, int width, int height, const enum AVPixelFormat pix_fmts) 
+{
+  ctx->width = width;
+  ctx->height = height;
+  ctx->bit_rate = 3000000;
+  ctx->time_base.num = 1;
+  ctx->time_base.den = 25;
+  ctx->gop_size = 10;
+  ctx->max_b_frames = 0;
+  ctx->pix_fmt = pix_fmts;
+}
+
 static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id, uint8_t *outbuf, size_t out_buf_size)
 {
   int ret = 0;
@@ -87,14 +99,8 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
 
   const enum AVPixelFormat *pix_fmts;
   avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  ctx->width = frame_array[0]->width / 4;
-  ctx->height = frame_array[0]->height / 4;
-  ctx->bit_rate = 3000000;
-  ctx->time_base.num = 1;
-  ctx->time_base.den = 25;
-  ctx->gop_size = 10;
-  ctx->max_b_frames = 0;
-  ctx->pix_fmt = *pix_fmts;
+
+  init_AVCodecContext(ctx, frame_array[0]->width/4, frame_array[0]->height/4, *pix_fmts);
   ret = avcodec_open2(ctx, codec, NULL);
   rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
@@ -138,14 +144,7 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
 
   const enum AVPixelFormat *pix_fmts;
   avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  ctx->width = frame_array[0]->width;
-  ctx->height = frame_array[0]->height;
-  ctx->bit_rate = 3000000;
-  ctx->time_base.num = 1;
-  ctx->time_base.den = 25;
-  ctx->gop_size = 10;
-  ctx->max_b_frames = 0;
-  ctx->pix_fmt = *pix_fmts;
+  init_AVCodecContext(ctx, frame_array[0]->width, frame_array[0]->height, *pix_fmts);
   ret = avcodec_open2(ctx, codec, NULL);
   rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
