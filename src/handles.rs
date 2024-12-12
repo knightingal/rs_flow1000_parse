@@ -957,38 +957,38 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
   });
 }
 
-pub fn move_cover() {
-  let sqlite_conn = get_sqlite_connection();
+// pub fn move_cover() {
+//   let sqlite_conn = get_sqlite_connection();
 
-  let mut stmt = sqlite_conn.prepare("
-  select 
-    id, video_file_name, cover_file_name, dir_path, base_index
-  from 
-    video_info
-  where 
-    moved isnull or moved == 0
-  ").unwrap();
-  let unmoved: Vec<VideoEntity> = stmt.query_map({}, |row| {
-    Ok(VideoEntity::new_by_file_name(
-          row.get_unwrap("id"),
-          row.get_unwrap("video_file_name"),
-          row.get_unwrap("cover_file_name"),
-          row.get_unwrap("dir_path"),
-          row.get_unwrap("base_index"),
-    ))
-  }).unwrap().map(|it|it.unwrap()).collect();
-  let jh = thread::spawn(move || {
-    unmoved.into_iter().for_each(|mut video_entity| {
-      video_entity.moved = Some(1);
-      println!("{:?}", video_entity);
-      // TODO: copy cover image 
-      
-      let _ = get_sqlite_connection().execute(
-        "update video_info set moved = 1 where id = :id", 
-        named_params! {":id": video_entity.id}
-      );
-    });
-  });
-  let _ = jh.join();
-  
-}
+//   let mut stmt = sqlite_conn.prepare("
+//   select
+//     id, video_file_name, cover_file_name, dir_path, base_index
+//   from
+//     video_info
+//   where
+//     moved isnull or moved == 0
+//   ").unwrap();
+//   let unmoved: Vec<VideoEntity> = stmt.query_map({}, |row| {
+//     Ok(VideoEntity::new_by_file_name(
+//           row.get_unwrap("id"),
+//           row.get_unwrap("video_file_name"),
+//           row.get_unwrap("cover_file_name"),
+//           row.get_unwrap("dir_path"),
+//           row.get_unwrap("base_index"),
+//     ))
+//   }).unwrap().map(|it|it.unwrap()).collect();
+//   let jh = thread::spawn(move || {
+//     unmoved.into_iter().for_each(|mut video_entity| {
+//       video_entity.moved = Some(1);
+//       println!("{:?}", video_entity);
+//       // TODO: copy cover image
+
+//       let _ = get_sqlite_connection().execute(
+//         "update video_info set moved = 1 where id = :id",
+//         named_params! {":id": video_entity.id}
+//       );
+//     });
+//   });
+//   let _ = jh.join();
+
+// }
