@@ -60,6 +60,7 @@ extern "C" {
   fn simple_dll_function_with_param(param: &RustObject) -> i32;
   fn simple_dll_function_return_struct() -> *mut RustObject;
   fn simple_dll_function_return_char_arr() -> *mut CharArrObject;
+  fn simple_dll_function_return_heap_point() -> *const c_char;
 }
 
 #[cfg(mocklink)]
@@ -101,6 +102,10 @@ async fn main() {
     let simple = simple_dll_function_with_param(&rust_obj);
     println!("rust_obj.b:{}", rust_obj.b);
     println!("simple:{}", simple);
+
+    let hp = simple_dll_function_return_heap_point();
+    println!("hp:{}", *hp);
+    libc::free(hp as *mut c_void);
 
     if cfg!(reallink) {
       let rust_object_point = simple_dll_function_return_struct();

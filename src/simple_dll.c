@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 int simple_dll_function() {
   printf("call simple_dll_function\n");
   return 1;
@@ -14,6 +15,8 @@ struct char_arr_object {
   char* a;
   int b;
 };
+
+
 
 int simple_dll_function_with_param(struct rust_object* p_rust_object) {
   printf("p_rust_object: %p\n", p_rust_object);
@@ -39,4 +42,10 @@ struct char_arr_object* simple_dll_function_return_char_arr() {
   ro->a = "hello";
   ro->b = 10;
   return ro;
+}
+
+const char* simple_dll_function_return_heap_point() {
+  const char* hp = malloc(10);
+  memset(hp, 1, 10);
+  return hp;
 }
