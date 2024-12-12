@@ -699,6 +699,21 @@ pub fn snapshot(file_url: CString, snap_time: u64) -> SnapshotSt {
   }
 }
 
+pub async fn snapshot_handler(
+  Path(sub_dir): Path<String>,
+  Query(params):Query<HashMap<String, u64>>
+) -> (StatusCode, Json<i32>) {
+
+  let video_name = CString::new(sub_dir.as_str()).unwrap();
+  let time_param = params.get("time");
+  let snapshot_st = snapshot(video_name, *time_param.unwrap());
+
+  unsafe { libc::free(snapshot_st.buff as *mut c_void) };
+  println!("snapshot_st len:{}", snapshot_st.buff_len);
+
+  (StatusCode::OK, Json(snapshot_st.buff_len))
+}
+
 pub async fn init_video_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoCover>>) {

@@ -9,10 +9,7 @@ use business_handles::{
   query_tags_by_video, statistic_handle, unbind_tag, video_info_handler, video_rate,
 };
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
-  init_video_handler, parse_designation_all_handler, parse_designation_handler,
-  parse_meta_info_all_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info,
-  video_detail, video_meta_info_handler, IS_LINUX,
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX
 };
 use hyper::StatusCode;
 use rusqlite::Connection;
@@ -164,6 +161,10 @@ async fn main() {
     .route(
       "/generate-video-snapshot/*sub_dir",
       get(generate_video_snapshot),
+    )
+    .route(
+      "/snapshot/*sub_dir",
+      get(snapshot_handler),
     )
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
     .route(
