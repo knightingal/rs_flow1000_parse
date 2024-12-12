@@ -1,9 +1,10 @@
+use core::slice;
 use std::{
-  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread
+  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread, usize
 };
 
-use axum::{extract::{Path, Query}, Json};
-use hyper::{HeaderMap, StatusCode};
+use axum::{body::{Body, Bytes}, extract::{Path, Query}, response::Response, Error, Json};
+use hyper::{header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_TYPE}, HeaderMap, StatusCode};
 use rusqlite::{named_params, params_from_iter, Connection};
 
 use crate::{
@@ -702,16 +703,50 @@ pub fn snapshot(file_url: CString, snap_time: u64) -> SnapshotSt {
 pub async fn snapshot_handler(
   Path(sub_dir): Path<String>,
   Query(params):Query<HashMap<String, u64>>
-) -> (StatusCode, Json<i32>) {
+) -> Response {
 
   let video_name = CString::new(sub_dir.as_str()).unwrap();
   let time_param = params.get("time");
   let snapshot_st = snapshot(video_name, *time_param.unwrap());
-
-  unsafe { libc::free(snapshot_st.buff as *mut c_void) };
   println!("snapshot_st len:{}", snapshot_st.buff_len);
 
-  (StatusCode::OK, Json(snapshot_st.buff_len))
+  let content_type_value = String::from("image/png");
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
+  header.insert(CONTENT_LENGTH, snapshot_st.buff_len.into());
+
+  let mut response_builder = Response::builder().status(StatusCode::OK);
+  *response_builder.headers_mut().unwrap() = header;
+
+  let bytes:Bytes = unsafe {
+    let len: usize = snapshot_st.buff_len.try_into().unwrap();
+    let slice = slice::from_raw_parts(snapshot_st.buff, len);
+    libc::free(snapshot_st.buff as *mut c_void);
+    Bytes::from_static(&slice)
+  };
+  
+  let buff_stream = BuffStream{bytes, done:false};
+  response_builder.body(Body::from_stream(buff_stream)).unwrap()
+}
+
+struct BuffStream {
+  // snapshot_st: SnapshotSt,
+  bytes:Bytes,
+  done: bool
+}
+
+impl futures_core::Stream for BuffStream {
+  type Item = Result<Bytes, Error>;
+
+  fn poll_next(mut self: std::pin::Pin<&mut Self>, _: &mut std::task::Context<'_>) -> std::task::Poll<Option<Self::Item>> {
+    if self.done {
+      return std::task::Poll::Ready(None);
+    } else {
+      self.done = true;    
+      return std::task::Poll::Ready(Some(Ok(self.bytes.clone())))
+    }
+  }
 }
 
 pub async fn init_video_handler(
