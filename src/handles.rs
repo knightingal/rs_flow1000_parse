@@ -1,5 +1,5 @@
 use std::{
-  cmp::Ordering, collections::HashMap, ffi::{c_char, CString}, fs::{self, DirEntry}, thread
+  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread
 };
 
 use axum::{extract::{Path, Query}, Json};
@@ -15,10 +15,17 @@ use crate::{
 
 pub static mut IS_LINUX: Option<&bool> = None;
 
+#[repr(C)]
+pub struct SnapshotSt {
+  pub buff: *const u8,
+  pub buff_len: i32,
+}
+
 #[cfg(reallink)]
 #[link(name = "frame_decode")]
 extern "C" {
   fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
+  fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
 #[cfg(reallink)]
@@ -682,6 +689,14 @@ pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<
   );
 
   (StatusCode::OK, header, Json(vec![]))
+}
+
+pub fn snapshot(file_url: CString, snap_time: u64) -> SnapshotSt {
+  unsafe {
+    let snapshot_st = snapshot_video(file_url.as_ptr(), snap_time);
+
+    snapshot_st
+  }
 }
 
 pub async fn init_video_handler(
