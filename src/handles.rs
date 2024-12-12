@@ -722,8 +722,9 @@ pub async fn snapshot_handler(
   let bytes:Bytes = unsafe {
     let len: usize = snapshot_st.buff_len.try_into().unwrap();
     let slice = slice::from_raw_parts(snapshot_st.buff, len);
+    let buff:Vec<u8> = Vec::from(slice);
     libc::free(snapshot_st.buff as *mut c_void);
-    Bytes::from_static(&slice)
+    Bytes::from(buff)
   };
   
   let buff_stream = BuffStream{bytes, done:false};
