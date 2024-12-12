@@ -19,56 +19,6 @@ static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
-static AVFrame *frame_to_rgb_buff41(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
-{
-  printf("index=%d\n", index);
-  int ret = 0;
-  AVFrame *rgb_frame = NULL;
-  uint8_t *buffer = NULL;
-  struct SwsContext *sws_context = NULL;
-  int dest_width = frame->width / 4;
-  int dest_height = frame->height / 4;
-  rgb_frame = av_frame_alloc();
-  sws_context = sws_getContext(frame->width, frame->height,
-                               (enum AVPixelFormat)frame->format, dest_width, dest_height,
-                               ctx->pix_fmt, 1, NULL, NULL, NULL);
-  int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
-  buffer = (unsigned char *)av_malloc(buffer_size);
-  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
-
-  if ((ret = sws_scale(sws_context, (const uint8_t *const *)frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize)) < 0)
-  {
-    printf("sws_scale failed\n");
-  }
-
-  uint32_t x = index % 4;
-  uint32_t y = index / 4;
-  size_t width_offset = dest_width * 3 * x;
-  size_t height_offset = dest_height * rgb_frame->linesize[0] * y;
-  size_t rgb_data_size = rgb_frame->linesize[0] * frame->height;
-  if (dest_buff == NULL)
-  {
-    dest_buff = (uint8_t *)av_malloc(rgb_data_size);
-  }
-  for (int line = 0; line < dest_height; line++)
-  {
-    memcpy(dest_buff + height_offset + line * rgb_frame->linesize[0] + width_offset, rgb_frame->data[0] + line * rgb_frame->linesize[0], dest_width * 3);
-  }
-  if (index == 0)
-  {
-    rgb_frame->data[0] = dest_buff;
-    rgb_frame->format = ctx->pix_fmt;
-    rgb_frame->width = ctx->width;
-    rgb_frame->height = ctx->height;
-    return rgb_frame;
-  }
-  else
-  {
-    av_frame_unref(rgb_frame);
-    av_frame_free(&rgb_frame);
-    return NULL;
-  }
-}
 
 static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
 {
@@ -137,8 +87,6 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
 
   const enum AVPixelFormat *pix_fmts;
   avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  int dest_width = frame_array[0]->width;
-  int dest_height = frame_array[0]->height;
   ctx->width = frame_array[0]->width / 4;
   ctx->height = frame_array[0]->height / 4;
   ctx->bit_rate = 3000000;
@@ -152,9 +100,11 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
   rgb_frame->height = ctx->height;
+  
+
+
   ret = avcodec_send_frame(ctx, rgb_frame);
   ret = avcodec_receive_packet(ctx, pkt);
-  printf("start memcpy\n");
   memcpy(outbuf, pkt->data, pkt->size);
   ret = pkt->size;
   if (rgb_frame)
@@ -171,7 +121,6 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
   {
     av_packet_free(&pkt);
   }
-  printf("finish frame_array_to_image41\n");
   return ret;
 }
 
@@ -189,8 +138,6 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
 
   const enum AVPixelFormat *pix_fmts;
   avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  int dest_width = frame_array[0]->width;
-  int dest_height = frame_array[0]->height;
   ctx->width = frame_array[0]->width;
   ctx->height = frame_array[0]->height;
   ctx->bit_rate = 3000000;
