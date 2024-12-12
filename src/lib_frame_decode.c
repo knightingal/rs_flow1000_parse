@@ -142,9 +142,9 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   codec = avcodec_find_encoder(code_id);
   ctx = avcodec_alloc_context3(codec);
 
-  const enum AVPixelFormat *pix_fmts;
-  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  init_AVCodecContext(ctx, frame_array[0]->width, frame_array[0]->height, *pix_fmts);
+  // const enum AVPixelFormat *pix_fmts;
+  // avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
+  init_AVCodecContext(ctx, frame_array[0]->width, frame_array[0]->height, codec->pix_fmts);
   ret = avcodec_open2(ctx, codec, NULL);
   rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
@@ -191,9 +191,9 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     printf("codec non found\n");
     goto error;
   }
-  const enum AVPixelFormat *pix_fmts;
-  ret = avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
-  if (ret < 0)
+  // const enum AVPixelFormat *pix_fmts;
+  // ret = avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
+  if (!codec->pix_fmts)
   {
     ret = -1;
     printf("codec non support pix_fmt\n");
@@ -211,7 +211,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
   ctx->time_base.den = 25;
   ctx->gop_size = 10;
   ctx->max_b_frames = 0;
-  ctx->pix_fmt = *pix_fmts;
+  ctx->pix_fmt = *codec->pix_fmts;
   ret = avcodec_open2(ctx, codec, NULL);
   if (ret < 0)
   {
