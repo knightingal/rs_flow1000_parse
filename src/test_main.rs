@@ -1,8 +1,10 @@
 #[cfg(test)]
 mod tests {
-  use std::{fs::File, io::{Read, Seek, SeekFrom, Write}};
+  use std::{ffi::{c_void, CString}, fs::File, io::{Read, Seek, SeekFrom, Write}};
 
-use crate::handles::move_cover;
+use crate::handles::snapshot;
+
+// use crate::handles::move_cover;
 
   #[test]
   fn it_works() {
@@ -11,7 +13,13 @@ use crate::handles::move_cover;
 
   #[test]
   fn move_cover_test() {
-    move_cover();
+    // move_cover();
+
+    let video_name = CString::new("/home/knightingal/demo_video.mp4").unwrap();
+    let snapshot_st = snapshot(video_name, 10);
+
+    unsafe { libc::free(snapshot_st.buff as *mut c_void) };
+    println!("snapshot_st len:{}", snapshot_st.buff_len)
   }
 
   #[test]
