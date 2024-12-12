@@ -162,10 +162,7 @@ async fn main() {
       "/generate-video-snapshot/*sub_dir",
       get(generate_video_snapshot),
     )
-    .route(
-      "/snapshot/*sub_dir",
-      get(snapshot_handler),
-    )
+    .route("/snapshot/*sub_dir", get(snapshot_handler))
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
     .route(
       "/parse-meta-info-all-handler",
@@ -221,6 +218,7 @@ fn root() -> impl Future<Output = &'static str> {
     .route("/all-duplicate-cover", get(all_duplicate_cover))
     .route("/video-detail/:id", get(video_detail))
     .route("/generate-video-snapshot/*sub_dir", get(generate_video_snapshot))
+    .route("/snapshot/*sub_dir", get(snapshot_handler))
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
     .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
     // bussiness
