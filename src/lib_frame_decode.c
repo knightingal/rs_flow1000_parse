@@ -15,10 +15,9 @@
 
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
-static char* DEST_URL = "demo_video_1.png";
+static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
-
 
 static AVFrame *frame_to_rgb_buff41(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
 {
@@ -137,7 +136,7 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
   ctx = avcodec_alloc_context3(codec);
 
   const enum AVPixelFormat *pix_fmts;
-  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &pix_fmts, NULL);
+  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
   int dest_width = frame_array[0]->width;
   int dest_height = frame_array[0]->height;
   ctx->width = frame_array[0]->width / 4;
@@ -151,12 +150,8 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
   ret = avcodec_open2(ctx, codec, NULL);
   rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
-  rgb_frame->width = ctx->width ;
-  rgb_frame->height = ctx->height ;
-  // for (int i = 1; i < PIC_NUM; i++)
-  // {
-  //   frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
-  // }
+  rgb_frame->width = ctx->width;
+  rgb_frame->height = ctx->height;
   ret = avcodec_send_frame(ctx, rgb_frame);
   ret = avcodec_receive_packet(ctx, pkt);
   printf("start memcpy\n");
@@ -172,7 +167,8 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
-  if (pkt) {
+  if (pkt)
+  {
     av_packet_free(&pkt);
   }
   printf("finish frame_array_to_image41\n");
@@ -192,7 +188,7 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   ctx = avcodec_alloc_context3(codec);
 
   const enum AVPixelFormat *pix_fmts;
-  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &pix_fmts, NULL);
+  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
   int dest_width = frame_array[0]->width;
   int dest_height = frame_array[0]->height;
   ctx->width = frame_array[0]->width;
@@ -226,7 +222,8 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
-  if (pkt) {
+  if (pkt)
+  {
     av_packet_free(&pkt);
   }
   return ret;
@@ -249,7 +246,7 @@ static int frame_to_image(AVFrame *frame, enum AVCodecID code_id, uint8_t *outbu
     goto error;
   }
   const enum AVPixelFormat *pix_fmts;
-  ret = avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &pix_fmts, NULL);
+  ret = avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
   if (ret < 0)
   {
     ret = -1;
@@ -345,24 +342,29 @@ error:
     avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
-  if (pkt) {
+  if (pkt)
+  {
     av_packet_free(&pkt);
   }
   return ret;
 }
 
-struct video_meta_info* video_meta_info(const char* name_path) {
-  struct video_meta_info* p_video_meta_info = malloc(sizeof(struct video_meta_info));
+struct video_meta_info *video_meta_info(const char *name_path)
+{
+  struct video_meta_info *p_video_meta_info = malloc(sizeof(struct video_meta_info));
 
   int ret;
   int eof;
   const char *filename;
-  if (name_path != NULL) {
+  if (name_path != NULL)
+  {
     filename = name_path;
-  } else {
+  }
+  else
+  {
     filename = FILE_NAME;
   }
-  
+
   ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
   printf("red=%d\n", ret);
 
@@ -413,13 +415,17 @@ struct video_meta_info* video_meta_info(const char* name_path) {
   return p_video_meta_info;
 }
 
-struct snapshot_st snapshot_video(const char* name_path, const uint64_t snap_time) {
+struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_time)
+{
   int ret;
   int eof;
   const char *filename;
-  if (name_path != NULL) {
+  if (name_path != NULL)
+  {
     filename = name_path;
-  } else {
+  }
+  else
+  {
     filename = FILE_NAME;
   }
 
@@ -533,30 +539,32 @@ struct snapshot_st snapshot_video(const char* name_path, const uint64_t snap_tim
   //   fprintf(stderr, "Failed to dump raw data.\n");
   // }
   // av_free(buffer);
-  
 
   // fclose(output_file);
   free(dec_ctx);
   avformat_close_input(&fmt_ctx);
   struct snapshot_st st = {
-    buffer, ret
-  };
+      buffer, ret};
 
   return st;
 }
 
-int frame_decode(const char* name_path, const char *dest_path)
+int frame_decode(const char *name_path, const char *dest_path)
 {
   int ret;
   int eof;
   const char *filename;
-  if (name_path != NULL) {
+  if (name_path != NULL)
+  {
     filename = name_path;
-  } else {
+  }
+  else
+  {
     filename = FILE_NAME;
   }
-  
-  if (dest_path == NULL) {
+
+  if (dest_path == NULL)
+  {
     dest_path = DEST_URL;
   }
 
@@ -683,8 +691,8 @@ int frame_decode(const char* name_path, const char *dest_path)
   return 0;
 }
 
-
-int frame_decode_with_param(const char *url, const char* dest_url) {
-  printf("url:%s\n",url);
+int frame_decode_with_param(const char *url, const char *dest_url)
+{
+  printf("url:%s\n", url);
   return frame_decode(url, dest_url);
 }

@@ -1,10 +1,22 @@
 use core::slice;
 use std::{
-  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirEntry}, thread, usize
+  cmp::Ordering,
+  collections::HashMap,
+  ffi::{c_char, c_void, CString},
+  fs::{self, DirEntry},
+  thread, usize,
 };
 
-use axum::{body::{Body, Bytes}, extract::{Path, Query}, response::Response, Error, Json};
-use hyper::{header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_TYPE}, HeaderMap, StatusCode};
+use axum::{
+  body::{Body, Bytes},
+  extract::{Path, Query},
+  response::Response,
+  Error, Json,
+};
+use hyper::{
+  header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_TYPE},
+  HeaderMap, StatusCode,
+};
 use rusqlite::{named_params, params_from_iter, Connection};
 
 use crate::{
@@ -156,8 +168,9 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
   StatusCode::OK
 }
 
-pub async fn all_duplicate_cover(Query(params):Query<HashMap<String, String>>) -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
-
+pub async fn all_duplicate_cover(
+  Query(params): Query<HashMap<String, String>>,
+) -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
   let dir_path_param = params.get("dir_path");
   let base_index_param = params.get("base_index");
   let conn1 = get_sqlite_connection();
@@ -167,32 +180,25 @@ pub async fn all_duplicate_cover(Query(params):Query<HashMap<String, String>>) -
   let mut query_param: Vec<&String> = vec![];
   if dir_path_param.is_some() || base_index_param.is_some() {
     where_state.push_str(" where ");
-
   }
 
   if dir_path_param.is_some() {
     where_state.push_str(" vi.dir_path = ? ");
-    query_param.push(dir_path_param.unwrap()); 
+    query_param.push(dir_path_param.unwrap());
   }
   if base_index_param.is_some() {
     if query_param.len() > 0 {
       where_state.push_str(" and ");
     }
     where_state.push_str(" vi.base_index = ? ");
-    query_param.push(base_index_param.unwrap()); 
+    query_param.push(base_index_param.unwrap());
   }
-
 
   let sql = format!("select count, cover_file_name, dir_path from(
       select count(vi.id) as count, vi.cover_file_name, vi.dir_path from video_info  vi {} group by cover_file_name, dir_path
     ) t where t.count > 1", where_state);
-  
 
-  let mut stmt = conn1
-    .prepare(
-      &sql,
-    )
-    .unwrap();
+  let mut stmt = conn1.prepare(&sql).unwrap();
 
   let mut duplicate_entity_list: Vec<DuplicateCoverEntity> = stmt
     .query_map(params_from_iter(query_param.iter()), |row| {
@@ -200,7 +206,7 @@ pub async fn all_duplicate_cover(Query(params):Query<HashMap<String, String>>) -
         count: row.get_unwrap(0),
         cover_file_name: row.get_unwrap(1),
         video_info_list: vec![],
-        dir_path: row.get_unwrap("dir_path")
+        dir_path: row.get_unwrap("dir_path"),
       })
     })
     .unwrap()
@@ -702,9 +708,8 @@ pub fn snapshot(file_url: CString, snap_time: u64) -> SnapshotSt {
 
 pub async fn snapshot_handler(
   Path(sub_dir): Path<String>,
-  Query(params):Query<HashMap<String, u64>>
+  Query(params): Query<HashMap<String, u64>>,
 ) -> Response {
-
   let video_name = CString::new(sub_dir.as_str()).unwrap();
   let time_param = params.get("time");
   let snapshot_st = snapshot(video_name, *time_param.unwrap());
@@ -719,33 +724,38 @@ pub async fn snapshot_handler(
   let mut response_builder = Response::builder().status(StatusCode::OK);
   *response_builder.headers_mut().unwrap() = header;
 
-  let bytes:Bytes = unsafe {
+  let bytes: Bytes = unsafe {
     let len: usize = snapshot_st.buff_len.try_into().unwrap();
     let slice = slice::from_raw_parts(snapshot_st.buff, len);
-    let buff:Vec<u8> = Vec::from(slice);
+    let buff: Vec<u8> = Vec::from(slice);
     libc::free(snapshot_st.buff as *mut c_void);
     Bytes::from(buff)
   };
-  
-  let buff_stream = BuffStream{bytes, done:false};
-  response_builder.body(Body::from_stream(buff_stream)).unwrap()
+
+  let buff_stream = BuffStream { bytes, done: false };
+  response_builder
+    .body(Body::from_stream(buff_stream))
+    .unwrap()
 }
 
 struct BuffStream {
   // snapshot_st: SnapshotSt,
-  bytes:Bytes,
-  done: bool
+  bytes: Bytes,
+  done: bool,
 }
 
 impl futures_core::Stream for BuffStream {
   type Item = Result<Bytes, Error>;
 
-  fn poll_next(mut self: std::pin::Pin<&mut Self>, _: &mut std::task::Context<'_>) -> std::task::Poll<Option<Self::Item>> {
+  fn poll_next(
+    mut self: std::pin::Pin<&mut Self>,
+    _: &mut std::task::Context<'_>,
+  ) -> std::task::Poll<Option<Self::Item>> {
     if self.done {
       return std::task::Poll::Ready(None);
     } else {
-      self.done = true;    
-      return std::task::Poll::Ready(Some(Ok(self.bytes.clone())))
+      self.done = true;
+      return std::task::Poll::Ready(Some(Ok(self.bytes.clone())));
     }
   }
 }
