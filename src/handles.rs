@@ -992,3 +992,19 @@ pub async fn move_cover() {
   let _ = jh.join();
 
 }
+
+fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String) {
+  let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
+  let mut video_path = mount_config.dir_path.clone();
+  video_path.push_str(&video_entity.dir_path);
+  video_path.push_str("/");
+  video_path.push_str(&video_entity.video_file_name);
+
+  let mut cover_path = mount_config.dir_path.clone();
+  
+  cover_path.push_str(&video_entity.dir_path);
+  cover_path.push('/');
+  cover_path.push_str(&video_entity.cover_file_name);
+
+  (video_path, cover_path)
+} 
