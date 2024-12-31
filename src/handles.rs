@@ -526,34 +526,18 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
     cover_size is null or cover_size=''",
     )
     .unwrap();
-  let file_names: Vec<(i32, String, String)> = stmt
+  let file_names: Vec<(u32, String, String)> = stmt
     .query_map(named_params! {}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
       let dir_path: String = row.get_unwrap("dir_path");
       let base_index: u32 = row.get_unwrap("base_index");
-      let id: i32 = row.get_unwrap("id");
+      let id: u32 = row.get_unwrap("id");
       println!("get file_name:{}, {}", video_file_name, cover_file_name);
-      let mut video_full_name = mount_config_list
-        .iter()
-        .find(|it| it.id == base_index)
-        .unwrap()
-        .dir_path
-        .clone();
-      video_full_name.push_str(&dir_path);
-      video_full_name.push('/');
-      video_full_name.push_str(&video_file_name);
 
-      let mut cover_full_name = mount_config_list
-        .iter()
-        .find(|it| it.id == base_index)
-        .unwrap()
-        .dir_path
-        .clone();
-      cover_full_name.push_str(&dir_path);
-      cover_full_name.push('/');
-      cover_full_name.push_str(&cover_file_name);
-
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
       println!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name))
@@ -916,7 +900,7 @@ fn check_exist_by_video_file_name(
   count != 0
 }
 
-pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_file_name: String) {
+pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_file_name: String) {
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn
     .prepare(
@@ -989,7 +973,7 @@ pub async fn move_cover() {
   }).unwrap().map(|it|it.unwrap()).collect();
   let jh = thread::spawn(move || {
     unmoved.into_iter().for_each(|video_entity| {
-      let (video_path, cover_path, dir_path) = video_entity_to_file_path(&video_entity, &mount_configs);
+      let (_, cover_path, dir_path) = video_entity_to_file_path(&video_entity, &mount_configs);
       println!("find cover path: {:?}", cover_path);
       // TODO: copy cover image
       let mut target_dir = mount_configs[0].dir_path.clone();
