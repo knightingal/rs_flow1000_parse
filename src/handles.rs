@@ -3,7 +3,7 @@ use std::{
   cmp::Ordering,
   collections::HashMap,
   ffi::{c_char, c_void, CString},
-  fs::{self, DirEntry},
+  fs::{self, DirBuilder, DirEntry},
   thread, usize,
 };
 
@@ -477,7 +477,8 @@ pub async fn parse_designation_handler(
   (StatusCode::OK, header, Json(selected_video))
 }
 
-pub async fn parse_meta_info_all_handler() -> StatusCode {
+fn query_mount_configs() -> Vec<MountConfig> {
+
   let sqlite_conn = get_sqlite_connection();
 
   let mut sql = String::from("select id, ");
@@ -506,8 +507,14 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
     .map(|it| it.unwrap());
 
   let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
+  return mount_config_list;
+}
+
+pub async fn parse_meta_info_all_handler() -> StatusCode {
+  let mount_config_list = query_mount_configs();
 
   println!("call query video_file_name");
+  let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
     .prepare(
@@ -958,6 +965,9 @@ pub fn parse_and_update_meta_info_by_id(id: i32, video_file_name: String, cover_
 }
 
 pub async fn move_cover() {
+
+  let mount_configs = query_mount_configs();
+
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn.prepare("
@@ -978,10 +988,19 @@ pub async fn move_cover() {
     ))
   }).unwrap().map(|it|it.unwrap()).collect();
   let jh = thread::spawn(move || {
-    unmoved.into_iter().for_each(|mut video_entity| {
-      video_entity.moved = Some(1);
-      println!("{:?}", video_entity);
+    unmoved.into_iter().for_each(|video_entity| {
+      let (video_path, cover_path, dir_path) = video_entity_to_file_path(&video_entity, &mount_configs);
+      println!("find cover path: {:?}", cover_path);
       // TODO: copy cover image
+      let mut target_dir = mount_configs[0].dir_path.clone();
+      target_dir.push_str("/covers");
+      target_dir.push_str(&dir_path);
+      let target_dir = std::path::Path::new(&target_dir);
+      if !target_dir.exists() {
+        DirBuilder::new()
+          .recursive(true)
+          .create(target_dir).unwrap();
+      }
 
       let _ = get_sqlite_connection().execute(
         "update video_info set moved = 1 where id = :id",
@@ -993,7 +1012,7 @@ pub async fn move_cover() {
 
 }
 
-fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String) {
+fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
   let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
   let mut video_path = mount_config.dir_path.clone();
   video_path.push_str(&video_entity.dir_path);
@@ -1001,10 +1020,12 @@ fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<Mou
   video_path.push_str(&video_entity.video_file_name);
 
   let mut cover_path = mount_config.dir_path.clone();
-  
   cover_path.push_str(&video_entity.dir_path);
   cover_path.push('/');
   cover_path.push_str(&video_entity.cover_file_name);
 
-  (video_path, cover_path)
+  let mut dir_path = mount_config.dir_path.clone();
+  dir_path.push_str(&video_entity.dir_path);
+
+  (video_path, cover_path, dir_path)
 } 
