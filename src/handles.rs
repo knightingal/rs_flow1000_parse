@@ -974,22 +974,31 @@ pub async fn move_cover() {
   let jh = thread::spawn(move || {
     unmoved.into_iter().for_each(|video_entity| {
       let (_, cover_path, dir_path) = video_entity_to_file_path(&video_entity, &mount_configs);
-      println!("find cover path: {:?}", cover_path);
       // TODO: copy cover image
       let mut target_dir = mount_configs[0].dir_path.clone();
       target_dir.push_str("/covers");
       target_dir.push_str(&dir_path);
-      let target_dir = std::path::Path::new(&target_dir);
-      if !target_dir.exists() {
+      let target_dir_path = std::path::Path::new(&target_dir);
+      if !target_dir_path.exists() {
         DirBuilder::new()
           .recursive(true)
-          .create(target_dir).unwrap();
+          .create(target_dir_path).unwrap();
       }
 
-      let _ = get_sqlite_connection().execute(
-        "update video_info set moved = 1 where id = :id",
-        named_params! {":id": video_entity.id}
-      );
+      let mut target_cover_file = target_dir;
+      
+      target_cover_file.push_str("/");
+      target_cover_file.push_str(&video_entity.cover_file_name);
+
+      if std::path::Path::new(&cover_path).exists() {
+        println!("copy cover path: {:?} to {:?}", cover_path, target_cover_file);
+        let _ = fs::copy(cover_path, target_cover_file);
+        let _ = get_sqlite_connection().execute(
+          "update video_info set moved = 1 where id = :id",
+          named_params! {":id": video_entity.id}
+        );
+      }
+
     });
   });
   let _ = jh.join();
