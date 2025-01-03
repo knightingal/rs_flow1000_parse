@@ -37,6 +37,7 @@ mod test_aes;
 mod test_designation;
 mod test_main;
 mod video_name_util;
+mod test_video_name_util;
 
 #[repr(C)]
 struct RustObject {
