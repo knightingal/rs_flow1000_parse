@@ -58,7 +58,7 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~statistic interface~~
 
-* copy cover file to main partition
+* copy cover file to main partition (development finished)
 
 * tab mark
 
