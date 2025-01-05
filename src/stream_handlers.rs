@@ -83,7 +83,7 @@ pub async fn image_stream_hander(Path((base_index, sub_dir)): Path<(u32, String)
     })
     .unwrap();
   let mut main_patition_path = mount_config.dir_path.clone();
-  main_patition_path.push_str("/cover");
+  main_patition_path.push_str("/covers");
   main_patition_path.push_str(&file_path);
   
   let path = std::path::Path::new(&main_patition_path);
