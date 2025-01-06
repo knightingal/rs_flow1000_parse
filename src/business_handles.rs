@@ -327,6 +327,32 @@ pub async fn unbind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCo
   }
 }
 
+pub async fn query_videos_by_tag(
+  Path(tag_id): Path<u32>,
+) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn
+    .prepare("select id, tag_id from video_tag where video_id = :video_id")
+    .unwrap();
+  let tag_vec: Vec<u32> = stmt
+    .query_map(named_params! {":video_id": tag_id}, |row| {
+      Ok(row.get_unwrap("tag_id"))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(
+    CONTENT_TYPE,
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header, Json::from(tag_vec))
+}
+
 pub async fn query_tags_by_video(
   Path(video_id): Path<u32>,
 ) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
