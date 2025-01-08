@@ -13,7 +13,7 @@ use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
-use rusqlite::{named_params, Connection};
+use rusqlite::{named_params, params_from_iter, Connection};
 use tokio::task;
 
 use crate::{entity::*, handles::IS_LINUX};
@@ -329,7 +329,7 @@ pub async fn unbind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCo
 
 pub async fn query_videos_by_tag(
   Path(tag_id): Path<u32>,
-) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
+) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
@@ -343,8 +343,21 @@ pub async fn query_videos_by_tag(
     .map(|it| it.unwrap())
     .collect();
 
-  
-  
+  let vars = repeat_vars(video_id_vec.len());
+  let sql = format!("select id, video_file_name, cover_file_name, rate from video_info where id in ({})", vars);
+
+  let mut stmt = sqlite_conn
+    .prepare(&sql)
+    .unwrap();
+  let video_entity_vec: Vec<VideoEntity> = stmt.query_map(params_from_iter(video_id_vec), |row| {
+      Result::Ok(VideoEntity::new_for_base_info(
+        row.get_unwrap(0),
+        row.get_unwrap(1),
+        row.get_unwrap(2),
+        Option::Some(0),
+        row.get_unwrap(3),
+      ))
+  }).unwrap().map(|it|it.unwrap()).collect();
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -353,7 +366,15 @@ pub async fn query_videos_by_tag(
     "application/json; charset=utf-8".parse().unwrap(),
   );
 
-  (StatusCode::OK, header, Json::from(video_id_vec))
+  (StatusCode::OK, header, Json::from(video_entity_vec))
+}
+
+fn repeat_vars(count: usize) -> String {
+  assert_ne!(count, 0);
+  let mut s = "?,".repeat(count);
+  // Remove trailing comma
+  s.pop();
+  s
 }
 
 pub async fn query_tags_by_video(
