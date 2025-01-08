@@ -333,15 +333,18 @@ pub async fn query_videos_by_tag(
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
-    .prepare("select id, tag_id from video_tag where video_id = :video_id")
+    .prepare("select id, video_id from video_tag where tag_id = :tag_id")
     .unwrap();
-  let tag_vec: Vec<u32> = stmt
-    .query_map(named_params! {":video_id": tag_id}, |row| {
-      Ok(row.get_unwrap("tag_id"))
+  let video_id_vec: Vec<u32> = stmt
+    .query_map(named_params! {":tag_id": tag_id}, |row| {
+      Ok(row.get_unwrap("video_id"))
     })
     .unwrap()
     .map(|it| it.unwrap())
     .collect();
+
+  
+  
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -350,7 +353,7 @@ pub async fn query_videos_by_tag(
     "application/json; charset=utf-8".parse().unwrap(),
   );
 
-  (StatusCode::OK, header, Json::from(tag_vec))
+  (StatusCode::OK, header, Json::from(video_id_vec))
 }
 
 pub async fn query_tags_by_video(
