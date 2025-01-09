@@ -344,7 +344,7 @@ pub async fn query_videos_by_tag(
     .collect();
 
   let vars = repeat_vars(video_id_vec.len());
-  let sql = format!("select id, video_file_name, cover_file_name, rate from video_info where id in ({})", vars);
+  let sql = format!("select id, video_file_name, cover_file_name, rate, video_size from video_info where id in ({})", vars);
 
   let mut stmt = sqlite_conn
     .prepare(&sql)
@@ -354,7 +354,7 @@ pub async fn query_videos_by_tag(
         row.get_unwrap(0),
         row.get_unwrap(1),
         row.get_unwrap(2),
-        Option::Some(0),
+        row.get_unwrap(4),
         row.get_unwrap(3),
       ))
   }).unwrap().map(|it|it.unwrap()).collect();
