@@ -101,6 +101,8 @@ impl VideoEntity {
     cover_file_name: String,
     video_size: Option<u64>,
     rate: Option<u32>,
+    base_index: u32,
+    dir_path: String,
   ) -> VideoEntity {
     VideoEntity {
       id,
@@ -108,8 +110,8 @@ impl VideoEntity {
       cover_file_name,
       designation_char: String::new(),
       designation_num: String::new(),
-      dir_path: String::new(),
-      base_index: 0,
+      dir_path,
+      base_index,
       rate,
       video_size,
       height: 0,

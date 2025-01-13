@@ -36,7 +36,7 @@ pub async fn video_info_handler(
 
   let sqlite_conn = get_sqlite_connection();
 
-  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate, video_size from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
+  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
   let selected_video_iter = stmt
     .query_map(
       named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index},
@@ -47,6 +47,8 @@ pub async fn video_info_handler(
           row.get_unwrap(2),
           row.get_unwrap(4),
           row.get_unwrap(3),
+          row.get_unwrap(5),
+          row.get_unwrap(6),
         ))
       },
     )
@@ -200,7 +202,7 @@ pub async fn video_rate(
     )
     .unwrap();
   let result: Result<VideoEntity, _> = sqlite_conn.query_row(
-    "select id, video_file_name, cover_file_name, rate from video_info where id = :id ",
+    "select id, video_file_name, cover_file_name, rate, base_index, dir_path from video_info where id = :id ",
     named_params! {
         ":id" : id,
     },
@@ -211,6 +213,9 @@ pub async fn video_rate(
         row.get_unwrap(2),
         Option::Some(0),
         row.get_unwrap(3),
+        row.get_unwrap(4),
+        row.get_unwrap(5),
+        
       ))
     },
   );
@@ -344,7 +349,7 @@ pub async fn query_videos_by_tag(
     .collect();
 
   let vars = repeat_vars(video_id_vec.len());
-  let sql = format!("select id, video_file_name, cover_file_name, rate, video_size from video_info where id in ({})", vars);
+  let sql = format!("select id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path from video_info where id in ({})", vars);
 
   let mut stmt = sqlite_conn
     .prepare(&sql)
@@ -356,6 +361,8 @@ pub async fn query_videos_by_tag(
         row.get_unwrap(2),
         row.get_unwrap(4),
         row.get_unwrap(3),
+        row.get_unwrap(5),
+        row.get_unwrap(6),
       ))
   }).unwrap().map(|it|it.unwrap()).collect();
 
