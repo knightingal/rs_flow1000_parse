@@ -67,3 +67,5 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 * video snapshot interface
 
 * tab in dialog 
+
+* ui for search designation 
