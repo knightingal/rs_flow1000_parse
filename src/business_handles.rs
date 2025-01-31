@@ -132,27 +132,27 @@ pub async fn mp4_dir_handler1(
     .unwrap();
 
   let exists = fs::exists(&dir_path);
-  let file_names = if exists.is_ok() && exists.unwrap() {
-    parse_dir_path(&dir_path).unwrap()
-  } else {
-    let mut stmt = sqlite_conn.prepare("
-      select 
-        dir_path 
-      from 
-        video_info 
-      where 
-        base_index=:base_index 
-      group by 
-        dir_path
-    ").unwrap();
-    let file_names: Vec<(String, u64)> = stmt.query_map(named_params! {":base_index": base_index}, |row| {
-      let mut dir_path: String = row.get_unwrap(0);
-      let dir_path1: String = dir_path.split_off(1);
-      Ok((dir_path1, 0u64))
-    }).unwrap().map(|it|it.unwrap()).collect();
-    file_names
+
+  let file_names = match exists {
+    Ok(true) => parse_dir_path(&dir_path).unwrap(),
+    _ => {
+      let mut stmt = sqlite_conn.prepare("
+        select 
+          dir_path 
+        from 
+          video_info 
+        where 
+          base_index=:base_index 
+        group by 
+          dir_path
+      ").unwrap();
+      let file_names: Vec<(String, u64)> = stmt.query_map(named_params! {":base_index": base_index}, |row| {
+        let mut dir_path: String = row.get_unwrap(0);
+        Ok((dir_path.split_off(1), 0))
+      }).unwrap().map(|it|it.unwrap()).collect();
+      file_names
+    }
   };
-  
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
