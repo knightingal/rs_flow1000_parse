@@ -101,7 +101,7 @@ pub async fn image_stream_hander(Path((base_index, sub_dir)): Path<(u32, String)
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = 0;
-  let mock_stream = VideoStream::new(start, file_path);
+  let mock_stream = VideoStream::new(start, main_patition_path);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
     .body(Body::from_stream(mock_stream))
