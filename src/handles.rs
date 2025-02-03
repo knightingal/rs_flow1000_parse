@@ -330,7 +330,7 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
 
 pub async fn designation_search(
   Path(designation_ori): Path<String>,
-) -> (StatusCode, Json<Vec<VideoEntity>>) {
+) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let designation = parse_designation(&designation_ori);
   let conn1 = get_sqlite_connection();
 
@@ -372,7 +372,7 @@ pub async fn designation_search(
     "content-type",
     "application/json; charset=utf-8".parse().unwrap(),
   );
-  (StatusCode::OK, Json(selected_video))
+  (StatusCode::OK, header, Json(selected_video))
 }
 
 fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
