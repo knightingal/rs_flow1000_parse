@@ -36,7 +36,13 @@ pub async fn video_info_handler(
 
   let sqlite_conn = get_sqlite_connection();
 
-  let mut stmt = sqlite_conn.prepare("select id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path from video_info where dir_path = :dir_path and base_index=:base_index").unwrap();
+  let mut stmt = sqlite_conn.prepare("
+    select 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
+    from 
+      video_info 
+    where 
+      dir_path = :dir_path and base_index=:base_index").unwrap();
   let selected_video_iter = stmt
     .query_map(
       named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index},

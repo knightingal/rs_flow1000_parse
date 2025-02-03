@@ -334,15 +334,13 @@ pub async fn designation_search(
   let designation = parse_designation(&designation_ori);
   let conn1 = get_sqlite_connection();
 
-  let mut stmt = conn1
-    .prepare(
-      "select 
-    id, video_file_name, cover_file_name, dir_path, base_index, designation_char, designation_num
-  from 
-    video_info 
-  where 
-    designation_char=:char and designation_num=:num",
-    )
+  let mut stmt = conn1.prepare( "
+    select 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
+    from 
+      video_info 
+    where 
+      designation_char=:char and designation_num=:num")
     .unwrap();
 
   let selected_video_iter = stmt
@@ -352,12 +350,12 @@ pub async fn designation_search(
           ":num" : designation.num_final.unwrap(),
       },
       |row| {
-        Ok(VideoEntity::new_by_for_duplicate_cover(
+        Ok(VideoEntity::new_for_base_info(
           row.get_unwrap(0),
           row.get_unwrap(1),
           row.get_unwrap(2),
-          row.get_unwrap(3),
           row.get_unwrap(4),
+          row.get_unwrap(3),
           row.get_unwrap(5),
           row.get_unwrap(6),
         ))
