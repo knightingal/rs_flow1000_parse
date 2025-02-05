@@ -68,4 +68,4 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * tab in dialog 
 
-* ui for search designation 
+* ~~ui for search designation ~~
