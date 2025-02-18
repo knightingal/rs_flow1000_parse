@@ -60,9 +60,9 @@ gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 
 * ~~copy cover file to main partition~~
 
-* image stream switch to main partition
+* ~~image stream switch to main partition~~
 
-* tab mark
+* ~~tab mark~~
 
 * video snapshot interface
 
