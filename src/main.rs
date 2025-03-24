@@ -20,7 +20,7 @@ use std::{
   time::Duration,
 };
 use stream_handlers::{
-  file_stream_hander, image_stream_hander, mock_stream_hander, video_stream_hander,
+  file_stream_hander, image_stream_hander, mock_stream_hander, video_exist, video_stream_hander
 };
 use tower_http::trace::TraceLayer;
 use tracing::Span;
@@ -189,6 +189,10 @@ async fn main() {
     .route(
       "/video-stream/:base_index/*sub_dir",
       get(video_stream_hander),
+    )
+    .route(
+      "/video-exist/:base_index/*sub_dir",
+      get(video_exist),
     )
     .route(
       "/image-stream/:base_index/*sub_dir",
