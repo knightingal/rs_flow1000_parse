@@ -23,8 +23,8 @@ netsh interface portproxy add v4tov4 listenport=3002 listenaddress=0.0.0.0 conne
 
 # Build frame_decode
 ```
-gcc frame_decode.c lib_frame_decode.c -g -o frame_decode -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
-gcc -shared -fPIC lib_frame_decode.c -o libframe_decode.so -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
+gcc -I/usr/include/ffmpeg frame_decode.c lib_frame_decode.c -g -o frame_decode -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
+gcc -I/usr/include/ffmpeg -shared -fPIC lib_frame_decode.c -o libframe_decode.so -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
 ```
 
 # Build simple dll
