@@ -10,6 +10,15 @@ sudo apt install libssl-dev
 sudo apt install libsqlite3-dev
 ```
 
+# Install ffmpeg in fedora 41
+```
+sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-41.noarch.rpm
+sudo dnf install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-41.noarch.rpm
+sudo dnf group install multimedia
+sudo dnf swap ffmpeg-free ffmpeg --allowerasing
+sudo dnf install ffmpeg-devel
+```
+
 # Build
 
 ```
