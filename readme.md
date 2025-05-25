@@ -41,6 +41,19 @@ gcc -I/usr/include/ffmpeg -shared -fPIC lib_frame_decode.c -o libframe_decode.so
 gcc -shared -fPIC -o libsimpledll.so simple_dll.c
 ```
 
+# Install ffmpeg and codecs libs
+
+## OpenSUSE
+
+```shell
+sudo zypper ar -cfp 90 'https://mirrors.aliyun.com/packman/suse/openSUSE_Tumbleweed' packman
+sudo zypper refresh
+sudo zypper dist-upgrade --from packman --allow-vendor-change
+sudo zypper install --from packman ffmpeg gstreamer-plugins-{good,bad,ugly,libav} libavcodec-full vlc-codecs
+
+sudo zypper install ffmpeg-7-libavcodec-devel ffmpeg-7-libavdevice-devel ffmpeg-7-libavfilter-devel ffmpeg-7-libavformat-devel ffmpeg-7-libavutil-devel ffmpeg-7-libpostproc-devel ffmpeg-7-libswresample-devel ffmpeg-7-libswscale-devel
+```
+
 # TODO
 
 * ~~support sqlite~~
