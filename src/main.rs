@@ -132,8 +132,11 @@ async fn main() {
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
-  let is_linux =
-    Box::new(System::name().unwrap().contains("Linux") || System::name().unwrap() == "Deepin");
+  let is_linux = Box::new(
+    System::name().unwrap().contains("Linux")
+      || System::name().unwrap() == "Deepin"
+      || System::name().unwrap().contains("openSUSE"),
+  );
   unsafe {
     IS_LINUX = Some(Box::leak(is_linux));
   }
