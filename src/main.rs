@@ -5,10 +5,15 @@ use axum::{
   Json, Router,
 };
 use business_handles::{
-  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags, query_tags_by_video, query_videos_by_tag, statistic_handle, unbind_tag, video_info_handler, video_rate
+  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags,
+  query_tags_by_video, query_videos_by_tag, statistic_handle, unbind_tag, video_info_handler,
+  video_rate,
 };
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot, init_video_handler, move_cover, parse_designation_all_handler, parse_designation_handler, parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config, sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX
+  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
+  init_video_handler, move_cover, parse_designation_all_handler, parse_designation_handler,
+  parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config,
+  sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX,
 };
 use hyper::StatusCode;
 use rusqlite::Connection;
@@ -20,7 +25,7 @@ use std::{
   time::Duration,
 };
 use stream_handlers::{
-  file_stream_hander, image_stream_hander, mock_stream_hander, video_exist, video_stream_hander
+  file_stream_hander, image_stream_hander, mock_stream_hander, video_exist, video_stream_hander,
 };
 use tower_http::trace::TraceLayer;
 use tracing::Span;
@@ -35,8 +40,8 @@ mod stream_handlers;
 mod test_aes;
 mod test_designation;
 mod test_main;
-mod video_name_util;
 mod test_video_name_util;
+mod video_name_util;
 
 #[repr(C)]
 struct RustObject {
@@ -190,10 +195,7 @@ async fn main() {
       "/video-stream/:base_index/*sub_dir",
       get(video_stream_hander),
     )
-    .route(
-      "/video-exist/:base_index/*sub_dir",
-      get(video_exist),
-    )
+    .route("/video-exist/:base_index/*sub_dir", get(video_exist))
     .route(
       "/image-stream/:base_index/*sub_dir",
       get(image_stream_hander),
