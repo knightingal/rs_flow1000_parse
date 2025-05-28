@@ -376,7 +376,12 @@ pub async fn query_videos_by_tag(
     .collect();
 
   let vars = repeat_vars(video_id_vec.len());
-  let sql = format!("select id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path from video_info where id in ({})", vars);
+  let sql = format!("
+    select 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
+    from 
+      video_info where id in ({})
+    ", vars);
 
   let mut stmt = sqlite_conn
     .prepare(&sql)
