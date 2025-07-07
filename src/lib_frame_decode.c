@@ -120,7 +120,7 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
   }
   if (ctx)
   {
-    avcodec_close(ctx);
+    // avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
   if (pkt)
@@ -165,7 +165,7 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   }
   if (ctx)
   {
-    avcodec_close(ctx);
+    // avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
   if (pkt)
@@ -285,7 +285,7 @@ error:
   }
   if (ctx)
   {
-    avcodec_close(ctx);
+    // avcodec_close(ctx);
     avcodec_free_context(&ctx);
   }
   if (pkt)
@@ -459,7 +459,7 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
   av_packet_free(&p_packet);
   avcodec_flush_buffers(dec_ctx);
 
-  avcodec_close(dec_ctx);
+  // avcodec_close(dec_ctx);
   avcodec_free_context(&dec_ctx);
 
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
@@ -479,14 +479,14 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
     av_frame_free(&frame_array[i]);
   }
 
-  // output_file = fopen(DEST_URL, "w+b");
-  // if (fwrite(buffer, 1, ret, output_file) < 0)
-  // {
-  //   fprintf(stderr, "Failed to dump raw data.\n");
-  // }
-  // av_free(buffer);
+  output_file = fopen(DEST_URL, "w+b");
+  if (fwrite(buffer, 1, ret, output_file) < 0)
+  {
+    fprintf(stderr, "Failed to dump raw data.\n");
+  }
+  av_free(buffer);
 
-  // fclose(output_file);
+  fclose(output_file);
   free(dec_ctx);
   avformat_close_input(&fmt_ctx);
   struct snapshot_st st = {
@@ -605,7 +605,7 @@ int frame_decode(const char *name_path, const char *dest_path)
     av_packet_free(&p_packet);
     avcodec_flush_buffers(dec_ctx);
   }
-  avcodec_close(dec_ctx);
+  // avcodec_close(dec_ctx);
   avcodec_free_context(&dec_ctx);
 
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
