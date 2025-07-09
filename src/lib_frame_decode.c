@@ -429,8 +429,15 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
   printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
 
   AVFrame *frame_array[1];
+  /**
+   * avcodec_alloc_context3 函数用于分配一个 AVCodecContext 结构体，并将其字段设置为默认值。生成的结构体需要使用 avcodec_free_context() 进行释放。
+   */
   dec_ctx = avcodec_alloc_context3(codec);
   avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
+  /**
+   * avcodec_open2 函数用于初始化 AVCodecContext 以使用指定的 AVCodec。
+   * 在调用此函数之前，需要先通过 avcodec_alloc_context3() 分配上下文，并根据需要通过设置选项或直接修改上下文来配置解码或编码参数。
+   */
   ret = avcodec_open2(dec_ctx, codec, NULL);
 
   int64_t timestamp = (int64_t)(snap_time) * 1000000l;
@@ -491,10 +498,17 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
   av_free(buffer);
 
   fclose(output_file);
-  free(dec_ctx);
+
+  /**
+   * Copilot: The line below is commented out because it is incorrect.
+   * The `dec_ctx` variable is already freed by `avcodec_free_context()`,
+   * and freeing it again would lead to undefined behavior.
+   * If you need to free the context, you should use `avcodec_free_context(&dec_ctx);`
+   * instead of `free(dec_ctx);`.
+   */
+  // free(dec_ctx);
   avformat_close_input(&fmt_ctx);
-  struct snapshot_st st = {
-      buffer, ret};
+  struct snapshot_st st = {buffer, ret};
 
   return st;
 }
