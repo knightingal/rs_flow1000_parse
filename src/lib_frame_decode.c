@@ -361,6 +361,10 @@ struct video_meta_info *video_meta_info(const char *name_path)
   return p_video_meta_info;
 }
 
+/**
+ * snapshot_video 函数接收视频文件路径和时间戳参数，提取指定时间点的视频帧并生成快照图像。
+ * 它使用 FFmpeg 库解析视频流，解码帧数据，将帧转换为图像格式并保存到指定位置，同时返回包含图像数据和大小的 snapshot_st 结构体。
+ */
 struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_time)
 {
   int ret;
