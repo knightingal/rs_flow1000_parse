@@ -54,6 +54,16 @@ fn frame_decode_with_param(_: *const c_char, _: *const c_char) -> i32 {
   return 0;
 }
 
+#[cfg(mocklink)]
+fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
+    SnapshotSt {
+      buff: std::ptr::null(),
+      buff_len: 0,
+    }
+}
+
+
+
 pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<VideoEntity>>) {
   let conn = get_sqlite_connection();
   let video_entity = conn

@@ -94,6 +94,14 @@ fn simple_dll_function_return_char_arr() -> *mut CharArrObject {
   p_ro
 }
 
+#[cfg(mocklink)]
+fn simple_dll_function_return_heap_point() -> *const c_char {
+  let video_name = CString::new("0").unwrap();
+  let heap_point = video_name.into_raw();
+  heap_point
+}
+
+
 #[tokio::main]
 async fn main() {
   unsafe {
