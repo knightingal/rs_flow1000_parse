@@ -264,5 +264,24 @@ int main() {
   key_expansion(key, w);
   cipher(input, w, result);
 
+  uint32_t cfb_result[8] = {0};
+  char* password = "passwordpassword";
+  char* iv = "2021000120210001";
+  char* input_data = "0123456789abcdef0123456789abcdef";
+
+  uint8_t password_bytes[16];
+  memcpy(password_bytes, password, 16);
+
+  uint32_t iv_bytes[4];
+  memcpy(iv_bytes, iv, 16);
+
+
+  uint32_t input_bytes[8];
+  memcpy(input_bytes, input_data, 32);
+
+
+
+  cfb(password_bytes, iv_bytes, input_bytes, cfb_result, 8);
+
   return 0;
 }
