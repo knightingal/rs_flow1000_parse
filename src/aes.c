@@ -220,7 +220,7 @@ void cfb(
 
 }
 
-void invCfg(
+void invCfb(
     uint8_t* pwd, 
     uint32_t* iv, 
     uint32_t* input, 
