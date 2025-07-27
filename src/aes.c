@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 int nk = 4; // Number of 32-bit words in the key (for AES-128)
@@ -139,7 +141,7 @@ uint32_t rot_word(uint32_t w) {
 }
 
 
-void key_expansion(const uint8_t *key, uint8_t *round_keys) {
+void key_expansion(const uint8_t *key, uint32_t *round_keys) {
   int i = 0;
   while (i <= nk - 1) {
     round_keys[i] = (key[i * 4] << 24) |
@@ -179,7 +181,7 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
             t4[ s[(i + 3) % 4]        & 0xff] ^
             w[round * 4 + i];
     }
-    memncpy(s, result, sizeof(uint32_t) * 4);
+    memcpy(s, result, sizeof(uint32_t) * 4);
   }
 
 
@@ -192,3 +194,26 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
         ) ^ w[nr * 4 + i];
     }
 } 
+
+int main() {
+  uint32_t input[4] = {
+    0x3243f6a8,
+    0x885a308d,
+    0x313198a2,
+    0xe0370734,
+  };
+  uint32_t w[44] = {0};
+  uint32_t result[4] = {0};
+
+  uint8_t key[16] = {
+    0x2b, 0x7e, 0x15, 0x16,
+    0x28, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88, 
+    0x09, 0xcf, 0x4f, 0x3c,
+  };
+
+  key_expansion(key, w);
+  cipher(input, w, result);
+
+  return 0;
+}
