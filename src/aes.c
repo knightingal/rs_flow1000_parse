@@ -220,6 +220,30 @@ void cfb(
 
 }
 
+void invCfg(
+    uint8_t* pwd, 
+    uint32_t* iv, 
+    uint32_t* input, 
+    uint32_t* output, 
+    size_t len
+) {
+  uint32_t w[44] = {0};
+  key_expansion(pwd, w);
+
+  uint32_t en[4] = {0};
+  cipher(iv, w, en);
+
+  for (size_t i = 0; i < len; i += 4) {
+    output[i    ] = input[i    ] ^ en[0];
+    output[i + 1] = input[i + 1] ^ en[1];
+    output[i + 2] = input[i + 2] ^ en[2];
+    output[i + 3] = input[i + 3] ^ en[3];
+    if (i + 4 < len) {
+      cipher(input + i, w, en);
+    }
+  }
+}
+
 int main() {
   uint32_t input[4] = {
     0x3243f6a8,
