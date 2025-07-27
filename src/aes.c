@@ -163,39 +163,32 @@ void key_expansion(const uint8_t *key, uint8_t *round_keys) {
   }
 }
 
-void cipher(uint32_t* input, uint32_t* w) {
-  uint32_t temp[4];
+void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
   uint32_t* s = input;
   int round = 0;
   for (int i = 0; i < 4; i++) {
     s[i] ^= w[i];
   }
 
-  for (int round = 1; round < nr; round++) {
+  for (int round = 1; round <= nr - 1; round++) {
     for (int i = 0; i < 4; i++) {
-      temp[i] = 
+      result[i] = 
             t1[(s[ i         ] >> 24) & 0xff] ^
             t2[(s[(i + 1) % 4] >> 16) & 0xff] ^
             t3[(s[(i + 2) % 4] >>  8) & 0xff] ^
-            t4[ s[(i + 3) % 4]         & 0xff] ^
+            t4[ s[(i + 3) % 4]        & 0xff] ^
             w[round * 4 + i];
     }
-    // s = [...temp]
+    memncpy(s, result, sizeof(uint32_t) * 4);
   }
 
 
-      for (int i = 0; i < 4; i++) {
-      // dart format off
-      temp[i] = (
-          (sbox[(s[ i]          >> 24) & 0xff] << 24) |
-          (sbox[(s[(i + 1) % 4] >> 16) & 0xff] << 16) |
-          (sbox[(s[(i + 2) % 4] >>  8) & 0xff] <<  8) |
-          (sbox[(s[(i + 3) % 4])        & 0xff]      )
-          ) ^
-          w[nr * 4 + i];
-      // dart format on
+    for (int i = 0; i < 4; i++) {
+    result[i] = (
+        (sbox[(s[ i]          >> 24) & 0xff] << 24) |
+        (sbox[(s[(i + 1) % 4] >> 16) & 0xff] << 16) |
+        (sbox[(s[(i + 2) % 4] >>  8) & 0xff] <<  8) |
+        (sbox[(s[(i + 3) % 4]      ) & 0xff]      )
+        ) ^ w[nr * 4 + i];
     }
-
-
-
 } 
