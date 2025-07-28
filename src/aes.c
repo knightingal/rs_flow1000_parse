@@ -244,6 +244,22 @@ void invCfb(
   }
 }
 
+uint32_t four_char_to_int(char* chars) {
+  return ((uint32_t)chars[0]) << 24 |
+        ((uint32_t)chars[1]) << 16 |
+        ((uint32_t)chars[2]) << 8  |
+        ((uint32_t)chars[3]);
+}
+
+void array_to_state(uint32_t* input) {
+  uint32_t state[4] = {0};
+  state[0] = input[0] & 0xff000000 | (input[1] & 0xff000000) >> 8 | (input[2] & 0xff000000) >> 16 | (input[3] & 0xff000000) >> 24;
+  state[1] = (input[0] & 0x00ff0000) << 8 | (input[1] & 0x00ff0000) | (input[2] & 0x00ff0000) >> 8 | (input[3] & 0x00ff0000) >> 16;
+  state[2] = (input[0] & 0x0000ff00) << 16 | (input[1] & 0x0000ff00) << 8 | (input[2] & 0x0000ff00)  | (input[3] & 0x0000ff00) >> 8;
+  state[3] = (input[0] & 0x000000ff) << 24 | (input[1] & 0x000000ff) << 16 | (input[2] & 0x000000ff) << 8 | (input[3] & 0x000000ff);
+  memcpy(input, state, sizeof(uint32_t) * 4);
+}
+
 int main() {
   uint32_t input[4] = {
     0x3243f6a8,
@@ -273,13 +289,23 @@ int main() {
   memcpy(password_bytes, password, 16);
 
   uint32_t iv_bytes[4];
-  memcpy(iv_bytes, iv, 16);
+  // memcpy(iv_bytes, iv, 16);
+  iv_bytes[0] = four_char_to_int(&iv[0]);
+  iv_bytes[1] = four_char_to_int(&iv[4]);
+  iv_bytes[2] = four_char_to_int(&iv[8]);
+  iv_bytes[3] = four_char_to_int(&iv[12]);
+  array_to_state(iv_bytes);
 
 
   uint32_t input_bytes[8];
-  memcpy(input_bytes, input_data, 32);
-
-
+  input_bytes[0] = four_char_to_int(&input_data[0]);
+  input_bytes[1] = four_char_to_int(&input_data[4]);
+  input_bytes[2] = four_char_to_int(&input_data[8]);
+  input_bytes[3] = four_char_to_int(&input_data[12]);
+  input_bytes[4] = four_char_to_int(&input_data[16]);
+  input_bytes[5] = four_char_to_int(&input_data[20]);
+  input_bytes[6] = four_char_to_int(&input_data[24]);
+  input_bytes[7] = four_char_to_int(&input_data[28]);
 
   cfb(password_bytes, iv_bytes, input_bytes, cfb_result, 8);
 
