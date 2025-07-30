@@ -205,30 +205,38 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
     }
 } 
 
-void cfb(
-    uint8_t* pwd, 
-    uint32_t* iv, 
-    uint32_t* input, 
-    uint32_t* output, 
-    size_t len
-) {
+void cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
   uint32_t w[44] = {0};
   key_expansion(pwd, w);
 
-  uint32_t en[4] = {0};
-  cipher(iv, w, en);
+  uint32_t iv_state[4] = {0};
 
-  for (size_t i = 0; i < len; i += 4) {
-    output[i    ] = input[i    ] ^ en[0];
-    output[i + 1] = input[i + 1] ^ en[1];
-    output[i + 2] = input[i + 2] ^ en[2];
-    output[i + 3] = input[i + 3] ^ en[3];
-    if (i + 4 < len) {
-      cipher(output + i, w, en);
+  i8_list_to_i32(iv, iv_state, 4);
+
+  uint32_t en[4] = {0};
+
+  cipher(iv_state, w, en);
+
+  for (int i = 0; i < len; i += 16) {
+    uint8_t* pt_array = input + i;
+    uint32_t pt_i32_array[4] = {0};
+    i8_list_to_i32(pt_array, pt_i32_array, 4);
+    for (int j = 0; j < 4; j++) {
+      en[j] ^= pt_i32_array[j];
+    }
+
+    for (int j = 0; j < 4; j++) {
+      output[i + j * 4    ] = (en[j] >> 24) & 0xff;
+      output[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+      output[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+      output[i + j * 4 + 3] = (en[j]      ) & 0xff;
+    }
+
+    uint32_t en_tmp[4] = {0};
+    cipher(en, w, en_tmp);
+    memcpy(en, en_tmp, sizeof(uint32_t) * 4);
     }
   }
-
-}
 
 void invCfb(
     uint8_t* pwd, 
