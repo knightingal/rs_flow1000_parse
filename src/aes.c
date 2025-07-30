@@ -165,6 +165,16 @@ void key_expansion(const uint8_t *key, uint32_t *round_keys) {
   }
 }
 
+void i8_list_to_i32(uint8_t* input, uint32_t* output, size_t out_len) {
+  for (size_t i = 0; i < out_len; i++) {
+    output[i] = 
+        input[i * 4    ] << 24 |
+        input[i * 4 + 1] << 16 |
+        input[i * 4 + 2] <<  8 |
+        input[i * 4 + 3];
+  }
+}
+
 void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
   uint32_t* s = input;
   int round = 0;
