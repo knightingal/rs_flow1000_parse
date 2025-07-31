@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 int nk = 4; // Number of 32-bit words in the key (for AES-128)
@@ -264,7 +265,107 @@ void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t
   }
 }
 
+uint8_t* read_file_to_byte_array(const char* filename, size_t* file_size) {
+  FILE* file = fopen(filename, "rb");
+  if (!file) {
+    printf("Error: Could not open file %s\n", filename);
+    return NULL;
+  }
+  
+  // Get file size
+  fseek(file, 0, SEEK_END);
+  *file_size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  
+  // Allocate memory for file content
+  uint8_t* buffer = (uint8_t*)malloc(*file_size);
+  if (!buffer) {
+    printf("Error: Could not allocate memory for file content\n");
+    fclose(file);
+    return NULL;
+  }
+  
+  // Read file content
+  size_t bytes_read = fread(buffer, 1, *file_size, file);
+  if (bytes_read != *file_size) {
+    printf("Error: Could not read complete file. Expected %zu bytes, read %zu bytes\n", *file_size, bytes_read);
+    free(buffer);
+    fclose(file);
+    return NULL;
+  }
+  
+  fclose(file);
+  printf("Successfully read %zu bytes from %s\n", *file_size, filename);
+  return buffer;
+}
+
+int write_byte_array_to_file(const char* filename, uint8_t* data, size_t data_size) {
+  FILE* file = fopen(filename, "wb");
+  if (!file) {
+    printf("Error: Could not create file %s\n", filename);
+    return 0;
+  }
+  
+  size_t bytes_written = fwrite(data, 1, data_size, file);
+  if (bytes_written != data_size) {
+    printf("Error: Could not write complete data. Expected %zu bytes, wrote %zu bytes\n", data_size, bytes_written);
+    fclose(file);
+    return 0;
+  }
+  
+  fclose(file);
+  printf("Successfully wrote %zu bytes to %s\n", data_size, filename);
+  return 1;
+}
+
+void do_file() {
+  // Read the encrypted file into a byte array
+  const char* filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
+  size_t file_size = 0;
+  uint8_t* file_data = read_file_to_byte_array(filename, &file_size);
+  uint8_t* output_data = (uint8_t*)malloc(file_size);
+  
+  if (!file_data) {
+    return ; // Exit if file reading failed
+  }
+  
+  printf("File data loaded. Size: %zu bytes\n", file_size);
+  printf("First 16 bytes (hex): ");
+  for (int i = 0; i < 16 && i < file_size; i++) {
+    printf("%d ", file_data[i]);
+  }
+  printf("\n");
+
+  char* password = "****************";
+  char* iv = "2017041621251234";
+
+  uint8_t password_bytes[16];
+  memcpy(password_bytes, password, 16);
+
+  uint8_t iv_bytes[16];
+  memcpy(iv_bytes, iv, 16);
+
+
+  inv_cfb(password_bytes, iv_bytes, file_data, output_data, file_size);
+  for (int i = 0; i < 16 && i < file_size; i++) {
+    printf("%d ", output_data[i]);
+  }
+  
+  // Write the byte array to output.jpg
+  if (write_byte_array_to_file("output.jpg", output_data, file_size)) {
+    printf("File successfully written to output.jpg\n");
+  } else {
+    printf("Failed to write file to output.jpg\n");
+  }
+  free(file_data);
+  free(output_data);
+
+}
+
 int main() {
+  do_file();
+  
+  // Your existing AES test code
   uint32_t input[4] = {
     0x3243f6a8,
     0x885a308d,
@@ -305,5 +406,7 @@ int main() {
   uint8_t inv_cfb_bytes[32] = {0};
   inv_cfb(password_bytes, iv_bytes, cfb_bytes, inv_cfb_bytes, 32);
 
+  // Clean up allocated memory
+  
   return 0;
 }
