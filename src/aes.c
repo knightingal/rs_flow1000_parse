@@ -271,13 +271,6 @@ void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t
   }
 }
 
-uint32_t four_char_to_int(char* chars) {
-  return ((uint32_t)chars[0]) << 24 |
-        ((uint32_t)chars[1]) << 16 |
-        ((uint32_t)chars[2]) << 8  |
-        ((uint32_t)chars[3]);
-}
-
 int main() {
   uint32_t input[4] = {
     0x3243f6a8,
