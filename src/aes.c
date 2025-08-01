@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 
 int nk = 4; // Number of 32-bit words in the key (for AES-128)
@@ -266,54 +269,55 @@ void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t
 }
 
 uint8_t* read_file_to_byte_array(const char* filename, size_t* file_size) {
-  FILE* file = fopen(filename, "rb");
-  if (!file) {
+  int fd = open(filename, O_RDONLY);
+  if (fd < 0) {
     printf("Error: Could not open file %s\n", filename);
     return NULL;
   }
-  
-  // Get file size
-  fseek(file, 0, SEEK_END);
-  *file_size = ftell(file);
-  fseek(file, 0, SEEK_SET);
+  struct stat st;
+
+  stat(filename, &st);
+  *file_size = st.st_size;
+
   
   // Allocate memory for file content
   uint8_t* buffer = (uint8_t*)malloc(*file_size);
   if (!buffer) {
     printf("Error: Could not allocate memory for file content\n");
-    fclose(file);
+    close(fd);
     return NULL;
   }
+
+  ssize_t bytes_read = read(fd, buffer, *file_size);
   
-  // Read file content
-  size_t bytes_read = fread(buffer, 1, *file_size, file);
   if (bytes_read != *file_size) {
     printf("Error: Could not read complete file. Expected %zu bytes, read %zu bytes\n", *file_size, bytes_read);
     free(buffer);
-    fclose(file);
+    close(fd);
     return NULL;
   }
-  
-  fclose(file);
+
+  close(fd);
   printf("Successfully read %zu bytes from %s\n", *file_size, filename);
   return buffer;
 }
 
 int write_byte_array_to_file(const char* filename, uint8_t* data, size_t data_size) {
-  FILE* file = fopen(filename, "wb");
-  if (!file) {
-    printf("Error: Could not create file %s\n", filename);
+  int fd = creat(filename, S_IRUSR|S_IWUSR);
+  if (fd < 0) {
+    printf("Error: Could not open file %s for writing\n", filename);
+    return 0;
+  }
+
+  ssize_t write_len = write(fd, data, data_size);
+  
+  if (write_len != data_size) {
+    printf("Error: Could not write complete data. Expected %zu bytes, wrote %zu bytes\n", data_size, write_len);
+    close(fd);
     return 0;
   }
   
-  size_t bytes_written = fwrite(data, 1, data_size, file);
-  if (bytes_written != data_size) {
-    printf("Error: Could not write complete data. Expected %zu bytes, wrote %zu bytes\n", data_size, bytes_written);
-    fclose(file);
-    return 0;
-  }
-  
-  fclose(file);
+  close(fd);
   printf("Successfully wrote %zu bytes to %s\n", data_size, filename);
   return 1;
 }
