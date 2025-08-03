@@ -5,6 +5,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+/*
+gcc -shared -fPIC -o libcfb_decode.so aes.c
+mv libcfb_decode.so /usr/lib
+ */
 
 
 int nk = 4; // Number of 32-bit words in the key (for AES-128)
@@ -235,6 +239,67 @@ void cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len
   }
 }
 
+void cfb_v2( uint32_t* w, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
+  uint32_t iv_state[4] = {0};
+
+  i8_list_to_i32(iv, iv_state, 4);
+
+  uint32_t en[4] = {0};
+
+  cipher(iv_state, w, en);
+
+  for (int i = 0; i < len; i += 16) {
+    uint8_t* pt_array = input + i;
+    uint32_t pt_i32_array[4] = {0};
+    i8_list_to_i32(pt_array, pt_i32_array, 4);
+    for (int j = 0; j < 4; j++) {
+      en[j] ^= pt_i32_array[j];
+    }
+
+    for (int j = 0; j < 4; j++) {
+      output[i + j * 4    ] = (en[j] >> 24) & 0xff;
+      output[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+      output[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+      output[i + j * 4 + 3] = (en[j]      ) & 0xff;
+    }
+
+    uint32_t en_tmp[4] = {0};
+    cipher(en, w, en_tmp);
+    memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+  }
+}
+
+void inv_cfb_v2( uint32_t* w, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
+
+  uint32_t iv_state[4] = {0};
+
+  i8_list_to_i32(iv, iv_state, 4);
+
+  uint32_t en[4] = {0};
+
+  cipher(iv_state, w, en);
+
+  for (int i = 0; i < len; i += 16) {
+    uint8_t* pt_array = input + i;
+    uint32_t pt_i32_array[4] = {0};
+    i8_list_to_i32(pt_array, pt_i32_array, 4);
+    for (int j = 0; j < 4; j++) {
+      en[j] ^= pt_i32_array[j];
+    }
+
+    for (int j = 0; j < 4; j++) {
+      output[i + j * 4    ] = (en[j] >> 24) & 0xff;
+      output[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+      output[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+      output[i + j * 4 + 3] = (en[j]      ) & 0xff;
+    }
+
+    uint32_t en_tmp[4] = {0};
+    cipher(pt_i32_array, w, en_tmp);
+    memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+  }
+}
+
 void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
   uint32_t w[44] = {0};
   key_expansion(pwd, w);
@@ -322,52 +387,391 @@ int write_byte_array_to_file(const char* filename, uint8_t* data, size_t data_si
   return 1;
 }
 
-void do_file() {
-  // Read the encrypted file into a byte array
-  const char* filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
+void inv_cfb_file(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
   size_t file_size = 0;
-  uint8_t* file_data = read_file_to_byte_array(filename, &file_size);
-  uint8_t* output_data = (uint8_t*)malloc(file_size);
-  
+  uint8_t* file_data = read_file_to_byte_array(input_filename, &file_size);
   if (!file_data) {
-    return ; // Exit if file reading failed
+    return; // Exit if file reading failed
   }
   
-  printf("File data loaded. Size: %zu bytes\n", file_size);
-  printf("First 16 bytes (hex): ");
-  for (int i = 0; i < 16 && i < file_size; i++) {
-    printf("%d ", file_data[i]);
+  uint8_t* output_data = (uint8_t*)malloc(file_size);
+  if (!output_data) {
+    free(file_data);
+    printf("Error: Could not allocate memory for output data\n");
+    return;
   }
-  printf("\n");
 
-  char* password = "****************";
-  char* iv = "2017041621251234";
+  inv_cfb(pwd, iv, file_data, output_data, file_size);
 
-  uint8_t password_bytes[16];
-  memcpy(password_bytes, password, 16);
-
-  uint8_t iv_bytes[16];
-  memcpy(iv_bytes, iv, 16);
-
-
-  inv_cfb(password_bytes, iv_bytes, file_data, output_data, file_size);
-  for (int i = 0; i < 16 && i < file_size; i++) {
-    printf("%d ", output_data[i]);
-  }
-  
-  // Write the byte array to output.jpg
-  if (write_byte_array_to_file("output.jpg", output_data, file_size)) {
-    printf("File successfully written to output.jpg\n");
+  if (write_byte_array_to_file(output_filename, output_data, file_size)) {
+    printf("File successfully written to %s\n", output_filename);
   } else {
-    printf("Failed to write file to output.jpg\n");
+    printf("Failed to write file to %s\n", output_filename);
   }
+
   free(file_data);
   free(output_data);
-
 }
 
-int main() {
-  do_file();
+void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
+  // Define buffer size (multiple of 16 bytes for AES block alignment)
+  const size_t BUFFER_SIZE = 4096; // 4KB buffer, always multiple of 16
+  
+  // Open input file
+  int input_fd = open(input_filename, O_RDONLY);
+  if (input_fd < 0) {
+    printf("Error: Could not open input file %s\n", input_filename);
+    return;
+  }
+  
+  // Create output file
+  int output_fd = creat(output_filename, S_IRUSR|S_IWUSR);
+  if (output_fd < 0) {
+    printf("Error: Could not create output file %s\n", output_filename);
+    close(input_fd);
+    return;
+  }
+  
+  // Get file size
+  struct stat st;
+  if (fstat(input_fd, &st) < 0) {
+    printf("Error: Could not get file size\n");
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
+  size_t file_size = st.st_size;
+  printf("Processing file of size: %zu bytes\n", file_size);
+  
+  // Allocate buffers
+  uint8_t* input_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  uint8_t* output_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  
+  if (!input_buffer || !output_buffer) {
+    printf("Error: Could not allocate buffers\n");
+    free(input_buffer);
+    free(output_buffer);
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
+  // Initialize CFB state
+  uint32_t w[44] = {0};
+  key_expansion(pwd, w);
+  
+  uint32_t iv_state[4] = {0};
+  i8_list_to_i32(iv, iv_state, 4);
+  
+  uint32_t en[4] = {0};
+  cipher(iv_state, w, en);
+  
+  size_t total_processed = 0;
+  
+  // Process file in chunks
+  ssize_t bytes_read;
+  
+  while ((bytes_read = read(input_fd, input_buffer, BUFFER_SIZE)) > 0) {
+    size_t chunk_size = bytes_read;
+    
+    // Process this chunk using CFB encryption
+    for (size_t i = 0; i < chunk_size; i += 16) {
+      size_t block_size = (i + 16 <= chunk_size) ? 16 : (chunk_size - i);
+
+      if (block_size == 16) {
+        // Full 16-byte block
+        uint8_t* pt_array = input_buffer + i;
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(pt_array, pt_i32_array, 4);
+
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+
+        for (int j = 0; j < 4; j++) {
+          output_buffer[i + j * 4    ] = (en[j] >> 24) & 0xff;
+          output_buffer[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+          output_buffer[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+          output_buffer[i + j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+
+        uint32_t en_tmp[4] = {0};
+        cipher(en, w, en_tmp);
+        memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+      } else {
+        // Handle incomplete final block (less than 16 bytes)
+        uint8_t padded_block[16] = {0};
+        memcpy(padded_block, input_buffer + i, block_size);
+
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(padded_block, pt_i32_array, 4);
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+
+        for (int j = 0; j < 4; j++) {
+          output_buffer[i + j * 4    ] = (en[j] >> 24) & 0xff;
+          output_buffer[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+          output_buffer[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+          output_buffer[i + j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+
+        uint32_t en_tmp[4] = {0};
+        cipher(en, w, en_tmp);
+        memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+      }
+    }
+
+    ssize_t bytes_written = write(output_fd, output_buffer, BUFFER_SIZE);
+    if (bytes_written != BUFFER_SIZE) {
+      printf("Error: Could not write complete chunk. Expected %zu bytes, wrote %zu bytes\n", 
+             BUFFER_SIZE, bytes_written);
+      break;
+    }
+    
+    total_processed += chunk_size;
+    
+    // Progress indicator for large files
+    if (file_size > 1024*1024) { // Show progress for files > 1MB
+      printf("\rProgress: %.1f%% (%zu/%zu bytes)", 
+             (double)total_processed / file_size * 100, total_processed, file_size);
+      fflush(stdout);
+    }
+  }
+
+  if (file_size > 1024*1024) {
+    printf("\n"); // New line after progress
+  }
+  
+  if (bytes_read < 0) {
+    printf("Error: Failed to read from input file\n");
+  } else {
+    printf("Successfully processed %zu bytes: %s -> %s\n", 
+           total_processed, input_filename, output_filename);
+  }
+
+  // Clean up
+  free(input_buffer);
+  free(output_buffer);
+  close(input_fd);
+  close(output_fd);
+}
+
+// Optimized streaming version that processes file in chunks
+void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, const char* output_filename) {
+  // Define buffer size (multiple of 16 bytes for AES block alignment)
+  const size_t BUFFER_SIZE = 4096; // 4KB buffer, always multiple of 16
+  
+  // Open input file
+  int input_fd = open(input_filename, O_RDONLY);
+  if (input_fd < 0) {
+    printf("Error: Could not open input file %s\n", input_filename);
+    return;
+  }
+  
+  // Create output file
+  int output_fd = creat(output_filename, S_IRUSR|S_IWUSR);
+  if (output_fd < 0) {
+    printf("Error: Could not create output file %s\n", output_filename);
+    close(input_fd);
+    return;
+  }
+  
+  // Get file size
+  struct stat st;
+  if (fstat(input_fd, &st) < 0) {
+    printf("Error: Could not get file size\n");
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  size_t file_size = st.st_size;
+  printf("Processing file of size: %zu bytes\n", file_size);
+  
+  // Allocate buffers
+  uint8_t* input_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  uint8_t* output_buffer = (uint8_t*)malloc(BUFFER_SIZE);
+  
+  if (!input_buffer || !output_buffer) {
+    printf("Error: Could not allocate buffers\n");
+    free(input_buffer);
+    free(output_buffer);
+    close(input_fd);
+    close(output_fd);
+    return;
+  }
+  
+  // Initialize CFB state
+  uint32_t w[44] = {0};
+  key_expansion(pwd, w);
+  
+  uint32_t iv_state[4] = {0};
+  i8_list_to_i32(iv, iv_state, 4);
+  
+  uint32_t en[4] = {0};
+  cipher(iv_state, w, en);
+  
+  size_t total_processed = 0;
+  ssize_t bytes_read;
+  
+  // Process file in chunks
+  while ((bytes_read = read(input_fd, input_buffer, BUFFER_SIZE)) > 0) {
+    size_t chunk_size = bytes_read;
+    
+    // Process this chunk using CFB decryption
+    for (size_t i = 0; i < chunk_size; i += 16) {
+      size_t block_size = (i + 16 <= chunk_size) ? 16 : (chunk_size - i);
+      
+      if (block_size == 16) {
+        // Full 16-byte block
+        uint8_t* pt_array = input_buffer + i;
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(pt_array, pt_i32_array, 4);
+        
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+        
+        for (int j = 0; j < 4; j++) {
+          output_buffer[i + j * 4    ] = (en[j] >> 24) & 0xff;
+          output_buffer[i + j * 4 + 1] = (en[j] >> 16) & 0xff;
+          output_buffer[i + j * 4 + 2] = (en[j] >>  8) & 0xff;
+          output_buffer[i + j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+        
+        uint32_t en_tmp[4] = {0};
+        cipher(pt_i32_array, w, en_tmp);
+        memcpy(en, en_tmp, sizeof(uint32_t) * 4);
+      } else {
+        // Handle incomplete final block (less than 16 bytes)
+        uint8_t padded_block[16] = {0};
+        memcpy(padded_block, input_buffer + i, block_size);
+        
+        uint32_t pt_i32_array[4] = {0};
+        i8_list_to_i32(padded_block, pt_i32_array, 4);
+        
+        for (int j = 0; j < 4; j++) {
+          en[j] ^= pt_i32_array[j];
+        }
+        
+        uint8_t temp_output[16];
+        for (int j = 0; j < 4; j++) {
+          temp_output[j * 4    ] = (en[j] >> 24) & 0xff;
+          temp_output[j * 4 + 1] = (en[j] >> 16) & 0xff;
+          temp_output[j * 4 + 2] = (en[j] >>  8) & 0xff;
+          temp_output[j * 4 + 3] = (en[j]      ) & 0xff;
+        }
+        
+        memcpy(output_buffer + i, temp_output, block_size);
+      }
+    }
+    
+    // Write processed chunk to output file
+    ssize_t bytes_written = write(output_fd, output_buffer, chunk_size);
+    if (bytes_written != chunk_size) {
+      printf("Error: Could not write complete chunk. Expected %zu bytes, wrote %zu bytes\n", 
+             chunk_size, bytes_written);
+      break;
+    }
+    
+    total_processed += chunk_size;
+    
+    // Progress indicator for large files
+    if (file_size > 1024*1024) { // Show progress for files > 1MB
+      printf("\rProgress: %.1f%% (%zu/%zu bytes)", 
+             (double)total_processed / file_size * 100, total_processed, file_size);
+      fflush(stdout);
+    }
+  }
+  
+  if (file_size > 1024*1024) {
+    printf("\n"); // New line after progress
+  }
+  
+  if (bytes_read < 0) {
+    printf("Error: Failed to read from input file\n");
+  } else {
+    printf("Successfully processed %zu bytes: %s -> %s\n", 
+           total_processed, input_filename, output_filename);
+  }
+  
+  // Cleanup
+  free(input_buffer);
+  free(output_buffer);
+  close(input_fd);
+  close(output_fd);
+}
+
+void do_file() {
+  // Use the streaming version for better memory efficiency
+  const char* input_filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
+  const char* output_filename = "output.jpg";
+  
+  // Initialize password and IV as uint8_t arrays directly
+  uint8_t password[16] = "yjmK14040842$000";
+  uint8_t iv[16] = "2017041621251234";
+  
+  printf("Decrypting file (streaming): %s -> %s\n", input_filename, output_filename);
+  
+  // Use the streaming function for better memory efficiency
+  inv_cfb_file_streaming(password, iv, input_filename, output_filename);
+}
+
+// Optional: More flexible version that accepts parameters
+void do_file_with_params(const char* input_file, const char* output_file, 
+                        const char* pwd_str, const char* iv_str) {
+  if (!input_file || !output_file || !pwd_str || !iv_str) {
+    printf("Error: Invalid parameters\n");
+    return;
+  }
+  
+  // Validate string lengths
+  if (strlen(pwd_str) != 16 || strlen(iv_str) != 16) {
+    printf("Error: Password and IV must be exactly 16 characters\n");
+    return;
+  }
+  
+  uint8_t password[16];
+  uint8_t iv[16];
+  
+  memcpy(password, pwd_str, 16);
+  memcpy(iv, iv_str, 16);
+  
+  printf("Decrypting file: %s -> %s\n", input_file, output_file);
+  inv_cfb_file(password, iv, input_file, output_file);
+}
+
+// Function to choose between streaming and non-streaming modes
+void decrypt_file_with_mode(const char* input_file, const char* output_file, 
+                           const char* pwd_str, const char* iv_str, int use_streaming) {
+  if (!input_file || !output_file || !pwd_str || !iv_str) {
+    printf("Error: Invalid parameters\n");
+    return;
+  }
+  
+  if (strlen(pwd_str) != 16 || strlen(iv_str) != 16) {
+    printf("Error: Password and IV must be exactly 16 characters\n");
+    return;
+  }
+  
+  uint8_t password[16];
+  uint8_t iv[16];
+  
+  memcpy(password, pwd_str, 16);
+  memcpy(iv, iv_str, 16);
+  
+  if (use_streaming) {
+    printf("Using streaming mode for large file processing\n");
+    inv_cfb_file_streaming(password, iv, input_file, output_file);
+  } else {
+    printf("Using standard mode (loads entire file into memory)\n");
+    inv_cfb_file(password, iv, input_file, output_file);
+  }
+}
+
+int main1() {
+  // do_file();
   
   // Your existing AES test code
   uint32_t input[4] = {
@@ -409,6 +813,24 @@ int main() {
 
   uint8_t inv_cfb_bytes[32] = {0};
   inv_cfb(password_bytes, iv_bytes, cfb_bytes, inv_cfb_bytes, 32);
+
+  memcpy(iv_bytes, iv, 16);
+  memcpy(password_bytes, password, 16);
+
+  cfb_file_streaming(
+    password_bytes, 
+    iv_bytes, 
+    "/mnt/drive2/data/202211/aavv333.com@422ION-0064C.mp4", 
+    "aavv333.com@422ION-0064C.mp4.bin"
+  );
+
+  // inv_cfb_file_streaming(
+  //   password_bytes, 
+  //   iv_bytes, 
+  //   "aavv333.com@422ION-0064C.mp4.bin",
+  //   "aavv333.com@422ION-0064C.mp4"
+  // );
+
 
   // Clean up allocated memory
   
