@@ -409,6 +409,7 @@ impl futures_core::Stream for CfbVideoStream {
               read_len,
             );
           }
+          self.iv = buf[read_len - 16..read_len].try_into().unwrap();
 
           std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice(0..read_len))))
         },
