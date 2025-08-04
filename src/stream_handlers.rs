@@ -186,6 +186,7 @@ pub async fn video_stream_hander(
   headers: HeaderMap,
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> Response {
+  println!("video stream handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
   let file_path = if sub_dir.len() > 0 {
     let mut sub_dir_param = String::from("/");
     sub_dir_param += &sub_dir;
@@ -225,6 +226,8 @@ pub async fn video_stream_hander(
   let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
   let range_header = headers.get(RANGE);
 
+  println!("parse range_header: {:?}", range_header);
+
   let (start, end, content_length, part) = match range_header {
     Some(range_header) => {
       let (_, value) = range_header.to_str().unwrap().split_once("=").unwrap();
@@ -236,6 +239,8 @@ pub async fn video_stream_hander(
     }
     _ => (0, file_size - 1, file_size, false),
   };
+
+  println!("response range: {:?}, {:?}, {:?}, {:?}", start, end, content_length, part);
 
   let status_code = match part {
     true => StatusCode::PARTIAL_CONTENT,
