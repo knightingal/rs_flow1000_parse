@@ -7,6 +7,14 @@ use std::{
   io::{Read, Seek},
 };
 
+use std::{
+  cmp::Ordering,
+  collections::HashMap,
+  ffi::{c_char, c_void, CString},
+  fs::{self, DirBuilder, DirEntry},
+  thread, usize,
+};
+
 use axum::{
   body::{Body, Bytes},
   extract::Path,
@@ -20,6 +28,23 @@ use hyper::{
   HeaderMap, StatusCode,
 };
 use rusqlite::named_params;
+
+// #[cfg(reallink)]
+// #[link(name = "cfb_decode")]
+// extern "C" {
+//   // fn inv_cfb(input_buf: *const u8, output: *mut u8, w: *const u32, iv: *const u8, len: usize);
+//   fn key_expansion(key: *const u8, w: *mut u32);
+//   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+// }
+
+#[cfg(reallink)]
+#[link(name = "cfb_decode")]
+extern "C" {
+  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  fn key_expansion(key: *const u8, w: *mut u32);
+  // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+}
 
 use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX};
 
@@ -314,6 +339,7 @@ impl VideoStream {
   }
 }
 
+
 impl futures_core::Stream for VideoStream {
   type Item = Result<Bytes, Error>;
 
@@ -321,11 +347,71 @@ impl futures_core::Stream for VideoStream {
     mut self: std::pin::Pin<&mut Self>,
     _: &mut std::task::Context<'_>,
   ) -> std::task::Poll<Option<Self::Item>> {
-    let mut buf = [0u8; 1024];
+    let mut buf = [0u8; 4096];
     let read_result = self.file.read(&mut buf);
     match read_result {
       Ok(read_len) => match read_len > 0 {
         true => std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&buf).slice(0..read_len)))),
+        false => std::task::Poll::Ready(None),
+      },
+      Err(_) => std::task::Poll::Ready(None),
+    }
+  }
+}
+
+struct CfbVideoStream {
+  file: File,
+  iv: [u8; 16],
+  w: [u32; 44],
+}
+
+impl CfbVideoStream {
+  fn new(start: u64, file_path: String, iv:[u8; 16], pwd:[u8; 16] ) -> Self {
+    // let db_path_env = env::var("DEMO_VIDEO").unwrap();
+    let mut file = File::open(file_path).unwrap();
+
+    let mut w: [u32; 44] = [0; 44];
+    unsafe {
+      key_expansion(pwd.as_ptr(), w.as_mut_ptr());
+    }
+    if start >= 16 {
+      let _ = file.seek(std::io::SeekFrom::Start(start - 16));
+      let mut tmp_iv: [u8; 16] = [0u8; 16];
+      let _ = file.read(&mut tmp_iv);
+      Self { file, iv: tmp_iv, w }
+    } else {
+      Self { file, iv, w }
+    }
+    // let _ = file.seek(std::io::SeekFrom::Start(start));
+  }
+}
+
+impl futures_core::Stream for CfbVideoStream {
+  type Item = Result<Bytes, Error>;
+
+  fn poll_next(
+    mut self: std::pin::Pin<&mut Self>,
+    _: &mut std::task::Context<'_>,
+  ) -> std::task::Poll<Option<Self::Item>> {
+    let mut buf: [u8; 4096] = [0u8; 4096];
+    let read_result = self.file.read(&mut buf);
+    match read_result {
+      Ok(read_len) => match read_len > 0 {
+
+        true => {
+          let mut output: [u8; 4096] = [0u8; 4096];
+          unsafe {
+            inv_cfb_v2(
+              self.w.as_ptr(),
+              self.iv.as_ptr(),
+              buf.as_ptr(),
+              output.as_mut_ptr(),
+              read_len,
+            );
+          }
+
+          std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice(0..read_len))))
+        },
         false => std::task::Poll::Ready(None),
       },
       Err(_) => std::task::Poll::Ready(None),
