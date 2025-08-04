@@ -35,6 +35,7 @@ use rusqlite::named_params;
 extern "C" {
   // fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  #[allow(dead_code)]
   fn key_expansion(key: *const u8, w: *mut u32);
   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
@@ -364,6 +365,7 @@ struct CfbVideoStream {
 }
 
 impl CfbVideoStream {
+  #[allow(dead_code)]
   fn new(start: u64, file_path: String, iv:[u8; 16], pwd:[u8; 16] ) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(file_path).unwrap();
