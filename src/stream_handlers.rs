@@ -7,13 +7,6 @@ use std::{
   io::{Read, Seek},
 };
 
-use std::{
-  cmp::Ordering,
-  collections::HashMap,
-  ffi::{c_char, c_void, CString},
-  fs::{self, DirBuilder, DirEntry},
-  thread, usize,
-};
 
 use axum::{
   body::{Body, Bytes},
@@ -40,7 +33,7 @@ use rusqlite::named_params;
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
 extern "C" {
-  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  // fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn key_expansion(key: *const u8, w: *mut u32);
   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
