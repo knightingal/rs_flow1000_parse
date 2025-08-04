@@ -183,6 +183,65 @@ pub async fn video_exist(
 
 }
 
+
+pub async fn demo_video_stream_hander(
+  headers: HeaderMap,
+  Path((base_index, sub_dir)): Path<(u32, String)>,
+) -> Response {
+  let file_path : String = "path_to_your_video.mp4.bin".to_string();
+  let path = std::path::Path::new(&file_path);
+  let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+  let range_header = headers.get(RANGE);
+
+  println!("parse range_header: {:?}", range_header);
+
+  let (start, end, content_length, part) = match range_header {
+    Some(range_header) => {
+      let (_, value) = range_header.to_str().unwrap().split_once("=").unwrap();
+
+      let (start, end) = value.split_once("-").unwrap();
+      let start: u64 = start.parse().unwrap();
+      let end: u64 = end.parse().unwrap_or(file_size - 1);
+      (start, end, file_size - start, true)
+    }
+    _ => (0, file_size - 1, file_size, false),
+  };
+
+  println!("response range: {:?}, {:?}, {:?}, {:?}", start, end, content_length, part);
+
+  let status_code = match part {
+    true => StatusCode::PARTIAL_CONTENT,
+    false => StatusCode::OK,
+  };
+
+  let key = "yourpassword1234"; // 16 bytes key
+  let iv = "youriv1234567890"; // 16 bytes IV
+  let mut response_builder = Response::builder().status(status_code);
+  let mock_stream = CfbVideoStream::new(
+    start, 
+    file_path, 
+    iv.as_bytes().try_into().unwrap(), 
+    key.as_bytes().try_into().unwrap());
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
+  header.insert(CONTENT_LENGTH, content_length.into());
+  header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
+  if part {
+    header.insert(
+      CONTENT_RANGE,
+      format!("bytes {}-{}/{}", start, end, file_size)
+        .parse()
+        .unwrap(),
+    );
+  }
+  *response_builder.headers_mut().unwrap() = header;
+  response_builder
+    .body(Body::from_stream(mock_stream))
+    .unwrap()
+}
+
 pub async fn video_stream_hander(
   headers: HeaderMap,
   Path((base_index, sub_dir)): Path<(u32, String)>,
