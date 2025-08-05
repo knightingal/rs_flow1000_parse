@@ -186,7 +186,7 @@ pub async fn video_exist(
 
 pub async fn demo_video_stream_hander(
   headers: HeaderMap,
-  Path((base_index, sub_dir)): Path<(u32, String)>,
+  Path((_base_index, _sub_dir)): Path<(u32, String)>,
 ) -> Response {
   let file_path : String = "path_to_your_video.mp4.bin".to_string();
   let path = std::path::Path::new(&file_path);
