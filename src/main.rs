@@ -32,6 +32,8 @@ use tracing::Span;
 
 use sysinfo::System;
 
+use crate::stream_handlers::demo_video_stream_hander;
+
 mod business_handles;
 mod designation;
 mod entity;
@@ -226,6 +228,10 @@ async fn main() {
     // demo
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
+    .route(
+      "/demo-video/:base_index/*sub_dir",
+      get(demo_video_stream_hander),
+    )
     .route(
       "/video-stream/:base_index/*sub_dir",
       get(video_stream_hander),
