@@ -421,6 +421,8 @@ struct CfbVideoStream {
   file: File,
   iv: [u8; 16],
   w: [u32; 44],
+  start: u64,
+  pad_start: u64,
 }
 
 impl CfbVideoStream {
@@ -433,13 +435,21 @@ impl CfbVideoStream {
     unsafe {
       key_expansion(pwd.as_ptr(), w.as_mut_ptr());
     }
-    if start >= 16 {
-      let _ = file.seek(std::io::SeekFrom::Start(start - 16));
-      let mut tmp_iv: [u8; 16] = [0u8; 16];
-      let _ = file.read(&mut tmp_iv);
-      Self { file, iv: tmp_iv, w }
+
+
+
+    if start != 0 {
+      let pad_start = start - (start % 16);
+      if pad_start >= 16 {
+        let _ = file.seek(std::io::SeekFrom::Start(pad_start - 16));
+        let mut tmp_iv: [u8; 16] = [0u8; 16];
+        let _ = file.read(&mut tmp_iv);
+        Self { file, iv: tmp_iv, w, start, pad_start  }
+      } else {
+        Self { file, iv, w, start, pad_start: 0}
+      }
     } else {
-      Self { file, iv, w }
+      Self { file, iv, w, start, pad_start: 0 }
     }
     // let _ = file.seek(std::io::SeekFrom::Start(start));
   }
