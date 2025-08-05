@@ -480,7 +480,10 @@ impl futures_core::Stream for CfbVideoStream {
           }
           self.iv = buf[read_len - 16..read_len].try_into().unwrap();
 
-          std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice(0..read_len))))
+          let offset = self.start - self.pad_start;
+          self.start = self.pad_start;
+
+          std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice((offset as usize)..read_len))))
         },
         false => std::task::Poll::Ready(None),
       },
