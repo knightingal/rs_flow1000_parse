@@ -421,8 +421,7 @@ struct CfbVideoStream {
   file: File,
   iv: [u8; 16],
   w: [u32; 44],
-  start: u64,
-  pad_start: u64,
+  header_offset: usize,
 }
 
 impl CfbVideoStream {
@@ -436,20 +435,19 @@ impl CfbVideoStream {
       key_expansion(pwd.as_ptr(), w.as_mut_ptr());
     }
 
-
-
     if start != 0 {
-      let pad_start = start - (start % 16);
+      let pad_start = start & 0xffff_ffff_ffff_fff0;
+      let header_offset = (start - pad_start) as usize;
       if pad_start >= 16 {
         let _ = file.seek(std::io::SeekFrom::Start(pad_start - 16));
         let mut tmp_iv: [u8; 16] = [0u8; 16];
         let _ = file.read(&mut tmp_iv);
-        Self { file, iv: tmp_iv, w, start, pad_start  }
+        Self { file, iv: tmp_iv, w, header_offset }
       } else {
-        Self { file, iv, w, start, pad_start: 0}
+        Self { file, iv, w, header_offset}
       }
     } else {
-      Self { file, iv, w, start, pad_start: 0 }
+      Self { file, iv, w, header_offset: 0 }
     }
     // let _ = file.seek(std::io::SeekFrom::Start(start));
   }
@@ -480,10 +478,10 @@ impl futures_core::Stream for CfbVideoStream {
           }
           self.iv = buf[read_len - 16..read_len].try_into().unwrap();
 
-          let offset = self.start - self.pad_start;
-          self.start = self.pad_start;
+          let offset = self.header_offset;
+          self.header_offset = 0;
 
-          std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice((offset as usize)..read_len))))
+          std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&output).slice(offset..read_len))))
         },
         false => std::task::Poll::Ready(None),
       },
