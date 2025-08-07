@@ -214,8 +214,8 @@ pub async fn demo_video_stream_hander(
     false => StatusCode::OK,
   };
 
-  let key = "yourpassword1234"; // 16 bytes key
-  let iv = "youriv1234567890"; // 16 bytes IV
+  let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+  let iv = "2021000120210001"; // 16 bytes IV
   let mut response_builder = Response::builder().status(status_code);
   let mock_stream = CfbVideoStream::new(
     start, 
@@ -420,17 +420,17 @@ impl futures_core::Stream for VideoStream {
 struct CfbVideoStream {
   file: File,
   iv: [u8; 16],
-  w: [u32; 44],
+  w: [u32; 60],
   header_offset: usize,
 }
 
 impl CfbVideoStream {
   #[allow(dead_code)]
-  fn new(start: u64, file_path: String, iv:[u8; 16], pwd:[u8; 16] ) -> Self {
+  fn new(start: u64, file_path: String, iv:[u8; 16], pwd:[u8; 32] ) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(file_path).unwrap();
 
-    let mut w: [u32; 44] = [0; 44];
+    let mut w: [u32; 60] = [0; 60];
     unsafe {
       key_expansion(pwd.as_ptr(), w.as_mut_ptr());
     }
