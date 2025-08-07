@@ -11,9 +11,9 @@ mv libcfb_decode.so /usr/lib
  */
 
 
-int nk = 4; // Number of 32-bit words in the key (for AES-128)
-int nr = 10; // Number of rounds for AES-128
-uint32_t rcon[12] = {
+int nk = 8; // Number of 32-bit words in the key (for AES-128)
+int nr = 14; // Number of rounds for AES-128
+uint32_t rcon[16] = {
   0x00000000, 
   0x01000000, 
   0x02000000, 
@@ -24,7 +24,12 @@ uint32_t rcon[12] = {
   0x40000000, 
   0x80000000,
   0x1b000000, 
-  0x36000000
+  0x36000000,
+  0x6c000000,  // Additional constants for AES256
+  0xd8000000,
+  0xab000000,
+  0x4d000000,
+  0x9a000000
 };
 uint8_t sbox[256] = {
   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -207,7 +212,7 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
 } 
 
 void cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
-  uint32_t w[44] = {0};
+  uint32_t w[60] = {0};
   key_expansion(pwd, w);
 
   uint32_t iv_state[4] = {0};
@@ -301,7 +306,7 @@ void inv_cfb_v2( uint32_t* w, uint8_t* iv, uint8_t* input, uint8_t* output, size
 }
 
 void inv_cfb( uint8_t* pwd, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
-  uint32_t w[44] = {0};
+  uint32_t w[60] = {0};
   key_expansion(pwd, w);
 
   uint32_t iv_state[4] = {0};
@@ -458,7 +463,7 @@ void cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filename, c
   }
   
   // Initialize CFB state
-  uint32_t w[44] = {0};
+  uint32_t w[60] = {0};
   key_expansion(pwd, w);
   
   uint32_t iv_state[4] = {0};
@@ -603,7 +608,7 @@ void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filenam
   }
   
   // Initialize CFB state
-  uint32_t w[44] = {0};
+  uint32_t w[60] = {0};
   key_expansion(pwd, w);
   
   uint32_t iv_state[4] = {0};
@@ -701,138 +706,4 @@ void inv_cfb_file_streaming(uint8_t* pwd, uint8_t* iv, const char* input_filenam
   free(output_buffer);
   close(input_fd);
   close(output_fd);
-}
-
-void do_file() {
-  // Use the streaming version for better memory efficiency
-  const char* input_filename = "/mnt/linux1000/encrypted/20160316230333BB-31_USS_UTAH/18-013104.jpg.bin";
-  const char* output_filename = "output.jpg";
-  
-  // Initialize password and IV as uint8_t arrays directly
-  uint8_t password[16] = "yjmK14040842$000";
-  uint8_t iv[16] = "2017041621251234";
-  
-  printf("Decrypting file (streaming): %s -> %s\n", input_filename, output_filename);
-  
-  // Use the streaming function for better memory efficiency
-  inv_cfb_file_streaming(password, iv, input_filename, output_filename);
-}
-
-// Optional: More flexible version that accepts parameters
-void do_file_with_params(const char* input_file, const char* output_file, 
-                        const char* pwd_str, const char* iv_str) {
-  if (!input_file || !output_file || !pwd_str || !iv_str) {
-    printf("Error: Invalid parameters\n");
-    return;
-  }
-  
-  // Validate string lengths
-  if (strlen(pwd_str) != 16 || strlen(iv_str) != 16) {
-    printf("Error: Password and IV must be exactly 16 characters\n");
-    return;
-  }
-  
-  uint8_t password[16];
-  uint8_t iv[16];
-  
-  memcpy(password, pwd_str, 16);
-  memcpy(iv, iv_str, 16);
-  
-  printf("Decrypting file: %s -> %s\n", input_file, output_file);
-  inv_cfb_file(password, iv, input_file, output_file);
-}
-
-// Function to choose between streaming and non-streaming modes
-void decrypt_file_with_mode(const char* input_file, const char* output_file, 
-                           const char* pwd_str, const char* iv_str, int use_streaming) {
-  if (!input_file || !output_file || !pwd_str || !iv_str) {
-    printf("Error: Invalid parameters\n");
-    return;
-  }
-  
-  if (strlen(pwd_str) != 16 || strlen(iv_str) != 16) {
-    printf("Error: Password and IV must be exactly 16 characters\n");
-    return;
-  }
-  
-  uint8_t password[16];
-  uint8_t iv[16];
-  
-  memcpy(password, pwd_str, 16);
-  memcpy(iv, iv_str, 16);
-  
-  if (use_streaming) {
-    printf("Using streaming mode for large file processing\n");
-    inv_cfb_file_streaming(password, iv, input_file, output_file);
-  } else {
-    printf("Using standard mode (loads entire file into memory)\n");
-    inv_cfb_file(password, iv, input_file, output_file);
-  }
-}
-
-int main1() {
-  // do_file();
-  
-  // Your existing AES test code
-  uint32_t input[4] = {
-    0x3243f6a8,
-    0x885a308d,
-    0x313198a2,
-    0xe0370734,
-  };
-  uint32_t w[44] = {0};
-  uint32_t result[4] = {0};
-
-  uint8_t key[16] = {
-    0x2b, 0x7e, 0x15, 0x16,
-    0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88, 
-    0x09, 0xcf, 0x4f, 0x3c,
-  };
-
-  key_expansion(key, w);
-  cipher(input, w, result);
-
-  uint32_t cfb_result[8] = {0};
-  char* password = "passwordpassword";
-  char* iv = "2021000120210001";
-  char* input_data = "0123456789abcdef0123456789abcdef";
-
-  uint8_t password_bytes[16];
-  memcpy(password_bytes, password, 16);
-
-  uint8_t iv_bytes[16];
-  memcpy(iv_bytes, iv, 16);
-
-  uint8_t input_bytes[32];
-  memcpy(input_bytes, input_data, 32);
-
-  uint8_t cfb_bytes[32] = {0};
-
-  cfb(password_bytes, iv_bytes, input_bytes, cfb_bytes, 32);
-
-  uint8_t inv_cfb_bytes[32] = {0};
-  inv_cfb(password_bytes, iv_bytes, cfb_bytes, inv_cfb_bytes, 32);
-
-  memcpy(iv_bytes, iv, 16);
-  memcpy(password_bytes, password, 16);
-
-  cfb_file_streaming(
-    password_bytes, 
-    iv_bytes, 
-    "/mnt/drive2/data/202211/aavv333.com@422ION-0064C.mp4", 
-    "aavv333.com@422ION-0064C.mp4.bin"
-  );
-
-  // inv_cfb_file_streaming(
-  //   password_bytes, 
-  //   iv_bytes, 
-  //   "aavv333.com@422ION-0064C.mp4.bin",
-  //   "aavv333.com@422ION-0064C.mp4"
-  // );
-
-
-  // Clean up allocated memory
-  
-  return 0;
 }
