@@ -163,10 +163,10 @@ async fn main() {
 
   unsafe {
     if cfg!(reallink) {
-      let key = "passwordpassword";
+      let key = "passwordpasswordpasswordpassword";
       let iv = "2021000120210001";
       let input_data = "0123456789abcdef0123456789abcdef";
-      let mut w: [u32; 44] = [0; 44];
+      let mut w: [u32; 60] = [0; 60];
       key_expansion(key.as_ptr(), w.as_mut_ptr());
       println!("key_expansion: {:?}", w);
       let mut output = [0u8; 32];
