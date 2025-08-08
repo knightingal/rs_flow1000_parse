@@ -11,8 +11,8 @@ mv libcfb_decode.so /usr/lib
  */
 
 
-int nk = 8; // Number of 32-bit words in the key (for AES-128)
-int nr = 14; // Number of rounds for AES-128
+const int NK = 8; // Number of 32-bit words in the key (for AES-128)
+const int NR = 14; // Number of rounds for AES-128
 uint32_t rcon[16] = {
   0x00000000, 
   0x01000000, 
@@ -147,8 +147,9 @@ uint32_t rot_word(uint32_t w) {
 
 
 void key_expansion(const uint8_t *key, uint32_t *round_keys) {
+  printf("Key expansion started for round %d\n", NR);
   int i = 0;
-  while (i <= nk - 1) {
+  while (i <= NK - 1) {
     round_keys[i] = 
         (key[i * 4    ] << 24) |
         (key[i * 4 + 1] << 16) |
@@ -157,16 +158,16 @@ void key_expansion(const uint8_t *key, uint32_t *round_keys) {
     i++;
   }
 
-  while (i <= 4 * nr + 3) {
+  while (i <= 4 * NR + 3) {
     uint32_t temp = round_keys[i - 1];
-    if (i % nk == 0) {
+    if (i % NK == 0) {
       temp = rot_word(temp);
       temp = sub_word(temp);
-      temp = add_word(temp, rcon[i / nk]);
-    } else if (nk > 6 && i % nk == 4) {
+      temp = add_word(temp, rcon[i / NK]);
+    } else if (NK > 6 && i % NK == 4) {
       temp = sub_word(temp);
     }
-    round_keys[i] = add_word(round_keys[i - nk], temp);
+    round_keys[i] = add_word(round_keys[i - NK], temp);
     i++;
   }
 }
@@ -188,7 +189,7 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
     s[i] ^= w[i];
   }
 
-  for (int round = 1; round <= nr - 1; round++) {
+  for (int round = 1; round <= NR - 1; round++) {
     for (int i = 0; i < 4; i++) {
       result[i] = 
           t1[(s[ i         ] >> 24) & 0xff] ^
@@ -207,7 +208,7 @@ void cipher(uint32_t* input, uint32_t* w, uint32_t* result) {
       (sbox[(s[(i + 1) % 4] >> 16) & 0xff] << 16) |
       (sbox[(s[(i + 2) % 4] >>  8) & 0xff] <<  8) |
       (sbox[(s[(i + 3) % 4]      ) & 0xff]      )
-    ) ^ w[nr * 4 + i];
+    ) ^ w[NR * 4 + i];
   }
 } 
 
