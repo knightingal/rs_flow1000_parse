@@ -201,14 +201,14 @@ impl Clone for TagEntity {
   }
 }
 
-#[derive(Serialize)]
-pub struct VideoTagEntity {
-  pub id: u32,
-  #[serde(rename = "tagId")]
-  pub tag_id: u32,
-  #[serde(rename = "videoId")]
-  pub video_id: u32,
-}
+// #[derive(Serialize)]
+// pub struct VideoTagEntity {
+//   pub id: u32,
+//   #[serde(rename = "tagId")]
+//   pub tag_id: u32,
+//   #[serde(rename = "videoId")]
+//   pub video_id: u32,
+// }
 
 #[derive(Serialize)]
 pub struct StatisticEntity {
