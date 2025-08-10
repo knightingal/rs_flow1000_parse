@@ -161,19 +161,20 @@ async fn main() {
     IS_LINUX = Some(Box::leak(is_linux));
   }
 
-  unsafe {
-    if cfg!(reallink) {
-      let key = "passwordpasswordpasswordpassword";
-      let iv = "2021000120210001";
-      let input_data = "0123456789abcdef0123456789abcdef";
-      let mut w: [u32; 60] = [0; 60];
-      key_expansion(key.as_ptr(), w.as_mut_ptr());
-      println!("key_expansion: {:?}", w);
-      let mut output = [0u8; 32];
-      cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
-      println!("output: {:?}", output);
-    }
-  }
+  // A demo for AES256, no need to do it everytime
+  // unsafe {
+  //   if cfg!(reallink) {
+  //     let key = "passwordpasswordpasswordpassword";
+  //     let iv = "2021000120210001";
+  //     let input_data = "0123456789abcdef0123456789abcdef";
+  //     let mut w: [u32; 60] = [0; 60];
+  //     key_expansion(key.as_ptr(), w.as_mut_ptr());
+  //     println!("key_expansion: {:?}", w);
+  //     let mut output = [0u8; 32];
+  //     cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
+  //     println!("output: {:?}", output);
+  //   }
+  // }
 
   let app = Router::new()
     // mantain
