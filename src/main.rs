@@ -67,15 +67,15 @@ extern "C" {
   fn simple_dll_function_return_heap_point() -> *const c_char;
 }
 
-#[cfg(reallink)]
-#[link(name = "cfb_decode")]
-extern "C" {
-  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-  #[allow(dead_code)]
-  fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-  fn key_expansion(key: *const u8, w: *mut u32);
-  // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
-}
+// #[cfg(reallink)]
+// #[link(name = "cfb_decode")]
+// extern "C" {
+//   fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+//   #[allow(dead_code)]
+//   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+//   fn key_expansion(key: *const u8, w: *mut u32);
+//   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+// }
 
 #[cfg(mocklink)]
 fn simple_dll_function() -> i32 {
