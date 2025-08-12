@@ -5,6 +5,33 @@ mod tests {
 
   type Aes128Ctr64LE = ctr::Ctr64LE<aes::Aes128>;
 
+#[cfg(reallink)]
+#[link(name = "cfb_decode")]
+extern "C" {
+  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  #[allow(dead_code)]
+  fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  fn key_expansion(key: *const u8, w: *mut u32);
+}
+
+  #[test]
+  fn cfb_test_extern() {
+    unsafe {
+      if cfg!(reallink) {
+        let key = "passwordpasswordpasswordpassword";
+        let iv = "2021000120210001";
+        let input_data = "0123456789abcdef0123456789abcdef";
+        let mut w: [u32; 60] = [0; 60];
+        key_expansion(key.as_ptr(), w.as_mut_ptr());
+        println!("key_expansion: {:?}", w);
+        let mut output = [0u8; 32];
+        cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
+        println!("output: {:?}", output);
+      }
+    }
+  }
+
+
   #[test]
   fn ctr_test() {
     let key = [0x42; 16];
