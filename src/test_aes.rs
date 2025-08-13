@@ -15,7 +15,7 @@ extern "C" {
 }
 
   #[test]
-  fn cfb_test_extern() {
+  fn cfb_extern_test() {
     unsafe {
       if cfg!(reallink) {
         let key = "passwordpasswordpasswordpassword";
