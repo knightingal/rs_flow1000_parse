@@ -27,6 +27,7 @@ extern "C" {
         let mut output = [0u8; 32];
         cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
         println!("output: {:?}", output);
+        assert_eq!([195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164, 111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196], output);
       }
     }
   }
