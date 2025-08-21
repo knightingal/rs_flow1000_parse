@@ -286,7 +286,7 @@ pub async fn video_stream_hander(
   let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
   let range_header = headers.get(RANGE);
 
-  println!("parse range_header: {:?}", range_header);
+  tracing::debug!("parse range_header: {:?}", range_header);
 
   let (start, end, content_length, part) = match range_header {
     Some(range_header) => {
@@ -300,7 +300,7 @@ pub async fn video_stream_hander(
     _ => (0, file_size - 1, file_size, false),
   };
 
-  println!("response range: {:?}, {:?}, {:?}, {:?}", start, end, content_length, part);
+  tracing::debug!("response range: {:?}, {:?}, {:?}, {:?}", start, end, content_length, part);
 
   let status_code = match part {
     true => StatusCode::PARTIAL_CONTENT,
