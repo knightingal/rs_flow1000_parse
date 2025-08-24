@@ -246,7 +246,7 @@ pub async fn video_stream_hander(
   headers: HeaderMap,
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> Response {
-  println!("video stream handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
+  tracing::debug!("video stream handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
   let file_path = if sub_dir.len() > 0 {
     let mut sub_dir_param = String::from("/");
     sub_dir_param += &sub_dir;
