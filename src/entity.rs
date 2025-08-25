@@ -29,6 +29,7 @@ pub struct VideoEntity {
   pub video_frame_count: i32,
   pub duration: i32,
   pub moved: Option<u8>,
+  pub cfb: u8,
 }
 
 impl VideoEntity {
@@ -56,6 +57,7 @@ impl VideoEntity {
       duration: 0,
       cover_size: Option::Some(0),
       moved: Option::Some(0),
+      cfb: 0
     }
   }
 
@@ -90,8 +92,8 @@ impl VideoEntity {
       frame_rate,
       video_frame_count,
       duration,
-
       moved: Option::Some(0),
+      cfb: 0,
     }
   }
 
@@ -121,6 +123,7 @@ impl VideoEntity {
       duration: 0,
       cover_size: Option::Some(0),
       moved: Option::Some(0),
+      cfb: 0,
     }
   }
 
@@ -150,6 +153,7 @@ impl VideoEntity {
       duration: 0,
       cover_size: Option::Some(0),
       moved: Option::Some(0),
+      cfb: 0,
     }
   }
 }
