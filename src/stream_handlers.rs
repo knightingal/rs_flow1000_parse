@@ -219,7 +219,7 @@ pub async fn demo_video_stream_hander(
   let mut response_builder = Response::builder().status(status_code);
   let mock_stream = CfbVideoStream::new(
     start, 
-    file_path, 
+    &file_path, 
     iv.as_bytes().try_into().unwrap(), 
     key.as_bytes().try_into().unwrap());
 
@@ -426,7 +426,7 @@ struct CfbVideoStream {
 
 impl CfbVideoStream {
   #[allow(dead_code)]
-  fn new(start: u64, file_path: String, iv:[u8; 16], pwd:[u8; 32] ) -> Self {
+  fn new(start: u64, file_path: &String, iv:[u8; 16], pwd:[u8; 32] ) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(file_path).unwrap();
 
