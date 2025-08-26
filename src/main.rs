@@ -104,10 +104,26 @@ fn simple_dll_function_return_heap_point() -> *const c_char {
   heap_point
 }
 
+#[cfg(reallink)]
+#[link(name = "cfb_decode")]
+extern "C" {
+  // fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+  #[allow(dead_code)]
+  fn key_expansion(key: *const u8, w: *mut u32);
+  // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+}
+
+
+static mut W: [u32; 60] = [0; 60];
 
 #[tokio::main]
 async fn main() {
   unsafe {
+
+    let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+    let pwd:[u8; 32] = key.as_bytes().try_into().unwrap();
+    key_expansion(pwd.as_ptr(), W.as_mut_ptr());
+
     let simple = simple_dll_function();
     println!("simple:{}", simple);
     let rust_obj = RustObject { a: 1, b: 1024 };

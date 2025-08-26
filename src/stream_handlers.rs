@@ -35,12 +35,12 @@ use rusqlite::named_params;
 extern "C" {
   // fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-  #[allow(dead_code)]
-  fn key_expansion(key: *const u8, w: *mut u32);
+  // #[allow(dead_code)]
+  // fn key_expansion(key: *const u8, w: *mut u32);
   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
-use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX};
+use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX, W};
 
 pub async fn mock_stream_hander() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
@@ -427,20 +427,19 @@ impl futures_core::Stream for VideoStream {
 struct CfbVideoStream {
   file: File,
   iv: [u8; 16],
-  w: [u32; 60],
+  // w: [u32; 60],
   header_offset: usize,
 }
 
+
 impl CfbVideoStream {
   #[allow(dead_code)]
+  #[allow(static_mut_refs)]
   fn new(start: u64, file_path: &String, iv:[u8; 16], pwd:[u8; 32] ) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(file_path).unwrap();
 
-    let mut w: [u32; 60] = [0; 60];
-    unsafe {
-      key_expansion(pwd.as_ptr(), w.as_mut_ptr());
-    }
+    // let mut w: [u32; 60] = [0; 60];
 
     if start != 0 {
       let pad_start = start & 0xffff_ffff_ffff_fff0;
@@ -449,12 +448,12 @@ impl CfbVideoStream {
         let _ = file.seek(std::io::SeekFrom::Start(pad_start - 16));
         let mut tmp_iv: [u8; 16] = [0u8; 16];
         let _ = file.read(&mut tmp_iv);
-        Self { file, iv: tmp_iv, w, header_offset }
+        Self { file, iv: tmp_iv, header_offset }
       } else {
-        Self { file, iv, w, header_offset}
+        Self { file, iv, header_offset}
       }
     } else {
-      Self { file, iv, w, header_offset: 0 }
+      Self { file, iv, header_offset: 0 }
     }
     // let _ = file.seek(std::io::SeekFrom::Start(start));
   }
@@ -463,6 +462,7 @@ impl CfbVideoStream {
 impl futures_core::Stream for CfbVideoStream {
   type Item = Result<Bytes, Error>;
 
+  #[allow(static_mut_refs)]
   fn poll_next(
     mut self: std::pin::Pin<&mut Self>,
     _: &mut std::task::Context<'_>,
@@ -476,7 +476,7 @@ impl futures_core::Stream for CfbVideoStream {
           let mut output: [u8; 4096] = [0u8; 4096];
           unsafe {
             inv_cfb_v2(
-              self.w.as_ptr(),
+              W.as_ptr(),
               self.iv.as_ptr(),
               buf.as_ptr(),
               output.as_mut_ptr(),
