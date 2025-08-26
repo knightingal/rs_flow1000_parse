@@ -120,7 +120,7 @@ pub async fn image_stream_hander(Path((base_index, sub_dir)): Path<(u32, String)
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = 0;
-  let mock_stream = VideoStream::new(start, main_patition_path);
+  let mock_stream = VideoStream::new(start, &main_patition_path);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
     .body(Body::from_stream(mock_stream))
@@ -307,7 +307,7 @@ pub async fn video_stream_hander(
     false => StatusCode::OK,
   };
   let mut response_builder = Response::builder().status(status_code);
-  let mock_stream = VideoStream::new(start, file_path);
+  let video_stream = VideoStream::new(start, &file_path);
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -324,7 +324,7 @@ pub async fn video_stream_hander(
   }
   *response_builder.headers_mut().unwrap() = header;
   response_builder
-    .body(Body::from_stream(mock_stream))
+    .body(Body::from_stream(video_stream))
     .unwrap()
 }
 
@@ -389,7 +389,7 @@ struct VideoStream {
 }
 
 impl VideoStream {
-  fn new(start: u64, file_path: String) -> Self {
+  fn new(start: u64, file_path: &String) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
     let mut file = File::open(file_path).unwrap();
     let _ = file.seek(std::io::SeekFrom::Start(start));
