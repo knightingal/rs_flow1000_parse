@@ -309,12 +309,12 @@ pub async fn video_stream_hander(
 
   let mut response_builder = Response::builder().status(status_code);
   let video_stream = VideoStream::new(start, &file_path);
-  let key = "passwordpasswordpasswordpassword"; // 32 bytes key
-  let iv = "2021000120210001"; // 16 bytes IV
-  let cfb_video_stream = CfbVideoStream::new(
-    start, &file_path, 
-    iv.as_bytes().try_into().unwrap(), 
-    key.as_bytes().try_into().unwrap());
+  // let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+  // let iv = "2021000120210001"; // 16 bytes IV
+  // let cfb_video_stream = CfbVideoStream::new(
+  //   start, &file_path, 
+  //   iv.as_bytes().try_into().unwrap(), 
+  //   key.as_bytes().try_into().unwrap());
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
