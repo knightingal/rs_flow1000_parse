@@ -759,6 +759,12 @@ impl futures_core::Stream for BuffStream {
   }
 }
 
+#[cfg(reallink)]
+#[link(name = "cfb_decode")]
+extern "C" {
+  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+}
+
 pub async fn init_video_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoCover>>) {
