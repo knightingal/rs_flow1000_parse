@@ -962,6 +962,12 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   });
 }
 
+pub async fn cfb_video_by_path(
+  Path((base_index, sub_dir)): Path<(u32, String)>,
+) -> StatusCode {
+  StatusCode::OK
+}
+
 pub async fn move_cover() {
 
   let mount_configs = query_mount_configs();
