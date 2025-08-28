@@ -1,10 +1,6 @@
 use core::slice;
 use std::{
-  cmp::Ordering,
-  collections::HashMap,
-  ffi::{c_char, c_void, CString},
-  fs::{self, DirBuilder, DirEntry},
-  thread, usize,
+  cmp::Ordering, collections::HashMap, env, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
 };
 
 use axum::{
@@ -964,8 +960,38 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
 
 pub async fn cfb_video_by_path(
   Path((base_index, sub_dir)): Path<(u32, String)>,
-) -> StatusCode {
-  StatusCode::OK
+) -> (StatusCode, String) {
+
+  tracing::debug!("cfb_video_by_path handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+  if sub_dir_param.ends_with("/") {
+    sub_dir_param.truncate(sub_dir_param.len() - 1);
+  }
+  let sqlite_conn = get_sqlite_connection();
+  let mut sql = String::from("select id, ");
+  let dir_path_name: &str;
+  unsafe {
+    dir_path_name = if *IS_LINUX.unwrap() {
+      "dir_path"
+    } else {
+      "win_dir_path"
+    }
+  }
+  sql += dir_path_name;
+  sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
+  let mount_config = sqlite_conn
+    .query_row(sql.as_str(), named_params! {":id": base_index}, |row| {
+      Ok(MountConfig {
+        id: row.get_unwrap("id"),
+        dir_path: row.get_unwrap(dir_path_name),
+        url_prefix: row.get_unwrap("url_prefix"),
+        api_version: row.get_unwrap("api_version"),
+      })
+    })
+    .unwrap();
+  let file_path = mount_config.dir_path + sub_dir_param.as_str();
+  (StatusCode::OK, file_path)
 }
 
 pub async fn move_cover() {
