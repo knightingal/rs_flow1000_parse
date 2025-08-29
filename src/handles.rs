@@ -960,7 +960,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
 
 pub async fn cfb_video_by_path(
   Path((base_index, sub_dir)): Path<(u32, String)>,
-) -> (StatusCode, String) {
+) -> (StatusCode, Json<Vec<String>>) {
 
   tracing::debug!("cfb_video_by_path handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
 
@@ -1012,7 +1012,9 @@ pub async fn cfb_video_by_path(
       .create(target_dir_path).unwrap();
   }
 
-  (StatusCode::OK, file_path)
+  let resp_vec = vec![target_dir, file_path];
+
+  (StatusCode::OK, Json(resp_vec))
 }
 
 pub async fn move_cover() {
