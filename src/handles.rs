@@ -963,11 +963,18 @@ pub async fn cfb_video_by_path(
 ) -> (StatusCode, String) {
 
   tracing::debug!("cfb_video_by_path handler: base_index: {}, sub_dir: {}", base_index, sub_dir);
+
+  let mount_configs = query_mount_configs();
+
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {
     sub_dir_param.truncate(sub_dir_param.len() - 1);
   }
+
+  let last_index = sub_dir_param.rfind('/').unwrap();
+  let (parenet_dir, _) = sub_dir_param.split_at(last_index);
+
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select id, ");
   let dir_path_name: &str;
@@ -991,6 +998,20 @@ pub async fn cfb_video_by_path(
     })
     .unwrap();
   let file_path = mount_config.dir_path + sub_dir_param.as_str();
+
+  let mut target_dir = mount_configs[0].dir_path.clone();
+  target_dir.push_str("/cfb/");
+  let mut buffer = itoa::Buffer::new();
+  let base_index_str = buffer.format(base_index);
+  target_dir.push_str(base_index_str);
+  target_dir.push_str(&parenet_dir);
+  let target_dir_path = std::path::Path::new(&target_dir);
+  if !target_dir_path.exists() {
+    DirBuilder::new()
+      .recursive(true)
+      .create(target_dir_path).unwrap();
+  }
+
   (StatusCode::OK, file_path)
 }
 
