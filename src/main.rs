@@ -203,7 +203,7 @@ async fn main() {
       get(parse_meta_info_all_handler),
     )
     .route("/move-cover", get(move_cover))
-    .route("/cfb-video-by-path", get(cfb_video_by_path))
+    .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path))
     // bussiness
     .route("/mount-config", get(mount_config_handler))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
