@@ -13,7 +13,7 @@ use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
-use rusqlite::{named_params, params_from_iter, Connection};
+use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
 use tokio::task;
 
 use crate::{entity::*, handles::IS_LINUX};
@@ -25,7 +25,62 @@ fn get_sqlite_connection() -> Connection {
   return conn;
 }
 
+fn process_sql<T, P, CBF>(sql: &str, params: P, mut cbf: CBF) -> Vec<T> 
+  where CBF: FnMut(&Row<'_>) -> Result<T, Error>, P: Params
+{
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare(sql).unwrap();
+  let selected_iter = 
+    stmt.query_map(params, |row| {cbf(row)}).unwrap().map(|it|it.unwrap());
+
+  selected_iter.collect()
+}
+
+
 pub async fn video_info_handler(
+  Path((base_index, sub_dir)): Path<(u32, String)>,
+) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
+  let mut sub_dir_param = String::from("/");
+  sub_dir_param += &sub_dir;
+  if sub_dir_param.ends_with("/") {
+    sub_dir_param.truncate(sub_dir_param.len() - 1);
+  }
+
+  let sql = "
+    select 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
+    from 
+      video_info 
+    where 
+      dir_path = :dir_path and base_index=:base_index";
+  let params = named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index};
+
+  fn cbf(row: &Row<'_>) -> Result<VideoEntity, Error> {
+    Ok(VideoEntity::new_for_base_info(
+            row.get_unwrap(0),
+            row.get_unwrap(1),
+            row.get_unwrap(2),
+            row.get_unwrap(4),
+            row.get_unwrap(3),
+            row.get_unwrap(5),
+            row.get_unwrap(6),
+          )
+    )
+  }
+
+  let selected_video = process_sql(sql, params, cbf);
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(
+    CONTENT_TYPE,
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header, Json(selected_video))
+}
+
+pub async fn video_info_handler_t(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let mut sub_dir_param = String::from("/");
