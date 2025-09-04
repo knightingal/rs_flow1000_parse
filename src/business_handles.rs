@@ -80,53 +80,6 @@ pub async fn video_info_handler(
   (StatusCode::OK, header, Json(selected_video))
 }
 
-pub async fn video_info_handler_t(
-  Path((base_index, sub_dir)): Path<(u32, String)>,
-) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
-  if sub_dir_param.ends_with("/") {
-    sub_dir_param.truncate(sub_dir_param.len() - 1);
-  }
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut stmt = sqlite_conn.prepare("
-    select 
-      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
-    from 
-      video_info 
-    where 
-      dir_path = :dir_path and base_index=:base_index").unwrap();
-  let selected_video_iter = stmt
-    .query_map(
-      named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index},
-      |row| {
-        Ok(VideoEntity::new_for_base_info(
-          row.get_unwrap(0),
-          row.get_unwrap(1),
-          row.get_unwrap(2),
-          row.get_unwrap(4),
-          row.get_unwrap(3),
-          row.get_unwrap(5),
-          row.get_unwrap(6),
-        ))
-      },
-    )
-    .unwrap()
-    .map(|it| it.unwrap());
-
-  let selected_video: Vec<VideoEntity> = selected_video_iter.collect();
-
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(selected_video))
-}
 
 pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
   let sqlite_conn = get_sqlite_connection();
