@@ -25,13 +25,13 @@ fn get_sqlite_connection() -> Connection {
   return conn;
 }
 
-fn process_sql<T, P, CBF>(sql: &str, params: P, mut cbf: CBF) -> Vec<T> 
+fn process_sql<T, P, CBF>(sql: &str, params: P, cbf: CBF) -> Vec<T> 
   where CBF: FnMut(&Row<'_>) -> Result<T, Error>, P: Params
 {
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(sql).unwrap();
   let selected_iter = 
-    stmt.query_map(params, |row| {cbf(row)}).unwrap().map(|it|it.unwrap());
+    stmt.query_map(params, cbf).unwrap().map(|it|it.unwrap());
 
   selected_iter.collect()
 }
