@@ -82,8 +82,6 @@ pub async fn video_info_handler(
 
 
 pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
-  let sqlite_conn = get_sqlite_connection();
-
   let mut sql = String::from("select id, ");
   let dir_path_name: &str;
   unsafe {
@@ -96,20 +94,16 @@ pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountCon
   sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir ";
 
-  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
-  let mount_config_iter = stmt
-    .query_map(named_params! {}, |row| {
+  let cbf = |row: &Row<'_>| -> Result<MountConfig, Error> {
       Ok(MountConfig {
         id: row.get_unwrap("id"),
         dir_path: row.get_unwrap(dir_path_name),
         url_prefix: row.get_unwrap("url_prefix"),
         api_version: row.get_unwrap("api_version"),
       })
-    })
-    .unwrap()
-    .map(|it| it.unwrap());
+  };
 
-  let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
+  let mount_config_list = process_sql(sql.as_str(), named_params! {}, cbf);
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
