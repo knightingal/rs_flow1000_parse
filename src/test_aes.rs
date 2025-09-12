@@ -9,13 +9,12 @@ mod tests {
 #[link(name = "cfb_decode")]
 extern "C" {
   fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-  #[allow(dead_code)]
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn key_expansion(key: *const u8, w: *mut u32);
 }
 
   #[test]
-  fn cfb_extern_test() {
+  fn cfb_extern_test1() {
     unsafe {
       if cfg!(reallink) {
         let key = "passwordpasswordpasswordpassword";
@@ -27,6 +26,32 @@ extern "C" {
         let mut output = [0u8; 32];
         cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
         assert_eq!([195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164, 111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196], output);
+      }
+    }
+  }
+
+  #[test]
+  fn cfb_extern_test2() {
+    unsafe {
+      if cfg!(reallink) {
+        let key = "passwordpassword16bytesAES256!!\0";
+        let iv = "2021000120210001";
+        let input_data = "0123456789abcdef0123456789abcdef";
+        let mut w: [u32; 60] = [0; 60];
+        key_expansion(key.as_ptr(), w.as_mut_ptr());
+        println!("key_expansion: {:?}", w);
+        let mut output = [0u8; 32];
+        let mut inv_output = [0u8; 32];
+        cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
+        assert_eq!([
+          0xef, 0xfb, 0x8c, 0xb0, 0x4c, 0x90, 0x9f, 0x33, 
+          0x41, 0xd7, 0x14, 0x2a, 0x1e, 0xcf, 0xdd, 0xa4, 
+          0xb6, 0xf9, 0x16, 0xf5, 0x09, 0xad, 0xa8, 0x83, 
+          0x02, 0xf2, 0x9c, 0xd9, 0x5b, 0xbf, 0x23, 0x83], output);
+
+        inv_cfb_v2(w.as_ptr(), iv.as_ptr(), output.as_ptr(), inv_output.as_mut_ptr(), input_data.len());
+
+        assert_eq!(inv_output, input_data.as_bytes());
       }
     }
   }
