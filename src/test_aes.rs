@@ -6,8 +6,18 @@ mod tests {
   type Aes128Ctr64LE = ctr::Ctr64LE<aes::Aes128>;
 
 #[cfg(reallink)]
+use libc::c_char;
+
+#[cfg(reallink)]
 #[link(name = "cfb_decode")]
 extern "C" {
+
+  fn cfb_file_streaming_v2(
+    w: *const u32,
+    iv: *const u8,
+    input_filename: *const c_char,
+    output_filename: *const c_char,
+  ) -> i32;
   fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn key_expansion(key: *const u8, w: *mut u32);
