@@ -973,7 +973,7 @@ pub async fn cfb_video_by_path(
   }
 
   let last_index = sub_dir_param.rfind('/').unwrap();
-  let (parenet_dir, _) = sub_dir_param.split_at(last_index);
+  let (parenet_dir, file_name) = sub_dir_param.split_at(last_index);
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select id, ");
@@ -1005,6 +1005,7 @@ pub async fn cfb_video_by_path(
   let base_index_str = buffer.format(base_index);
   target_dir.push_str(base_index_str);
   target_dir.push_str(&parenet_dir);
+  
   let target_dir_path = std::path::Path::new(&target_dir);
   if !target_dir_path.exists() {
     DirBuilder::new()
@@ -1012,7 +1013,11 @@ pub async fn cfb_video_by_path(
       .create(target_dir_path).unwrap();
   }
 
-  let resp_vec = vec![target_dir, file_path];
+  let mut target_file_path = target_dir;
+  target_file_path.push_str(file_name);
+  target_file_path.push_str(".bin");
+
+  let resp_vec = vec![target_file_path, file_path];
 
   (StatusCode::OK, Json(resp_vec))
 }
