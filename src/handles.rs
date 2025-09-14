@@ -19,7 +19,7 @@ use crate::{
   designation::parse_designation,
   entity::*,
   get_sqlite_connection,
-  video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo},
+  video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}, W,
 };
 
 pub static mut IS_LINUX: Option<&bool> = None;
@@ -35,6 +35,12 @@ pub struct SnapshotSt {
 extern "C" {
   fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
   fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+  fn cfb_file_streaming_v2(
+    w: *const u32,
+    iv: *const u8,
+    input_filename: *const c_char,
+    output_filename: *const c_char,
+  ) -> i32;
 }
 
 #[cfg(reallink)]
@@ -755,11 +761,6 @@ impl futures_core::Stream for BuffStream {
   }
 }
 
-#[cfg(reallink)]
-#[link(name = "cfb_decode")]
-extern "C" {
-  fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-}
 
 pub async fn init_video_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
@@ -1017,7 +1018,26 @@ pub async fn cfb_video_by_path(
   target_file_path.push_str(file_name);
   target_file_path.push_str(".bin");
 
+  let file_name = CString::new(file_name).unwrap();
+
+  let iv = "2021000120210001";
+
+  let move_target_file_path = target_file_path.clone();
+
+  thread::spawn(move || {
+    unsafe {
+      cfb_file_streaming_v2(
+          W.as_ptr(), 
+          iv.as_ptr(), 
+          file_name.as_ptr() as *const c_char, 
+          move_target_file_path.as_ptr() as *const c_char
+      );
+    }
+  });
+
   let resp_vec = vec![target_file_path, file_path];
+
+
 
   (StatusCode::OK, Json(resp_vec))
 }
