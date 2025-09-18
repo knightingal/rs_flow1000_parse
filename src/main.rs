@@ -109,10 +109,9 @@ fn simple_dll_function_return_heap_point() -> *const c_char {
 extern "C" {
   #[allow(dead_code)]
   fn key_expansion(key: *const u8, w: *mut u32);
+  fn init_inner_key_expansion(key: *const u8);
 }
 
-
-static mut W: [u32; 60] = [0; 60];
 
 #[tokio::main]
 async fn main() {
@@ -120,7 +119,7 @@ async fn main() {
 
     let key = "passwordpasswordpasswordpassword"; // 32 bytes key
     let pwd:[u8; 32] = key.as_bytes().try_into().unwrap();
-    key_expansion(pwd.as_ptr(), W.as_mut_ptr());
+    init_inner_key_expansion(pwd.as_ptr());
 
     let simple = simple_dll_function();
     println!("simple:{}", simple);

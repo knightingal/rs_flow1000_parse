@@ -1,6 +1,6 @@
 use core::slice;
 use std::{
-  cmp::Ordering, collections::HashMap, env, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
+  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
 };
 
 use axum::{
@@ -19,7 +19,7 @@ use crate::{
   designation::parse_designation,
   entity::*,
   get_sqlite_connection,
-  video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo}, W,
+  video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo},
 };
 
 pub static mut IS_LINUX: Option<&bool> = None;
@@ -1018,18 +1018,19 @@ pub async fn cfb_video_by_path(
   target_file_path.push_str(file_name);
   target_file_path.push_str(".bin");
 
-  let file_name = CString::new(file_name).unwrap();
+  // let file_name = CString::new(file_name).unwrap();
+  let input_file_path = CString::new(file_path.as_str()).unwrap();
 
   let iv = "2021000120210001";
 
-  let move_target_file_path = target_file_path.clone();
+  let move_target_file_path = CString::new(target_file_path.as_str()).unwrap();
 
   thread::spawn(move || {
     unsafe {
       cfb_file_streaming_v2(
-          W.as_ptr(), 
+          0 as *const u32, 
           iv.as_ptr(), 
-          file_name.as_ptr() as *const c_char, 
+          input_file_path.as_ptr() as *const c_char, 
           move_target_file_path.as_ptr() as *const c_char
       );
     }

@@ -40,7 +40,7 @@ extern "C" {
   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
-use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX, W};
+use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX};
 
 pub async fn mock_stream_hander() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
@@ -474,7 +474,7 @@ impl futures_core::Stream for CfbVideoStream {
           let mut output: [u8; 4096] = [0u8; 4096];
           unsafe {
             inv_cfb_v2(
-              W.as_ptr(),
+              0 as *const u32,
               self.iv.as_ptr(),
               buf.as_ptr(),
               output.as_mut_ptr(),
