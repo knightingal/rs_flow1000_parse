@@ -10,6 +10,8 @@ gcc -shared -fPIC -o libcfb_decode.so aes.c
 mv libcfb_decode.so /usr/lib
  */
 
+// Global round keys buffer for init_inner_key_expansion
+uint32_t g_round_keys[60] = {0};
 
 const int NK = 8; // Number of 32-bit words in the key (for AES-128)
 const int NR = 14; // Number of rounds for AES-128
@@ -145,6 +147,31 @@ uint32_t rot_word(uint32_t w) {
   return ((w << 8) & 0xffffff00) | ((w >> 24) & 0x000000ff);
 }
 
+void init_inner_key_expansion(const uint8_t *key) {
+  printf("Key expansion started for round %d\n", NR);
+  int i = 0;
+  while (i <= NK - 1) {
+    g_round_keys[i] = 
+        (key[i * 4    ] << 24) |
+        (key[i * 4 + 1] << 16) |
+        (key[i * 4 + 2] <<  8) |
+        (key[i * 4 + 3]      );
+    i++;
+  }
+
+  while (i <= 4 * NR + 3) {
+    uint32_t temp = g_round_keys[i - 1];
+    if (i % NK == 0) {
+      temp = rot_word(temp);
+      temp = sub_word(temp);
+      temp = add_word(temp, rcon[i / NK]);
+    } else if (NK > 6 && i % NK == 4) {
+      temp = sub_word(temp);
+    }
+    g_round_keys[i] = add_word(g_round_keys[i - NK], temp);
+    i++;
+  }
+}
 
 void key_expansion(const uint8_t *key, uint32_t *round_keys) {
   printf("Key expansion started for round %d\n", NR);
@@ -275,7 +302,11 @@ void cfb_v2( uint32_t* w, uint8_t* iv, uint8_t* input, uint8_t* output, size_t l
   }
 }
 
-void inv_cfb_v2( uint32_t* w, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
+void inv_cfb_v2( uint32_t* w_input, uint8_t* iv, uint8_t* input, uint8_t* output, size_t len) {
+  uint32_t* w = w_input;
+  if (w == NULL) {
+    w = g_round_keys;
+  }
 
   uint32_t iv_state[4] = {0};
 
@@ -419,8 +450,12 @@ void inv_cfb_file(uint8_t* pwd, uint8_t* iv, const char* input_filename, const c
   free(output_data);
 }
 
-void cfb_file_streaming_v2(uint32_t* w, uint8_t* iv, const char* input_filename, const char* output_filename) {
+void cfb_file_streaming_v2(uint32_t* w_input, uint8_t* iv, const char* input_filename, const char* output_filename) {
   // Define buffer size (multiple of 16 bytes for AES block alignment)
+  uint32_t* w = w_input;
+  if (w == NULL) {
+    w = g_round_keys;
+  }
   const size_t BUFFER_SIZE = 4096; // 4KB buffer, always multiple of 16
   
   // Open input file
