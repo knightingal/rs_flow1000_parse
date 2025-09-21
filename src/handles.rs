@@ -979,15 +979,17 @@ pub async fn cfb_video_by_id(
   }
   sql += "mbd.";
   sql += dir_path_name;
-  sql += " , vi.video_file_name, vi.base_index, mbd.url_prefix, mbd.api_version 
+  sql += " as mount_path, vi.video_file_name, vi.base_index, mbd.url_prefix, mbd.api_version, vi.dir_path 
     from video_info vi left join mp4_base_dir mbd on vi.base_index = mbd.id where vi.id = :id";
   let video_entity = sqlite_conn
     .query_row(sql.as_str(), named_params! {":id": id}, |row| {
+      let mut dir_path: String = row.get_unwrap("mount_path");
+      dir_path.push_str(row.get_unwrap::<_, String>("dir_path").as_str());
       Ok(VideoEntity::new_by_file_name(
         row.get_unwrap("id"),
         row.get_unwrap("video_file_name"),
         String::new(),
-        row.get_unwrap(dir_path_name),
+        dir_path,
         row.get_unwrap("base_index"),
       ))
     })
