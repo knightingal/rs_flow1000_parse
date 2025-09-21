@@ -1023,16 +1023,16 @@ pub async fn cfb_video_by_id(
 
   let move_target_file_path = CString::new(target_file_path.as_str()).unwrap();
 
-  // thread::spawn(move || {
-  //   unsafe {
-  //     cfb_file_streaming_v2(
-  //         0 as *const u32,
-  //         iv.as_ptr(),
-  //         input_file_path.as_ptr() as *const c_char,
-  //         move_target_file_path.as_ptr() as *const c_char
-  //     );
-  //   }
-  // });
+  thread::spawn(move || {
+    unsafe {
+      cfb_file_streaming_v2(
+          0 as *const u32,
+          iv.as_ptr(),
+          input_file_path.as_ptr() as *const c_char,
+          move_target_file_path.as_ptr() as *const c_char
+      );
+    }
+  });
 
   let resp_vec = vec![target_file_path, file_path];
 
