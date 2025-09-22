@@ -1017,19 +1017,19 @@ pub async fn cfb_video_by_id(
   target_file_path.push_str(".bin");
 
   // let file_name = CString::new(file_name).unwrap();
-  let input_file_path = CString::new(file_path.as_str()).unwrap();
+  let input_file_path: CString = CString::new(file_path.as_str()).unwrap();
 
   let iv = "2021000120210001";
 
-  let move_target_file_path = CString::new(target_file_path.as_str()).unwrap();
+  let move_target_file_path: CString = CString::new(target_file_path.as_str()).unwrap();
 
   thread::spawn(move || {
     unsafe {
       cfb_file_streaming_v2(
           0 as *const u32,
           iv.as_ptr(),
-          input_file_path.as_ptr() as *const c_char,
-          move_target_file_path.as_ptr() as *const c_char
+          input_file_path.as_ptr(),
+          move_target_file_path.as_ptr(), 
       );
     }
   });
