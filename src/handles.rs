@@ -269,7 +269,7 @@ pub async fn all_duplicate_cover(
   (StatusCode::OK, Json(duplicate_entity_list))
 }
 
-pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
+pub async fn all_duplicate_video() -> (StatusCode, HeaderMap, Json<Vec<DuplicateEntity>>) {
   let conn1 = get_sqlite_connection();
 
   let mut stmt = conn1.prepare(
@@ -337,7 +337,14 @@ pub async fn all_duplicate_video() -> (StatusCode, Json<Vec<DuplicateEntity>>) {
     duplicate_entity.video_info_list = selected_video;
   }
 
-  (StatusCode::OK, Json(duplicate_entity_list))
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert(
+    "content-type",
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header, Json(duplicate_entity_list))
 }
 
 pub async fn designation_search(
