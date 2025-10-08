@@ -70,15 +70,30 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<Video
   let conn = get_sqlite_connection();
   let video_entity = conn
     .query_row(
-      "select id, video_file_name, cover_file_name, base_index, dir_path from video_info where id = :id",
+      "select 
+        id, video_file_name, cover_file_name, base_index, dir_path,
+        video_size, cover_size, rate, height, width, 
+        frame_rate, video_frame_count, duration
+      from 
+        video_info 
+      where 
+        id = :id",
       named_params! {":id":id},
       |row| {
-        Result::Ok(VideoEntity::new_by_file_name(
+        Result::Ok(VideoEntity::new_for_meta_info(
           id,
           row.get_unwrap("video_file_name"),
           row.get_unwrap("cover_file_name"),
           row.get_unwrap("dir_path"),
           row.get_unwrap("base_index"),
+          row.get_unwrap("video_size"),
+          row.get_unwrap("cover_size"),
+          row.get_unwrap("rate"),
+          row.get_unwrap("height"),
+          row.get_unwrap("width"),
+          row.get_unwrap("frame_rate"),
+          row.get_unwrap("video_frame_count"),
+          row.get_unwrap("duration"),
         ))
       },
     )
