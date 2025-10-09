@@ -216,8 +216,11 @@ impl Clone for TagEntity {
 
 #[derive(Serialize)]
 pub struct StatisticEntity {
-  #[serde(rename = "videoSize")]
-  pub video_size: u64,
-  #[serde(rename = "coverSize")]
-  pub cover_size: u64,
+  #[serde(rename = "totalVideoSize")]
+  pub total_video_size: u64,
+  #[serde(rename = "totalCoverSize")]
+  pub total_cover_size: u64,
+
+  #[serde(rename = "deletedSize")]
+  pub deleted_size: u64,
 }
