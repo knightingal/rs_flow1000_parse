@@ -461,9 +461,21 @@ pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>
     .into_iter()
     .reduce(|acc, e| (acc.0 + e.0, acc.1 + e.1))
     .unwrap();
+  
+  let mut stmt = sqlite_conn
+    .prepare("select sum(video_size) from video_info where rate = 3")
+    .unwrap();
+
+  let deleted_size = stmt.query_row({}, |row| {
+    let v: u64 = row.get_unwrap(0);
+    Ok(v)
+  }).unwrap();
+
+
   let statistic = StatisticEntity {
-    video_size: sum.0,
-    cover_size: sum.1,
+    total_video_size: sum.0,
+    total_cover_size: sum.1,
+    deleted_size: deleted_size,
   };
 
   let mut header = HeaderMap::new();
