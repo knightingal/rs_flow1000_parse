@@ -444,10 +444,21 @@ pub async fn query_tags_by_video(
   (StatusCode::OK, header, Json::from(tag_vec))
 }
 
-pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
+pub async fn statistic_handle(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
+  let (sql1, sql2) = if id != 0 {
+    (
+      "select video_size, cover_size from video_info where base_index = ".to_string() + &id.to_string(),
+      "select sum(video_size) from video_info where rate = 3 and base_index = ".to_string() + &id.to_string(),
+    )
+  } else {
+    (
+      "select video_size, cover_size from video_info".to_string(),
+      "select sum(video_size) from video_info where rate = 3".to_string(),
+    )
+  };
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn
-    .prepare("select video_size, cover_size from video_info")
+    .prepare(sql1.as_str())
     .unwrap();
   let sizes: Vec<(u64, u64)> = stmt
     .query_map({}, |row| {
@@ -463,7 +474,7 @@ pub async fn statistic_handle() -> (StatusCode, HeaderMap, Json<StatisticEntity>
     .unwrap();
   
   let mut stmt = sqlite_conn
-    .prepare("select sum(video_size) from video_info where rate = 3")
+    .prepare(sql2.as_str())
     .unwrap();
 
   let deleted_size = stmt.query_row({}, |row| {

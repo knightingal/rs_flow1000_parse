@@ -217,7 +217,7 @@ async fn main() {
     .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag))
     .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
     .route("/query-videos-by-tag/:tag_id", get(query_videos_by_tag))
-    .route("/statistic", get(statistic_handle))
+    .route("/statistic/patition/:id", get(statistic_handle))
     // demo
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
