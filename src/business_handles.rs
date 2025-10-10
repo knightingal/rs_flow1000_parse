@@ -484,9 +484,9 @@ pub async fn statistic_handle(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Js
 
 
   let statistic = StatisticEntity {
-    total_video_size: sum.0,
-    total_cover_size: sum.1,
-    deleted_size: deleted_size,
+    total_video_size: sum.0 / 1024 / 1024 / 1024,
+    total_cover_size: sum.1 / 1024 / 1024,
+    deleted_size: deleted_size / 1024 / 1024 / 1024,
   };
 
   let mut header = HeaderMap::new();
