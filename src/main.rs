@@ -248,6 +248,7 @@ async fn main() {
 fn root() -> impl Future<Output = &'static str> {
   async {
     r###################"
+    // mantain
     .route("/", get(root))
     .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
     .route("/sync-mysql2sqlite-video-info", get(sync_mysql2sqlite_video_info))
@@ -264,6 +265,8 @@ fn root() -> impl Future<Output = &'static str> {
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
     .route("/parse-meta-info-all-handler", get(parse_meta_info_all_handler))
     .route("/move-cover", get(move_cover))
+    .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path))
+    .route("/cfb-video-by-id/:id", get(cfb_video_by_id))
     // bussiness
     .route("/mount-config", get(mount_config_handler))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
@@ -273,14 +276,17 @@ fn root() -> impl Future<Output = &'static str> {
     .route("/video-rate/:id/:rate", post(video_rate))
     .route("/add-tag/:tag", post(add_tag))
     .route("/query-tags", get(query_tags))
-
     .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
     .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag))
     .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
+    .route("/query-videos-by-tag/:tag_id", get(query_videos_by_tag))
+    .route("/statistic/patition/:id", get(statistic_handle))
     // demo
     .route("/mock-steam", get(mock_stream_hander))
     .route("/file-steam", get(file_stream_hander))
+    .route("/demo-video/:base_index/*sub_dir", get(demo_video_stream_hander))
     .route("/video-stream/:base_index/*sub_dir", get(video_stream_hander))
+    .route("/video-exist/:base_index/*sub_dir", get(video_exist))
     .route("/image-stream/:base_index/*sub_dir", get(image_stream_hander))
       
       github.com 140.82.116.4
