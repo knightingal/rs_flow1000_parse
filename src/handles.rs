@@ -66,7 +66,7 @@ fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
 
 
 
-pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<VideoEntity>>) {
+pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<Option<VideoEntity>>) {
   let conn = get_sqlite_connection();
   let video_entity = conn
     .query_row(
@@ -99,7 +99,14 @@ pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, Json<Option<Video
     )
     .unwrap();
 
-  (StatusCode::OK, Json(Option::Some(video_entity)))
+  let mut header = HeaderMap::new();
+  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+  header.insert(
+    "content-type",
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header, Json(Option::Some(video_entity)))
 }
 
 pub async fn video_meta_info_handler(
