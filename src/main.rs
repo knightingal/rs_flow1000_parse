@@ -32,7 +32,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{handles::{cfb_video_by_id, cfb_video_by_path}, stream_handlers::demo_video_stream_hander};
+use crate::{handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::demo_video_stream_hander};
 
 mod business_handles;
 mod designation;
@@ -200,6 +200,10 @@ async fn main() {
     .route(
       "/parse-meta-info-all-handler",
       get(parse_meta_info_all_handler),
+    )
+    .route(
+      "/parse-meta-info-by-id/:id",
+      get(parse_meta_info_by_id),
     )
     .route("/move-cover", get(move_cover))
     .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path))
