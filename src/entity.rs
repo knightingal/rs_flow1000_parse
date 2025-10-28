@@ -19,6 +19,8 @@ pub struct VideoEntity {
   pub rate: Option<u32>,
   #[serde(rename = "videoSize")]
   pub video_size: Option<u64>,
+  #[serde(rename = "coverOffset")]
+  pub cover_offset: Option<u64>,
   #[serde(rename = "coverSize")]
   pub cover_size: Option<u64>,
   pub width: i32,
@@ -56,6 +58,7 @@ impl VideoEntity {
       video_frame_count: 0,
       duration: 0,
       cover_size: Option::Some(0),
+      cover_offset: Option::Some(0),
       moved: Option::Some(0),
       cfb: 0
     }
@@ -86,6 +89,7 @@ impl VideoEntity {
       base_index,
       video_size,
       cover_size,
+      cover_offset: Option::Some(0),
       rate,
       height,
       width,
@@ -122,6 +126,7 @@ impl VideoEntity {
       video_frame_count: 0,
       duration: 0,
       cover_size: Option::Some(0),
+      cover_offset: Option::Some(0),
       moved: Option::Some(0),
       cfb: 0,
     }
@@ -152,6 +157,7 @@ impl VideoEntity {
       video_frame_count: 0,
       duration: 0,
       cover_size: Option::Some(0),
+      cover_offset: Option::Some(0),
       moved: Option::Some(0),
       cfb: 0,
     }
