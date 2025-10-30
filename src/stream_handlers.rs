@@ -70,14 +70,14 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let mut stmt = sqlite_conn
     .prepare(
       "select 
-        id, video_file_name, base_index, dir_path, cover_file_name, cover_size
+        id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
       from 
         video_info 
       where 
         id = :id",
     )
     .unwrap();
-  let file_names: Vec<(u32, String, String, u64)> = stmt
+  let file_names: Vec<(u32, String, String, u64, u64)> = stmt
     .query_map(named_params! {":id": id}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
@@ -85,6 +85,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
       let base_index: u32 = row.get_unwrap("base_index");
       let id: u32 = row.get_unwrap("id");
       let cover_size: u64 = row.get_unwrap("cover_size");
+      let cover_offset: u64 = row.get_unwrap("cover_offset");
       println!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
@@ -92,7 +93,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
       ), &mount_config_list);
       println!("{}", cover_full_name);
 
-      Result::Ok((id, video_full_name, cover_full_name, cover_size))
+      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
     })
     .unwrap()
     .map(|it| it.unwrap())
@@ -114,7 +115,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   header.insert(CONTENT_LENGTH, content_length.into());
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
-  let start = 0;
+  let start = file_names[0].4;
   let mock_stream = VideoStream::new(start, &always_exist_cover_file);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
