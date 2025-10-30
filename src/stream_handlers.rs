@@ -62,6 +62,7 @@ pub async fn file_stream_hander() -> Response {
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let mount_config_list = query_mount_configs();
+  let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
 
   println!("call query video_file_name");
   let sqlite_conn = get_sqlite_connection();
@@ -96,8 +97,10 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
     .unwrap()
     .map(|it| it.unwrap())
     .collect();
+
+  let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
   
-  let path = std::path::Path::new(&file_names[0].2);
+  let path = std::path::Path::new(&always_exist_cover_file);
 
   let file_size = file_names[0].3;
   let content_length = file_size;
@@ -112,7 +115,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = 0;
-  let mock_stream = VideoStream::new(start, &file_names[0].2);
+  let mock_stream = VideoStream::new(start, &always_exist_cover_file);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
     .body(Body::from_stream(mock_stream))
