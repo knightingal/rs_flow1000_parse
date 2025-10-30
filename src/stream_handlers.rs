@@ -40,7 +40,7 @@ extern "C" {
   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
-use crate::{entity::MountConfig, get_sqlite_connection, handles::IS_LINUX};
+use crate::{entity::{MountConfig, VideoEntity}, get_sqlite_connection, handles::{IS_LINUX, query_mount_configs, video_entity_to_file_path}};
 
 pub async fn mock_stream_hander() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
@@ -60,7 +60,65 @@ pub async fn file_stream_hander() -> Response {
     .unwrap()
 }
 
-pub async fn image_stream_hander(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
+pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
+  let mount_config_list = query_mount_configs();
+
+  println!("call query video_file_name");
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+        id, video_file_name, base_index, dir_path, cover_file_name
+      from 
+        video_info 
+      where 
+        id = :id",
+    )
+    .unwrap();
+  let file_names: Vec<(u32, String, String)> = stmt
+    .query_map(named_params! {":id": id}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      println!("get file_name:{}, {}", video_file_name, cover_file_name);
+
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
+      println!("{}", cover_full_name);
+
+      Result::Ok((id, video_full_name, cover_full_name))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
+  
+  let path = std::path::Path::new(&file_names[0].2);
+
+  let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+  let content_length = file_size;
+
+  let extension = path.extension().unwrap().to_str().unwrap();
+  let mut content_type_value = String::from("image/");
+  content_type_value.push_str(extension);
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
+  header.insert(CONTENT_LENGTH, content_length.into());
+
+  let mut response_builder = Response::builder().status(StatusCode::OK);
+  let start = 0;
+  let mock_stream = VideoStream::new(start, &file_names[0].2);
+  *response_builder.headers_mut().unwrap() = header;
+  response_builder
+    .body(Body::from_stream(mock_stream))
+    .unwrap()
+}
+
+pub async fn image_stream_by_path_hander(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {

@@ -25,14 +25,14 @@ use std::{
   time::Duration,
 };
 use stream_handlers::{
-  file_stream_hander, image_stream_hander, mock_stream_hander, video_exist, video_stream_hander,
+  file_stream_hander, image_stream_by_path_hander, mock_stream_hander, video_exist, video_stream_hander,
 };
 use tower_http::trace::TraceLayer;
 use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::demo_video_stream_hander};
+use crate::{handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -235,8 +235,12 @@ async fn main() {
     )
     .route("/video-exist/:base_index/*sub_dir", get(video_exist))
     .route(
-      "/image-stream/:base_index/*sub_dir",
-      get(image_stream_hander),
+      "/image-stream-by-path/:base_index/*sub_dir",
+      get(image_stream_by_path_hander),
+    )
+    .route(
+      "/image-stream-by-id/:id",
+      get(image_stream_by_id_handler),
     )
     .layer(TraceLayer::new_for_http().on_body_chunk(
       |chunk: &Bytes, _latency: Duration, _span: &Span| {

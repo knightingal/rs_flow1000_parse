@@ -516,7 +516,7 @@ pub async fn parse_designation_handler(
   (StatusCode::OK, header, Json(selected_video))
 }
 
-fn query_mount_configs() -> Vec<MountConfig> {
+pub fn query_mount_configs() -> Vec<MountConfig> {
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -1261,7 +1261,7 @@ pub async fn move_cover() {
 
 }
 
-fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
+pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
   let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
   let mut video_path = mount_config.dir_path.clone();
   video_path.push_str(&video_entity.dir_path);
