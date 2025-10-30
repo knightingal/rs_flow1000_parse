@@ -64,7 +64,6 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let mount_config_list = query_mount_configs();
   let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
 
-  println!("call query video_file_name");
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
@@ -86,12 +85,10 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
       let id: u32 = row.get_unwrap("id");
       let cover_size: u64 = row.get_unwrap("cover_size");
       let cover_offset: u64 = row.get_unwrap("cover_offset");
-      println!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
         id, video_file_name, cover_file_name, dir_path, base_index
       ), &mount_config_list);
-      println!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
     })
