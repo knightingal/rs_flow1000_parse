@@ -69,20 +69,21 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let mut stmt = sqlite_conn
     .prepare(
       "select 
-        id, video_file_name, base_index, dir_path, cover_file_name
+        id, video_file_name, base_index, dir_path, cover_file_name, cover_size
       from 
         video_info 
       where 
         id = :id",
     )
     .unwrap();
-  let file_names: Vec<(u32, String, String)> = stmt
+  let file_names: Vec<(u32, String, String, u64)> = stmt
     .query_map(named_params! {":id": id}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
       let dir_path: String = row.get_unwrap("dir_path");
       let base_index: u32 = row.get_unwrap("base_index");
       let id: u32 = row.get_unwrap("id");
+      let cover_size: u64 = row.get_unwrap("cover_size");
       println!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
@@ -90,7 +91,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
       ), &mount_config_list);
       println!("{}", cover_full_name);
 
-      Result::Ok((id, video_full_name, cover_full_name))
+      Result::Ok((id, video_full_name, cover_full_name, cover_size))
     })
     .unwrap()
     .map(|it| it.unwrap())
@@ -98,7 +99,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   
   let path = std::path::Path::new(&file_names[0].2);
 
-  let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+  let file_size = file_names[0].3;
   let content_length = file_size;
 
   let extension = path.extension().unwrap().to_str().unwrap();
