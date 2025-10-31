@@ -156,14 +156,7 @@ async fn main() {
   println!("use_mysql:{}", use_mysql);
   println!("db_path:{}", db_path_env);
 
-  let is_linux = Box::new(
-    System::name().unwrap().contains("Linux")
-      || System::name().unwrap() == "Deepin"
-      || System::name().unwrap().contains("openSUSE"),
-  );
-  unsafe {
-    IS_LINUX = Some(Box::leak(is_linux));
-  }
+  linux_init();
 
 
   let app = Router::new()
@@ -311,6 +304,17 @@ fn get_sqlite_connection() -> Connection {
     .unwrap_or_else(|_| String::from("/home/knightingal/source/keys/mp41000.db"));
   let conn = Connection::open(db_path_env).unwrap();
   return conn;
+}
+
+pub fn linux_init() {
+  let is_linux = Box::new(
+    System::name().unwrap().contains("Linux")
+      || System::name().unwrap() == "Deepin"
+      || System::name().unwrap().contains("openSUSE"),
+  );
+  unsafe {
+    IS_LINUX = Some(Box::leak(is_linux));
+  }
 }
 
 async fn create_user(
