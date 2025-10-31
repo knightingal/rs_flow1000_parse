@@ -2,7 +2,10 @@
 mod tests {
   use std::{ffi::{c_void, CString}, fs::File, io::{Read, Seek, SeekFrom, Write}};
 
-use crate::handles::snapshot;
+use rusqlite::{Connection, named_params};
+use sysinfo::System;
+
+use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, query_mount_configs, snapshot, video_entity_to_file_path}, linux_init};
 
 // use crate::handles::move_cover;
 
@@ -58,8 +61,48 @@ use crate::handles::snapshot;
     Ok(())
   }
 
+
+
   #[test]
-  fn test_move_cover() {
+  fn test_concat_cover() {
+
+    // let is_linux = Box::new(
+    //   System::name().unwrap().contains("Linux")
+    //     || System::name().unwrap() == "Deepin"
+    //     || System::name().unwrap().contains("openSUSE"),
+    // );
+    // unsafe {
+    //   IS_LINUX = Some(Box::leak(is_linux));
+    // }
+
+    linux_init();
+
+    let mount_config_list = query_mount_configs();
+    let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
+    let dir_name = "/201707";
+    let sqlite_conn: Connection = get_sqlite_connection();
+    let mut stmt = sqlite_conn.prepare(
+      "SELECT 
+        id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
+      FROM video_info WHERE dir_path = :dir_path").unwrap();
+    let ids: Vec<(u32, String, String, u64, u64)> = stmt.query_map(named_params! {":dir_path": dir_name}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      let cover_size: u64 = row.get_unwrap("cover_size");
+      let cover_offset: u64 = row.get_unwrap("cover_offset");
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
+
+      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
+    }).unwrap().map(|result| {
+      result.unwrap()
+    }).collect();
+    println!("ids:{:?}", ids);
+    
 
   }
 }
