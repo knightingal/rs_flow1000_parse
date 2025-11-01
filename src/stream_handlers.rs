@@ -98,12 +98,18 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
 
   let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
   
-  let path = std::path::Path::new(&always_exist_cover_file);
+  let concat_path = std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class");
+
+  let real_file_name = if file_names[0].4 == 0 {
+    always_exist_cover_file
+  } else {
+    concat_path.to_str().unwrap().to_string()
+  };
 
   let file_size = file_names[0].3;
   let content_length = file_size;
 
-  let extension = path.extension().unwrap().to_str().unwrap();
+  let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
   let mut content_type_value = String::from("image/");
   content_type_value.push_str(extension);
   let mut header = HeaderMap::new();
@@ -113,7 +119,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = file_names[0].4;
-  let mock_stream = VideoStream::new(start, &always_exist_cover_file);
+  let mock_stream = VideoStream::new(start, &real_file_name);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
     .body(Body::from_stream(mock_stream))

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use std::{ffi::{c_void, CString}, fs::File, io::{Read, Seek, SeekFrom, Write}};
+  use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
 
 use rusqlite::{Connection, named_params};
 
@@ -108,14 +108,26 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
     }).collect();
     println!("ids:{:?}", covers);
 
-    let mut out_f = File::create("concat_file.bin").unwrap();
+    let concat_file_name = base_mount.dir_path.clone() + "/covers" + covers[0].2.as_str();
+    let concat_path = Path::new(&concat_file_name).parent().unwrap();
+    let concat_path_name = concat_path.join("main.class");
 
-    let mut write_offset: u64 = 0;
+
+    let mut out_f = File::create(concat_path_name).unwrap();
+    let header: [u8; 4] = [0xca, 0xfe, 0xba, 0xbe]; // "CAFEBABE"
+    let _ = out_f.write(&header);
+
+    let mut write_offset: u64 = 4;
 
     let mut stmt = sqlite_conn.prepare(
-      "update video_info set cover_offset = :cover_offset where id = :id").unwrap();
+      "update 
+        video_info 
+      set 
+        cover_offset = :cover_offset 
+      where 
+        id = :id").unwrap();
 
-    covers.iter().for_each(|(id, _video_file_name, cover_file_name, cover_size, cover_offset)| {
+    covers.iter().for_each(|(id, _video_file_name, cover_file_name, cover_size, _cover_offset)| {
       stmt.execute(named_params! {
         ":cover_offset": write_offset,
         ":id": *id
@@ -123,7 +135,7 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
 
       let mut f = File::open(cover_file_name).unwrap();
       let mut buf: Vec<u8> = vec![0; *cover_size as usize];
-      let _ = f.seek(SeekFrom::Start(*cover_offset));
+      let _ = f.seek(SeekFrom::Start(0));
       let _ = f.read_exact(&mut buf);
       let _ = out_f.write_all(&buf);
       write_offset += *cover_size;
