@@ -66,26 +66,26 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, quer
   #[test]
   fn test_concat_cover() {
 
-    // let is_linux = Box::new(
-    //   System::name().unwrap().contains("Linux")
-    //     || System::name().unwrap() == "Deepin"
-    //     || System::name().unwrap().contains("openSUSE"),
-    // );
-    // unsafe {
-    //   IS_LINUX = Some(Box::leak(is_linux));
-    // }
-
     linux_init();
 
     let mount_config_list = query_mount_configs();
     let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-    let dir_name = "/201707";
+    let dir_name = "/202402";
     let sqlite_conn: Connection = get_sqlite_connection();
     let mut stmt = sqlite_conn.prepare(
       "SELECT 
         id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
-      FROM video_info WHERE dir_path = :dir_path").unwrap();
-    let ids: Vec<(u32, String, String, u64, u64)> = stmt.query_map(named_params! {":dir_path": dir_name}, |row| {
+      FROM 
+        video_info 
+      WHERE 
+        dir_path = :dir_path").unwrap();
+    let ids: Vec<(
+        u32, 
+        String, 
+        String, 
+        u64, 
+        u64
+    )> = stmt.query_map(named_params! {":dir_path": dir_name}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
       let dir_path: String = row.get_unwrap("dir_path");
@@ -97,7 +97,13 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, quer
         id, video_file_name, cover_file_name, dir_path, base_index
       ), &mount_config_list);
 
-      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
+      Result::Ok((
+        id, 
+        video_full_name, 
+        cover_full_name, 
+        cover_size, 
+        cover_offset
+      ))
     }).unwrap().map(|result| {
       result.unwrap()
     }).collect();
