@@ -3,9 +3,8 @@ mod tests {
   use std::{ffi::{c_void, CString}, fs::File, io::{Read, Seek, SeekFrom, Write}};
 
 use rusqlite::{Connection, named_params};
-use sysinfo::System;
 
-use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, query_mount_configs, snapshot, video_entity_to_file_path}, linux_init};
+use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_configs, snapshot, video_entity_to_file_path}, linux_init};
 
 // use crate::handles::move_cover;
 
@@ -79,7 +78,7 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, quer
         video_info 
       WHERE 
         dir_path = :dir_path").unwrap();
-    let ids: Vec<(
+    let covers: Vec<(
         u32, 
         String, 
         String, 
@@ -107,8 +106,30 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{IS_LINUX, quer
     }).unwrap().map(|result| {
       result.unwrap()
     }).collect();
-    println!("ids:{:?}", ids);
-    
+    println!("ids:{:?}", covers);
+
+    let mut out_f = File::create("concat_file.bin").unwrap();
+
+    let mut write_offset: u64 = 0;
+
+    let mut stmt = sqlite_conn.prepare(
+      "update video_info set cover_offset = :cover_offset where id = :id").unwrap();
+
+    covers.iter().for_each(|(id, _video_file_name, cover_file_name, cover_size, cover_offset)| {
+      stmt.execute(named_params! {
+        ":cover_offset": write_offset,
+        ":id": *id
+      }).unwrap();
+
+      let mut f = File::open(cover_file_name).unwrap();
+      let mut buf: Vec<u8> = vec![0; *cover_size as usize];
+      let _ = f.seek(SeekFrom::Start(*cover_offset));
+      let _ = f.read_exact(&mut buf);
+      let _ = out_f.write_all(&buf);
+      write_offset += *cover_size;
+    });
+
+    out_f.flush().unwrap()
 
   }
 }
