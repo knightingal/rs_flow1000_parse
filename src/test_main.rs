@@ -72,7 +72,7 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
     let dir_name = "/202402";
     let sqlite_conn: Connection = get_sqlite_connection();
     let mut stmt = sqlite_conn.prepare(
-      "SELECT 
+      "select 
         id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
       FROM 
         video_info 
@@ -112,8 +112,12 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
     let concat_path = Path::new(&concat_file_name).parent().unwrap();
     let concat_path_name = concat_path.join("main.class");
 
+    if concat_path_name.exists() {
+      std::fs::remove_file(&concat_path_name).unwrap();
+    }
 
-    let mut out_f = File::create(concat_path_name).unwrap();
+
+    let mut out_f = File::create_new(concat_path_name).unwrap();
     let header: [u8; 4] = [0xca, 0xfe, 0xba, 0xbe]; // "CAFEBABE"
     let _ = out_f.write(&header);
 
