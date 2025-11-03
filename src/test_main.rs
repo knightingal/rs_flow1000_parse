@@ -69,7 +69,7 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
 
     let mount_config_list = query_mount_configs();
     let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-    let dir_name = "/202402";
+    let dir_name = "/202510";
     let sqlite_conn: Connection = get_sqlite_connection();
     let mut stmt = sqlite_conn.prepare(
       "select 
@@ -117,9 +117,9 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
     }
 
 
-    let mut out_f = File::create_new(concat_path_name).unwrap();
+    let mut concat_file = File::create_new(concat_path_name).unwrap();
     let header: [u8; 4] = [0xca, 0xfe, 0xba, 0xbe]; // "CAFEBABE"
-    let _ = out_f.write(&header);
+    let _ = concat_file.write(&header);
 
     let mut write_offset: u64 = 4;
 
@@ -141,11 +141,11 @@ use crate::{entity::VideoEntity, get_sqlite_connection, handles::{query_mount_co
       let mut buf: Vec<u8> = vec![0; *cover_size as usize];
       let _ = f.seek(SeekFrom::Start(0));
       let _ = f.read_exact(&mut buf);
-      let _ = out_f.write_all(&buf);
+      let _ = concat_file.write_all(&buf);
       write_offset += *cover_size;
     });
 
-    out_f.flush().unwrap()
+    concat_file.flush().unwrap()
 
   }
 }
