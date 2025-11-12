@@ -17,12 +17,11 @@ use rusqlite::{named_params, params_from_iter, Connection};
 
 use crate::{
   designation::parse_designation,
-  entity::*,
-  get_sqlite_connection,
   video_name_util::{parse_video_cover, parse_video_meta_info, VideoCover, VideoMetaInfo},
 };
 
-pub static mut IS_LINUX: Option<&bool> = None;
+
+use rs_flow1000_parse::{IS_LINUX, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, get_sqlite_connection, query_mount_configs, video_entity_to_file_path};
 
 #[repr(C)]
 pub struct SnapshotSt {
@@ -516,38 +515,6 @@ pub async fn parse_designation_handler(
   (StatusCode::OK, header, Json(selected_video))
 }
 
-pub fn query_mount_configs() -> Vec<MountConfig> {
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut sql = String::from("select id, ");
-  let dir_path_name: &str;
-  unsafe {
-    dir_path_name = if *IS_LINUX.unwrap() {
-      "dir_path"
-    } else {
-      "win_dir_path"
-    }
-  }
-  sql += dir_path_name;
-  sql += " , url_prefix, api_version from mp4_base_dir ";
-
-  let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
-  let mount_config_iter = stmt
-    .query_map(named_params! {}, |row| {
-      Ok(MountConfig {
-        id: row.get_unwrap("id"),
-        dir_path: row.get_unwrap(dir_path_name),
-        url_prefix: row.get_unwrap("url_prefix"),
-        api_version: row.get_unwrap("api_version"),
-      })
-    })
-    .unwrap()
-    .map(|it| it.unwrap());
-
-  let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
-  return mount_config_list;
-}
 
 pub async fn parse_meta_info_all_handler() -> StatusCode {
   let mount_config_list = query_mount_configs();
@@ -1260,21 +1227,3 @@ pub async fn move_cover() {
   let _ = jh.join();
 
 }
-
-pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
-  let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
-  let mut video_path = mount_config.dir_path.clone();
-  video_path.push_str(&video_entity.dir_path);
-  video_path.push_str("/");
-  video_path.push_str(&video_entity.video_file_name);
-
-  let mut cover_path = mount_config.dir_path.clone();
-  cover_path.push_str(&video_entity.dir_path);
-  cover_path.push('/');
-  cover_path.push_str(&video_entity.cover_file_name);
-
-  let mut dir_path = mount_config.dir_path.clone();
-  dir_path.push_str(&video_entity.dir_path);
-
-  (video_path, cover_path, dir_path)
-} 

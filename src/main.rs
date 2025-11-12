@@ -13,10 +13,10 @@ use handles::{
   all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
   init_video_handler, move_cover, parse_designation_all_handler, parse_designation_handler,
   parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config,
-  sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler, IS_LINUX,
+  sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler
 };
 use hyper::StatusCode;
-use rusqlite::Connection;
+use rs_flow1000_parse::linux_init;
 use serde_derive::{Deserialize, Serialize};
 use std::{
   env,
@@ -299,23 +299,7 @@ fn root() -> impl Future<Output = &'static str> {
   }
 }
 
-fn get_sqlite_connection() -> Connection {
-  let db_path_env = env::var("DB_PATH")
-    .unwrap_or_else(|_| String::from("/home/knightingal/source/keys/mp41000.db"));
-  let conn = Connection::open(db_path_env).unwrap();
-  return conn;
-}
 
-pub fn linux_init() {
-  let is_linux = Box::new(
-    System::name().unwrap().contains("Linux")
-      || System::name().unwrap() == "Deepin"
-      || System::name().unwrap().contains("openSUSE"),
-  );
-  unsafe {
-    IS_LINUX = Some(Box::leak(is_linux));
-  }
-}
 
 async fn create_user(
   Path((name, age)): Path<(String, u32)>,
