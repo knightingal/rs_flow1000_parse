@@ -16,7 +16,6 @@ use handles::{
   sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler
 };
 use hyper::StatusCode;
-use rs_flow1000_parse::linux_init;
 use serde_derive::{Deserialize, Serialize};
 use std::{
   env,
@@ -32,7 +31,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
+use crate::{base_lib::linux_init, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -44,6 +43,7 @@ mod test_designation;
 mod test_main;
 mod test_video_name_util;
 mod video_name_util;
+mod base_lib;
 
 #[repr(C)]
 struct RustObject {

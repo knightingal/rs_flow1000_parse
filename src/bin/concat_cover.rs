@@ -1,6 +1,6 @@
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
 
-use rs_flow1000_parse::{entity::VideoEntity, get_sqlite_connection, linux_init, query_mount_configs, video_entity_to_file_path};
+use rs_flow1000_parse::{base_lib::{get_sqlite_connection, linux_init, query_mount_configs, video_entity_to_file_path}, entity::VideoEntity};
 use rusqlite::{Connection, named_params};
 
 

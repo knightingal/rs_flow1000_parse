@@ -1,17 +1,9 @@
 #[cfg(test)]
 mod tests {
-  use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
+  use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, };
 
-use rusqlite::{Connection, named_params};
 
-use crate::{entity::VideoEntity,  handles::{ snapshot, }, linux_init};
-
-// use crate::handles::move_cover;
-
-  #[test]
-  fn it_works() {
-    assert_eq!(2 + 2, 4);
-  }
+use crate::{ handles::{ snapshot, } };
 
   #[test]
   fn move_cover_test() {
@@ -30,16 +22,15 @@ use crate::{entity::VideoEntity,  handles::{ snapshot, }, linux_init};
     let mut i: u32 = 0;
     loop {
       if i <= 0xffff {
-        let u0: u8= (i >> 24) as u8;
+        let u0: u8= ( i >> 24)         as u8;
         let u1: u8= ((i >> 16) & 0xff) as u8;
-        let u2: u8= ((i >> 8) & 0xff) as u8;
-        let u3: u8= (i & 0xff) as u8;
+        let u2: u8= ((i >> 08) & 0xff) as u8;
+        let u3: u8= ( i        & 0xff) as u8;
         let buf = [u0, u1, u2, u3];
         let _ = f.write(&buf);
         if i & 0xffff == 0 {
           println!("{:08x}", i);
         }
-
       } else {
         break;
       }
@@ -60,11 +51,4 @@ use crate::{entity::VideoEntity,  handles::{ snapshot, }, linux_init};
     Ok(())
   }
 
-
-
-  #[test]
-  fn test_concat_cover() {
-
-
-  }
 }
