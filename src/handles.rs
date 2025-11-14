@@ -1,6 +1,6 @@
 use core::slice;
 use std::{
-  cmp::Ordering, collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
+  collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
 };
 
 use axum::{
@@ -16,7 +16,7 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter, Connection};
 
 use crate::{
-  base_lib::{IS_LINUX, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{IS_LINUX, check_exist_by_video_file_name, get_sqlite_connection, parse_dir_path, query_mount_configs, video_entity_to_file_path}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
 };
 
 
@@ -411,32 +411,7 @@ pub async fn designation_search(
   (StatusCode::OK, header, Json(selected_video))
 }
 
-fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
-  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
-    .map(|res| res.unwrap())
-    .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent"))
-    .collect();
-  file_entry_list.sort_by(|a, b| comp_path(&b, &a).unwrap());
 
-  let file_names: Vec<(String, u64)> = file_entry_list
-    .into_iter()
-    .map(|res| {
-      (
-        res.file_name().into_string().unwrap(),
-        res.metadata().unwrap().len(),
-      )
-    })
-    .collect();
-
-  return Result::Ok(file_names);
-}
-
-fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
-  let mod_a = a.metadata()?.modified()?;
-  let mod_b = b.metadata()?.modified()?;
-
-  Result::Ok(mod_a.cmp(&mod_b))
-}
 
 pub async fn parse_designation_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
@@ -925,37 +900,6 @@ pub async fn init_video_handler(
   (StatusCode::OK, header, Json(video_cover_list))
 }
 
-fn check_exist_by_video_file_name(
-  dir_path: &String,
-  base_index: u32,
-  video_file_name: &String,
-) -> bool {
-  let sqlite_conn = get_sqlite_connection();
-  let mut stmt = sqlite_conn
-    .prepare(
-      "select 
-    count(id) 
-  from 
-    video_info 
-  where 
-    dir_path=:dir_path 
-    and base_index=:base_index 
-    and video_file_name=:video_file_name",
-    )
-    .unwrap();
-  let count: u32 = stmt
-    .query_row(
-      named_params! {
-        ":video_file_name": video_file_name,
-        ":base_index": base_index,
-        ":dir_path": dir_path,
-      },
-      |row| Ok(row.get_unwrap(0)),
-    )
-    .unwrap();
-
-  count != 0
-}
 
 pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_file_name: String) {
   let sqlite_conn: Connection = get_sqlite_connection();

@@ -1,4 +1,4 @@
-use std::env;
+use std::{cmp::Ordering, env, fs::{self, DirEntry}};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -76,3 +76,64 @@ pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec
 
   (video_path, cover_path, dir_path)
 } 
+
+
+pub fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
+  let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
+    .map(|res| res.unwrap())
+    .filter(|res| !res.file_name().into_string().unwrap().ends_with(".torrent"))
+    .collect();
+  file_entry_list.sort_by(|a, b| comp_path(&b, &a).unwrap());
+
+  let file_names: Vec<(String, u64)> = file_entry_list
+    .into_iter()
+    .map(|res| {
+      (
+        res.file_name().into_string().unwrap(),
+        res.metadata().unwrap().len(),
+      )
+    })
+    .collect();
+
+  return Result::Ok(file_names);
+}
+
+fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
+  let mod_a = a.metadata()?.modified()?;
+  let mod_b = b.metadata()?.modified()?;
+
+  Result::Ok(mod_a.cmp(&mod_b))
+}
+
+
+pub fn check_exist_by_video_file_name(
+  dir_path: &String,
+  base_index: u32,
+  video_file_name: &String,
+) -> bool {
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+    count(id) 
+  from 
+    video_info 
+  where 
+    dir_path=:dir_path 
+    and base_index=:base_index 
+    and video_file_name=:video_file_name",
+    )
+    .unwrap();
+  let count: u32 = stmt
+    .query_row(
+      named_params! {
+        ":video_file_name": video_file_name,
+        ":base_index": base_index,
+        ":dir_path": dir_path,
+      },
+      |row| Ok(row.get_unwrap(0)),
+    )
+    .unwrap();
+
+  count != 0
+}
