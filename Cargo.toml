@@ -31,3 +31,6 @@ itoa = "1.0.15"
 
 [[bin]]
 name="concat_cover"
+
+[[bin]]
+name="import_monthly"
