@@ -255,8 +255,17 @@ pub async fn demo_video_stream_hander(
   headers: HeaderMap,
   Path((_base_index, _sub_dir)): Path<(u32, String)>,
 ) -> Response {
-  let file_path : String = "path_to_your_video.mp4.bin".to_string();
+
+  let file_path = env::var("ENCRYPTED_FILE_PATH");
+  if file_path.is_err() {
+    return Response::builder().status(StatusCode::NOT_FOUND).body(Body::empty()).unwrap();
+  }
+  let file_path = file_path.unwrap();
+    
   let path = std::path::Path::new(&file_path);
+  if !path.exists() {
+    return Response::builder().status(StatusCode::NOT_FOUND).body(Body::empty()).unwrap();
+  }
   let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
   let range_header = headers.get(RANGE);
 
