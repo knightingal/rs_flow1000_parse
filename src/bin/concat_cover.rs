@@ -11,7 +11,7 @@ fn main() {
 
   let mount_config_list = query_mount_configs();
   let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-  let dir_name = "/202510";
+  let dir_name = "/201710";
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(
     "select 
@@ -20,6 +20,7 @@ fn main() {
       video_info 
     WHERE 
       dir_path = :dir_path").unwrap();
+
   let covers: Vec<(
       u32, 
       String, 
