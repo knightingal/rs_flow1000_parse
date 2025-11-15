@@ -34,3 +34,6 @@ name="concat_cover"
 
 [[bin]]
 name="import_monthly"
+
+[[bin]]
+name="cfb_file"
