@@ -11,7 +11,7 @@ fn main() {
 
   let mount_config_list = query_mount_configs();
   let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-  let dir_name = "/201710";
+  let dir_name = "/201803";
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(
     "select 
@@ -80,7 +80,13 @@ fn main() {
       ":id": *id
     }).unwrap();
 
-    let mut f = File::open(cover_file_name).unwrap();
+    let f_err = File::open(cover_file_name);
+    if f_err.is_err() {
+      println!("open cover file error: {}", cover_file_name);
+      return;
+    }
+    let mut f = f_err.unwrap();
+      
     let mut buf: Vec<u8> = vec![0; *cover_size as usize];
     let _ = f.seek(SeekFrom::Start(0));
     let _ = f.read_exact(&mut buf);

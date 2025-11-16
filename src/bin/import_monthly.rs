@@ -6,13 +6,11 @@ fn main() {
 
   linux_init();
 
-  let base_index: u32 = 1;
-  let sub_dir: String = String::from("/201710");
+  let base_index: u32 = 2;
+  let sub_dir: String = String::from("/201803");
 
   println!("{}", base_index);
   println!("{}", sub_dir);
-  let mut sub_dir_param = String::from("/");
-  sub_dir_param += &sub_dir;
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -25,7 +23,7 @@ fn main() {
     })
     .unwrap();
 
-  dir_path += &sub_dir_param;
+  dir_path += &sub_dir;
 
   let file_names: Vec<(String, u64)> = parse_dir_path(&dir_path).unwrap();
   dir_path += "/";
@@ -48,7 +46,7 @@ fn main() {
 
     let designation = parse_designation(&video_cover_entry.video_file_name);
     let exist = check_exist_by_video_file_name(
-      &sub_dir_param,
+      &sub_dir,
       base_index,
       &video_cover_entry.video_file_name,
     );
@@ -62,7 +60,7 @@ fn main() {
         :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, 
         :video_size, :width, :height,:duration,:frame_rate,:video_frame_count,:cover_size
       )", named_params! {
-        ":dir_path": sub_dir_param, 
+        ":dir_path": sub_dir, 
         ":base_index": base_index, 
         ":video_file_name": video_cover_entry.video_file_name, 
         ":cover_file_name": video_cover_entry.cover_file_name,
@@ -93,7 +91,7 @@ fn main() {
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
       ",
         named_params! {
-          ":dir_path": sub_dir_param,
+          ":dir_path": sub_dir,
           ":base_index": base_index,
           ":video_file_name": video_cover_entry.video_file_name,
           ":cover_file_name": video_cover_entry.cover_file_name,
