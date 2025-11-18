@@ -37,3 +37,6 @@ name="import_monthly"
 
 [[bin]]
 name="cfb_file"
+
+[[bin]]
+name="cfb_video_by_id"
