@@ -109,13 +109,15 @@ impl VideoEntity {
     rate: Option<u32>,
     base_index: u32,
     dir_path: String,
+    designation_char: String,
+    designation_num: String
   ) -> VideoEntity {
     VideoEntity {
       id,
       video_file_name,
       cover_file_name,
-      designation_char: String::new(),
-      designation_num: String::new(),
+      designation_char,
+      designation_num,
       dir_path,
       base_index,
       rate,

@@ -374,7 +374,8 @@ pub async fn designation_search(
 
   let mut stmt = conn1.prepare( "
     select 
-      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path,
+      designation_char, designation_num 
     from 
       video_info 
     where 
@@ -396,6 +397,8 @@ pub async fn designation_search(
           row.get_unwrap(3),
           row.get_unwrap(5),
           row.get_unwrap(6),
+          row.get_unwrap(7),
+          row.get_unwrap(8),
         ))
       },
     )
