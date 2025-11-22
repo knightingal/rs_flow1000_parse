@@ -7,6 +7,15 @@ use crate::entity::{MountConfig, VideoEntity};
 
 pub static mut IS_LINUX: Option<&bool> = None;
 
+pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
+  let mut byte_array: [u8; 32] = [0; 32];
+  for i in 0..32 {
+    let byte_str = &hex[i * 2..i * 2 + 2];
+    byte_array[i] = u8::from_str_radix(byte_str, 16).unwrap();
+  }
+  byte_array
+}
+
 pub fn linux_init() {
   let is_linux = Box::new(
     System::name().unwrap().contains("Linux")
