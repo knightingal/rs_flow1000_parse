@@ -31,7 +31,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::linux_init, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
+use crate::{base_lib::{hex_to_byte_array, linux_init}, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -117,8 +117,18 @@ extern "C" {
 async fn main() {
   unsafe {
 
-    let key = "passwordpasswordpasswordpassword"; // 32 bytes key
-    let pwd:[u8; 32] = key.as_bytes().try_into().unwrap();
+    let cfb_key = env::var("CFB_KEY");
+
+    let pwd: [u8; 32] = match cfb_key {
+        Ok(cfb_key) => hex_to_byte_array(cfb_key),
+        Err(_) => {
+          tracing::warn!("CFB_KEY not set, use hard coded key");
+          let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+          key.as_bytes().try_into().unwrap()
+        },
+    };
+
+
     init_inner_key_expansion(pwd.as_ptr());
 
     let simple = simple_dll_function();
