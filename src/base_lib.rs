@@ -5,6 +5,13 @@ use sysinfo::System;
 
 use crate::entity::{MountConfig, VideoEntity};
 
+#[cfg(reallink)]
+#[link(name = "cfb_decode")]
+extern "C" {
+  #[allow(dead_code)]
+  fn init_inner_key_expansion(key: *const u8);
+}
+
 pub static mut IS_LINUX: Option<&bool> = None;
 
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
@@ -145,4 +152,23 @@ pub fn check_exist_by_video_file_name(
     .unwrap();
 
   count != 0
+}
+
+pub fn init_key() {
+
+  let cfb_key = env::var("CFB_KEY");
+
+  let pwd: [u8; 32] = match cfb_key {
+      Ok(cfb_key) => hex_to_byte_array(cfb_key),
+      Err(_) => {
+        tracing::warn!("CFB_KEY not set, use hard coded key");
+        let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+        key.as_bytes().try_into().unwrap()
+      },
+  };
+
+  unsafe {
+    init_inner_key_expansion(pwd.as_ptr());
+  }
+
 }
