@@ -11,7 +11,7 @@ fn main() {
 
   let mount_config_list = query_mount_configs();
   let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-  let dir_name = "/201803";
+  let dir_name = "/202411";
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(
     "select 

@@ -1,6 +1,7 @@
 use std::ffi::c_char;
 use std::{ffi::CString, fs::DirBuilder, thread};
 
+use rs_flow1000_parse::base_lib::init_key;
 use rs_flow1000_parse::{
   base_lib::{get_sqlite_connection, linux_init, query_mount_configs, IS_LINUX},
   entity::VideoEntity,
@@ -10,7 +11,6 @@ use rusqlite::named_params;
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
 extern "C" {
-  fn key_expansion(key: *const u8, w: *mut u32);
   fn cfb_file_streaming_v2(
     w: *const u32,
     iv: *const u8,
@@ -24,11 +24,7 @@ fn main() {
 
   linux_init();
 
-  unsafe {
-    let key = "passwordpasswordpasswordpassword";
-    let mut w: [u32; 60] = [0; 60];
-    key_expansion(key.as_ptr(), w.as_mut_ptr());
-  }
+  init_key();
 
   tracing::debug!("cfb_video_by_id handler: id: {}", id);
 
