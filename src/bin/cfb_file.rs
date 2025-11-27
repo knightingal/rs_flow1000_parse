@@ -5,8 +5,6 @@ use rs_flow1000_parse::base_lib::init_key;
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
 extern "C" {
-
-  fn key_expansion(key: *const u8, w: *mut u32);
   fn cfb_file_streaming_v2(
     w: *const u32,
     iv: *const u8,
