@@ -40,3 +40,6 @@ name="cfb_file"
 
 [[bin]]
 name="cfb_video_by_id"
+
+[[bin]]
+name="key_generation"
