@@ -16,7 +16,7 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
 use tokio::task;
 
-use crate::{base_lib::IS_LINUX, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
+use crate::{base_lib::{IS_LINUX, video_file_path_by_id}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
 
 
 fn get_sqlite_connection() -> Connection {
@@ -265,6 +265,52 @@ pub async fn video_rate(
   );
 
   (StatusCode::OK, header, Json(result.unwrap().clone()))
+}
+
+pub async fn delete_video(
+  Path(id): Path<u32>,
+) -> (StatusCode, HeaderMap) {
+  let video_files = video_file_path_by_id(id);
+
+  let ret = fs::remove_file(&video_files[0].1);
+  if ret.is_err() {
+    tracing::error!("failed to delete {}, {}", video_files[0].1, ret.unwrap_err().to_string());
+    let mut header = HeaderMap::new();
+    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+    header.insert(
+      CONTENT_TYPE,
+      "application/json; charset=utf-8".parse().unwrap(),
+    );
+    return (StatusCode::INTERNAL_SERVER_ERROR, header);
+  }
+  let ret = fs::remove_file(&video_files[0].2);
+  if ret.is_err() {
+    tracing::error!("failed to delete {}, {}", video_files[0].2, ret.unwrap_err().to_string());
+    let mut header = HeaderMap::new();
+    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+    header.insert(
+      CONTENT_TYPE,
+      "application/json; charset=utf-8".parse().unwrap(),
+    );
+    return (StatusCode::INTERNAL_SERVER_ERROR, header);
+  }
+
+  let sqlite_conn = get_sqlite_connection();
+  sqlite_conn
+    .execute(
+      "update video_info set rate=?1 where id=?2",
+      rusqlite::params![4, id],
+    )
+    .unwrap();
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(
+    CONTENT_TYPE,
+    "application/json; charset=utf-8".parse().unwrap(),
+  );
+
+  (StatusCode::OK, header)
 }
 
 pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {

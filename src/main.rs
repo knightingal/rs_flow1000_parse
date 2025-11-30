@@ -1,8 +1,5 @@
 use axum::{
-  body::Bytes,
-  extract::Path,
-  routing::{get, post},
-  Json, Router,
+  Json, Router, body::Bytes, extract::Path, routing::{delete, get, post}
 };
 use business_handles::{
   add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags,
@@ -31,7 +28,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::{init_key, linux_init}, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
+use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -205,6 +202,7 @@ async fn main() {
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
     .route("/video-rate/:id/:rate", post(video_rate))
+    .route("/video/:id", delete(delete_video))
     .route("/add-tag/:tag", post(add_tag))
     .route("/query-tags", get(query_tags))
     .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
