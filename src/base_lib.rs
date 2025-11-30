@@ -172,3 +172,42 @@ pub fn init_key() {
   }
 
 }
+
+pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String)>{
+
+  let mount_config_list = query_mount_configs();
+
+  println!("call query video_file_name");
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+        id, video_file_name, base_index, dir_path, cover_file_name
+      from 
+        video_info 
+      where 
+        id = :id",
+    )
+    .unwrap();
+  let file_names: Vec<(u32, String, String)> = stmt
+    .query_map(named_params! {":id": id}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      println!("get file_name:{}, {}", video_file_name, cover_file_name);
+
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
+      println!("{}", cover_full_name);
+
+      Result::Ok((id, video_full_name, cover_full_name))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
+  return file_names;
+}
