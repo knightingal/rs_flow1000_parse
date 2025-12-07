@@ -43,3 +43,6 @@ name="cfb_video_by_id"
 
 [[bin]]
 name="key_generation"
+
+[[bin]]
+name="parse_meta_info_by_id"
