@@ -3,7 +3,7 @@ use std::{cmp::Ordering, env, fs::{self, DirEntry}};
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
 
-use crate::entity::{MountConfig, VideoEntity};
+use crate::{entity::{MountConfig, VideoEntity}, video_name_util::parse_video_meta_info};
 
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
@@ -210,4 +210,52 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String)>{
     .map(|it| it.unwrap())
     .collect();
   return file_names;
+}
+
+pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_file_name: String) {
+  let sqlite_conn: Connection = get_sqlite_connection();
+  let mut stmt: rusqlite::Statement<'_> = sqlite_conn
+    .prepare(
+      "update 
+    video_info 
+  set 
+    video_size = :video_size,
+    cover_size = :cover_size,
+    width = :width,
+    height = :height,
+    frame_rate = :frame_rate,
+    video_frame_count=:video_frame_count,
+    duration=:duration 
+  where 
+    id=:id",
+    )
+    .unwrap();
+
+  let path = std::path::Path::new(&video_file_name);
+  let exist = path.exists();
+  if !exist {
+    return;
+  }
+  let video_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+
+  let path = std::path::Path::new(&cover_file_name);
+  let exist = path.exists();
+  if !exist {
+    return;
+  }
+  let cover_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
+
+  println!("parse file:{}", video_file_name);
+
+  let meta_info = parse_video_meta_info(&video_file_name);
+  let _ = stmt.execute(named_params! {
+    ":width": meta_info.width,
+    ":height": meta_info.height,
+    ":frame_rate": meta_info.frame_rate,
+    ":video_size": video_file_size,
+    ":cover_size": cover_file_size,
+    ":duration":meta_info.duratoin,
+    ":video_frame_count": meta_info.video_frame_count,
+    ":id": id
+  });
 }

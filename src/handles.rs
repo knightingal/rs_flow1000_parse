@@ -13,10 +13,10 @@ use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
-use rusqlite::{named_params, params_from_iter, Connection};
+use rusqlite::{named_params, params_from_iter};
 
 use crate::{
-  base_lib::{IS_LINUX, check_exist_by_video_file_name, get_sqlite_connection, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{IS_LINUX, check_exist_by_video_file_name, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
 };
 
 
@@ -870,53 +870,6 @@ pub async fn init_video_handler(
 }
 
 
-pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_file_name: String) {
-  let sqlite_conn: Connection = get_sqlite_connection();
-  let mut stmt: rusqlite::Statement<'_> = sqlite_conn
-    .prepare(
-      "update 
-    video_info 
-  set 
-    video_size = :video_size,
-    cover_size = :cover_size,
-    width = :width,
-    height = :height,
-    frame_rate = :frame_rate,
-    video_frame_count=:video_frame_count,
-    duration=:duration 
-  where 
-    id=:id",
-    )
-    .unwrap();
-
-  let path = std::path::Path::new(&video_file_name);
-  let exist = path.exists();
-  if !exist {
-    return;
-  }
-  let video_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
-
-  let path = std::path::Path::new(&cover_file_name);
-  let exist = path.exists();
-  if !exist {
-    return;
-  }
-  let cover_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
-
-  println!("parse file:{}", video_file_name);
-
-  let meta_info = parse_video_meta_info(&video_file_name);
-  let _ = stmt.execute(named_params! {
-    ":width": meta_info.width,
-    ":height": meta_info.height,
-    ":frame_rate": meta_info.frame_rate,
-    ":video_size": video_file_size,
-    ":cover_size": cover_file_size,
-    ":duration":meta_info.duratoin,
-    ":video_frame_count": meta_info.video_frame_count,
-    ":id": id
-  });
-}
 
 pub async fn cfb_video_by_id(
   Path(id): Path<u32>,
