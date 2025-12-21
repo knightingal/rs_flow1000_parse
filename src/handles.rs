@@ -295,9 +295,21 @@ pub async fn all_duplicate_video() -> (StatusCode, HeaderMap, Json<Vec<Duplicate
     "select 
       count, designation_char, designation_num 
     from (
-        select count(vi.id) as count, count(DISTINCT vi.dir_path) as cd, count(DISTINCT vi.base_index) as cb, vi.designation_char , vi.designation_num  
-        from video_info vi where vi.designation_char != 'MP' or vi.designation_num != '4' group by designation_char, designation_num) t 
-    where t.count > 1  and t.cd > 1 ").unwrap();
+      select 
+        count(vi.id) as count, 
+        count(DISTINCT vi.dir_path) as cd, 
+        count(DISTINCT vi.base_index) as cb, 
+        vi.designation_char, 
+        vi.designation_num  
+      from 
+        video_info vi 
+      where 
+        (vi.designation_char != 'MP' or vi.designation_num != '4') and vi.rate != 4 
+      group by 
+        designation_char, designation_num
+    ) t 
+    where 
+      t.count > 1 and t.cd > 1").unwrap();
 
   let mut duplicate_entity_list: Vec<DuplicateEntity> = stmt
     .query_map(named_params! {}, |row| {
