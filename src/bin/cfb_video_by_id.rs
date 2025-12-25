@@ -20,7 +20,7 @@ extern "C" {
 }
 
 fn main() {
-  let id = 1;
+  let id = 985;
 
   linux_init();
 
@@ -87,14 +87,14 @@ fn main() {
 
   let move_target_file_path: CString = CString::new(target_file_path.as_str()).unwrap();
 
-  thread::spawn(move || unsafe {
+  unsafe {
     cfb_file_streaming_v2(
       0 as *const u32,
       iv.as_ptr(),
       input_file_path.as_ptr(),
       move_target_file_path.as_ptr(),
     );
-  });
+  }
 
   tracing::debug!("target_file_path {}", target_file_path);
   tracing::debug!("file_path {}", file_path);
