@@ -1,5 +1,5 @@
 use std::ffi::c_char;
-use std::{ffi::CString, fs::DirBuilder, thread};
+use std::{ffi::CString, fs::DirBuilder};
 
 use rs_flow1000_parse::base_lib::init_key;
 use rs_flow1000_parse::{
