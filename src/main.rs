@@ -28,7 +28,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler}};
+use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler, video_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -229,6 +229,10 @@ async fn main() {
     .route(
       "/image-stream-by-id/:id",
       get(image_stream_by_id_handler),
+    )
+    .route(
+      "/video-stream-by-id/:id",
+      get(video_stream_by_id_handler),
     )
     .layer(TraceLayer::new_for_http().on_body_chunk(
       |chunk: &Bytes, _latency: Duration, _span: &Span| {

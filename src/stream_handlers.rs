@@ -127,6 +127,95 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
     .unwrap()
 }
 
+pub async fn video_stream_by_id_handler(
+  headers: HeaderMap,
+  Path(id): Path<u32>
+) -> Response {
+  let mount_config_list = query_mount_configs();
+  let range_header = headers.get(RANGE);
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+        id, video_file_name, base_index, dir_path, cover_file_name, video_size, cover_offset, cfb
+      from 
+        video_info 
+      where 
+        id = :id",
+    )
+    .unwrap();
+  let file_info: Vec<(u32, String, String, u64, u64, u8)> = stmt
+    .query_map(named_params! {":id": id}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      let cover_size: u64 = row.get_unwrap("video_size");
+      let cover_offset: u64 = row.get_unwrap("cover_offset");
+      let cfb: u8 = row.get_unwrap("cfb");
+
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
+
+      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset, cfb))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
+  
+
+  let real_file_name = &file_info[0].1;
+  let file_size = file_info[0].3;
+
+  let (start, end, content_length, part) = match range_header {
+    Some(range_header) => {
+      let (_, value) = range_header.to_str().unwrap().split_once("=").unwrap();
+
+      let (start, end) = value.split_once("-").unwrap();
+      let start: u64 = start.parse().unwrap();
+      let end: u64 = end.parse().unwrap_or(file_size - 1);
+      (start, end, file_size - start, true)
+    }
+    _ => (0, file_size - 1, file_size, false),
+  };
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
+  header.insert(CONTENT_LENGTH, content_length.into());
+  header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
+  if part {
+    header.insert(
+      CONTENT_RANGE,
+      format!("bytes {}-{}/{}", start, end, file_size)
+        .parse()
+        .unwrap(),
+    );
+  }
+
+  let mut response_builder = Response::builder().status(StatusCode::OK);
+  let cfb = file_info[0].5;
+
+  *response_builder.headers_mut().unwrap() = header;
+  if cfb == 1 {
+    let iv = "2021000120210001"; // 16 bytes IV
+    let mock_stream = CfbVideoStream::new(
+      start, 
+      &real_file_name, 
+      iv.as_bytes().try_into().unwrap());
+    response_builder
+      .body(Body::from_stream(mock_stream))
+      .unwrap()
+  } else {
+    let mock_stream = VideoStream::new(start, &real_file_name);
+    response_builder
+      .body(Body::from_stream(mock_stream))
+      .unwrap()
+  }
+}
+
 pub async fn image_stream_by_path_hander(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
