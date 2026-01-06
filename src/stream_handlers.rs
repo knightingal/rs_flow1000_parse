@@ -206,17 +206,17 @@ pub async fn video_stream_by_id_handler(
   *response_builder.headers_mut().unwrap() = header;
   if cfb == 1 {
     let iv = "2021000120210001"; // 16 bytes IV
-    let mock_stream = CfbVideoStream::new(
+    let video_stream = CfbVideoStream::new(
       start, 
       &real_file_name, 
       iv.as_bytes().try_into().unwrap());
     response_builder
-      .body(Body::from_stream(mock_stream))
+      .body(Body::from_stream(video_stream))
       .unwrap()
   } else {
-    let mock_stream = VideoStream::new(start, &real_file_name);
+    let video_stream = VideoStream::new(start, &real_file_name);
     response_builder
-      .body(Body::from_stream(mock_stream))
+      .body(Body::from_stream(video_stream))
       .unwrap()
   }
 }
