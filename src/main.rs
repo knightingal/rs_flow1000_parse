@@ -231,7 +231,7 @@ async fn main() {
       get(image_stream_by_id_handler),
     )
     .route(
-      "/video-stream-by-id/:id",
+      "/video-stream-by-id/:id/stream.mp4",
       get(video_stream_by_id_handler),
     )
     .layer(TraceLayer::new_for_http().on_body_chunk(

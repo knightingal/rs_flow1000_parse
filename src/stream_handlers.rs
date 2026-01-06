@@ -195,7 +195,12 @@ pub async fn video_stream_by_id_handler(
     );
   }
 
-  let mut response_builder = Response::builder().status(StatusCode::OK);
+  let status_code = match part {
+    true => StatusCode::PARTIAL_CONTENT,
+    false => StatusCode::OK,
+  };
+
+  let mut response_builder = Response::builder().status(status_code);
   let cfb = file_info[0].5;
 
   *response_builder.headers_mut().unwrap() = header;
@@ -561,6 +566,7 @@ struct VideoStream {
 impl VideoStream {
   fn new(start: u64, file_path: &String) -> Self {
     // let db_path_env = env::var("DEMO_VIDEO").unwrap();
+    // println!("video stream {}", file_path);
     let mut file = File::open(file_path).unwrap();
     let _ = file.seek(std::io::SeekFrom::Start(start));
     Self { file }
