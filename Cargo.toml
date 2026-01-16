@@ -46,3 +46,6 @@ name="key_generation"
 
 [[bin]]
 name="parse_meta_info_by_id"
+
+[[bin]]
+name="separate_cover"
