@@ -6,8 +6,8 @@ fn main() {
 
   linux_init();
 
-  let base_index: u32 = 2;
-  let sub_dir: String = String::from("/201803");
+  let base_index: u32 = 4;
+  let sub_dir: String = String::from("/202512");
 
   println!("{}", base_index);
   println!("{}", sub_dir);
