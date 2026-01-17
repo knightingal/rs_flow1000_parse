@@ -1,4 +1,4 @@
-use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
+use std::{fs::File, io::{Read, Write}, path::Path};
 
 use rs_flow1000_parse::{base_lib::{get_sqlite_connection, linux_init, query_mount_configs, video_entity_to_file_path}, entity::VideoEntity};
 use rusqlite::{Connection, named_params};
@@ -60,27 +60,20 @@ fn main() {
   }
 
 
-  let mut concat_file = File::create_new(concat_path_name).unwrap();
-  let header: [u8; 4] = [0xca, 0xfe, 0xba, 0xbe]; // "CAFEBABE"
-  let _ = concat_file.write(&header);
+  let mut concat_file = File::open(concat_path_name).unwrap();
+  let mut header: [u8; 4]  = [0, 0, 0, 0];
+  let _ = concat_file.read_exact(& mut header);
+  if !header.eq(&[0xca, 0xfe, 0xba, 0xbe]) {
+    println!("Error file");
+    return;
+  }
 
-  let mut write_offset: u64 = 4;
+  let mut read_offset: u64 = 4;
 
-  let mut stmt = sqlite_conn.prepare(
-    "update 
-      video_info 
-    set 
-      cover_offset = :cover_offset 
-    where 
-      id = :id").unwrap();
 
-  covers.iter().for_each(|(id, _video_file_name, cover_file_name, cover_size, _cover_offset)| {
-    stmt.execute(named_params! {
-      ":cover_offset": write_offset,
-      ":id": *id
-    }).unwrap();
+  covers.iter().for_each(|(_, _video_file_name, cover_file_name, cover_size, _cover_offset)| {
 
-    let f_err = File::open(cover_file_name);
+    let f_err = File::create(cover_file_name);
     if f_err.is_err() {
       println!("open cover file error: {}", cover_file_name);
       return;
@@ -88,10 +81,10 @@ fn main() {
     let mut f = f_err.unwrap();
       
     let mut buf: Vec<u8> = vec![0; *cover_size as usize];
-    let _ = f.seek(SeekFrom::Start(0));
-    let _ = f.read_exact(&mut buf);
-    let _ = concat_file.write_all(&buf);
-    write_offset += *cover_size;
+    let _ = concat_file.read_exact(& mut buf);
+    let _ = f.write(&mut buf);
+    f.flush().unwrap();
+    read_offset += *cover_size;
   });
 
   concat_file.flush().unwrap()
