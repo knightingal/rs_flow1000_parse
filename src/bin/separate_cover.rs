@@ -55,9 +55,6 @@ fn main() {
   let concat_path = Path::new(&concat_file_name).parent().unwrap();
   let concat_path_name = concat_path.join("main.class");
 
-  if concat_path_name.exists() {
-    std::fs::remove_file(&concat_path_name).unwrap();
-  }
 
 
   let mut concat_file = File::open(concat_path_name).unwrap();
