@@ -98,13 +98,10 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
     .collect();
 
   let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
-  
-  let concat_path = std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class");
-
   let real_file_name = if file_names[0].4 == 0 {
     always_exist_cover_file
   } else {
-    concat_path.to_str().unwrap().to_string()
+    std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
   };
 
   let file_size = file_names[0].3;
@@ -120,10 +117,10 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
   let start = file_names[0].4;
-  let mock_stream = VideoStream::new(start, &real_file_name);
+  let image_stream = ImageStream::new(start, content_length, &real_file_name);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
-    .body(Body::from_stream(mock_stream))
+    .body(Body::from_stream(image_stream))
     .unwrap()
 }
 
@@ -559,14 +556,51 @@ impl futures_core::Stream for FileStream {
   }
 }
 
+struct ImageStream {
+  content_length: u64,
+  file: File,
+  readed_lenght: u64,
+}
+
+impl ImageStream {
+  fn new(start: u64, content_length: u64, file_path: &String) -> Self {
+    let mut file = File::open(file_path).unwrap();
+    let _ = file.seek(std::io::SeekFrom::Start(start));
+    Self { content_length, file, readed_lenght: 0 }
+  }
+}
+
+impl futures_core::Stream for ImageStream {
+  type Item = Result<Bytes, Error>;
+  fn poll_next(
+    mut self: std::pin::Pin<&mut Self>,
+    _: &mut std::task::Context<'_>,
+  ) -> std::task::Poll<Option<Self::Item>> {
+    let mut buf = [0u8; 4096];
+    let read_result = self.file.read(&mut buf);
+    match read_result {
+      Ok(read_len) => match read_len > 0 {
+        true => {
+          if self.readed_lenght >= self.content_length {
+            std::task::Poll::Ready(None)
+          } else {
+            self.readed_lenght = self.readed_lenght + read_len as u64;
+            std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&buf).slice(0..read_len))))
+          }
+        },
+        false => std::task::Poll::Ready(None),
+      },
+      Err(_) => std::task::Poll::Ready(None),
+    }
+  }
+}
+
 struct VideoStream {
   file: File,
 }
 
 impl VideoStream {
   fn new(start: u64, file_path: &String) -> Self {
-    // let db_path_env = env::var("DEMO_VIDEO").unwrap();
-    // println!("video stream {}", file_path);
     let mut file = File::open(file_path).unwrap();
     let _ = file.seek(std::io::SeekFrom::Start(start));
     Self { file }
