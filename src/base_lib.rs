@@ -259,3 +259,54 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
     ":id": id
   });
 }
+
+pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
+
+  let mount_config_list = query_mount_configs();
+  let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
+
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+        id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
+      from 
+        video_info 
+      where 
+        id = :id",
+    )
+    .unwrap();
+  let file_names: Vec<(u32, String, String, u64, u64)> = stmt
+    .query_map(named_params! {":id": id}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      let cover_size: u64 = row.get_unwrap("cover_size");
+      let cover_offset: u64 = row.get_unwrap("cover_offset");
+
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
+        id, video_file_name, cover_file_name, dir_path, base_index
+      ), &mount_config_list);
+
+      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
+    })
+    .unwrap()
+    .map(|it| it.unwrap())
+    .collect();
+
+  let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
+  let real_file_name = if file_names[0].4 == 0 {
+    always_exist_cover_file
+  } else {
+    std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
+  };
+
+  let file_size = file_names[0].3;
+  let content_length = file_size;
+
+  let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
+  (real_file_name, file_names[0].4, content_length, String::from(extension))
+}

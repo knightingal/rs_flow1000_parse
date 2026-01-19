@@ -22,7 +22,7 @@ use hyper::{
 };
 use rusqlite::named_params;
 
-use crate::{base_lib::{IS_LINUX, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, entity::{MountConfig, VideoEntity}};
+use crate::{base_lib::{IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, entity::{MountConfig, VideoEntity}};
 
 // #[cfg(reallink)]
 // #[link(name = "cfb_decode")]
@@ -62,61 +62,15 @@ pub async fn file_stream_hander() -> Response {
 }
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
-  let mount_config_list = query_mount_configs();
-  let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
-
-  let sqlite_conn = get_sqlite_connection();
-
-  let mut stmt = sqlite_conn
-    .prepare(
-      "select 
-        id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
-      from 
-        video_info 
-      where 
-        id = :id",
-    )
-    .unwrap();
-  let file_names: Vec<(u32, String, String, u64, u64)> = stmt
-    .query_map(named_params! {":id": id}, |row| {
-      let video_file_name: String = row.get_unwrap("video_file_name");
-      let cover_file_name: String = row.get_unwrap("cover_file_name");
-      let dir_path: String = row.get_unwrap("dir_path");
-      let base_index: u32 = row.get_unwrap("base_index");
-      let id: u32 = row.get_unwrap("id");
-      let cover_size: u64 = row.get_unwrap("cover_size");
-      let cover_offset: u64 = row.get_unwrap("cover_offset");
-
-      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
-        id, video_file_name, cover_file_name, dir_path, base_index
-      ), &mount_config_list);
-
-      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
-    })
-    .unwrap()
-    .map(|it| it.unwrap())
-    .collect();
-
-  let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
-  let real_file_name = if file_names[0].4 == 0 {
-    always_exist_cover_file
-  } else {
-    std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
-  };
-
-  let file_size = file_names[0].3;
-  let content_length = file_size;
-
-  let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
+  let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
   let mut content_type_value = String::from("image/");
-  content_type_value.push_str(extension);
+  content_type_value.push_str(extension.as_str());
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
   header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
-  let start = file_names[0].4;
   let image_stream = ImageStream::new(start, content_length, &real_file_name);
   *response_builder.headers_mut().unwrap() = header;
   response_builder
