@@ -41,6 +41,7 @@ mod test_main;
 mod test_video_name_util;
 mod video_name_util;
 mod base_lib;
+mod util;
 
 #[repr(C)]
 struct RustObject {
