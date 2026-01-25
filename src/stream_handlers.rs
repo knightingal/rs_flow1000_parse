@@ -42,7 +42,7 @@ extern "C" {
 }
 
 
-pub async fn mock_stream_hander() -> Response {
+pub async fn mock_stream_handler() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
   let mock_stream = MockStream::new();
 
@@ -51,7 +51,7 @@ pub async fn mock_stream_hander() -> Response {
     .unwrap()
 }
 
-pub async fn file_stream_hander() -> Response {
+pub async fn file_stream_handler() -> Response {
   let response_builder = Response::builder().status(StatusCode::OK);
   let mock_stream = FileStream::new();
 
@@ -184,7 +184,7 @@ pub async fn video_stream_by_id_handler(
   }
 }
 
-pub async fn image_stream_by_path_hander(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
+pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {
@@ -251,7 +251,7 @@ pub async fn image_stream_by_path_hander(Path((base_index, sub_dir)): Path<(u32,
     .unwrap()
 }
 
-pub async fn video_exist(
+pub async fn video_exist_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> Response {
   let file_path = if sub_dir.len() > 0 {
@@ -308,7 +308,7 @@ pub async fn video_exist(
 }
 
 
-pub async fn demo_video_stream_hander(
+pub async fn demo_video_stream_handler(
   headers: HeaderMap,
   Path((_base_index, _sub_dir)): Path<(u32, String)>,
 ) -> Response {
@@ -373,7 +373,7 @@ pub async fn demo_video_stream_hander(
     .unwrap()
 }
 
-pub async fn video_stream_hander(
+pub async fn video_stream_handler(
   headers: HeaderMap,
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> Response {

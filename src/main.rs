@@ -2,15 +2,15 @@ use axum::{
   Json, Router, body::Bytes, extract::Path, routing::{delete, get, post}
 };
 use business_handles::{
-  add_tag, bind_tag, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags,
-  query_tags_by_video, query_videos_by_tag, statistic_handle, unbind_tag, video_info_handler,
-  video_rate,
+  add_tag_handler, bind_tag_handler, mount_config_handler, mp4_dir_handler, mp4_dir_handler1, query_tags_handler,
+  query_tags_by_video_handler, query_videos_by_tag_handler, statistic_handler, unbind_tag_handler, video_info_handler,
+  video_rate_handler,
 };
 use handles::{
-  all_duplicate_cover, all_duplicate_video, designation_search, generate_video_snapshot,
-  init_video_handler, move_cover, parse_designation_all_handler, parse_designation_handler,
-  parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config,
-  sync_mysql2sqlite_video_info, video_detail, video_meta_info_handler
+  all_duplicate_cover_handler, all_duplicate_video_handler, designation_search_handler, generate_video_snapshot_handler,
+  init_video_handler, move_cover_handler, parse_designation_all_handler, parse_designation_handler,
+  parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config_handler,
+  sync_mysql2sqlite_video_info_handler, video_detail_handler, video_meta_info_handler
 };
 use hyper::StatusCode;
 use serde_derive::{Deserialize, Serialize};
@@ -21,14 +21,14 @@ use std::{
   time::Duration,
 };
 use stream_handlers::{
-  file_stream_hander, image_stream_by_path_hander, mock_stream_hander, video_exist, video_stream_hander,
+  file_stream_handler, image_stream_by_path_handler, mock_stream_handler, video_exist_handler, video_stream_handler,
 };
 use tower_http::trace::TraceLayer;
 use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video, handles::{cfb_video_by_id, cfb_video_by_path, parse_meta_info_by_id}, stream_handlers::{demo_video_stream_hander, image_stream_by_id_handler, video_stream_by_id_handler}};
+use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video_handler, handles::{cfb_video_by_id_handler, cfb_video_by_path_handler, parse_meta_info_by_id_handler}, stream_handlers::{demo_video_stream_handler, image_size_by_id_handler, image_stream_by_id_handler, video_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -160,13 +160,13 @@ async fn main() {
     .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
     .route(
       "/sync-mysql2sqlite-video-info",
-      get(sync_mysql2sqlite_video_info),
+      get(sync_mysql2sqlite_video_info_handler),
     )
     .route(
       "/sync-mysql2sqlite-mount-config",
-      get(sync_mysql2sqlite_mount_config),
+      get(sync_mysql2sqlite_mount_config_handler),
     )
-    .route("/users/name/:name/age/:age", post(create_user))
+    .route("/users/name/:name/age/:age", post(create_user_handler))
     .route(
       "/parse-designation/:base_index/*sub_dir",
       get(parse_designation_handler),
@@ -174,14 +174,14 @@ async fn main() {
     .route("/parse-designation-all", get(parse_designation_all_handler))
     .route(
       "/designation-search/:designation_ori",
-      get(designation_search),
+      get(designation_search_handler),
     )
-    .route("/all-duplicate-video", get(all_duplicate_video))
-    .route("/all-duplicate-cover", get(all_duplicate_cover))
-    .route("/video-detail/:id", get(video_detail))
+    .route("/all-duplicate-video", get(all_duplicate_video_handler))
+    .route("/all-duplicate-cover", get(all_duplicate_cover_handler))
+    .route("/video-detail/:id", get(video_detail_handler))
     .route(
       "/generate-video-snapshot/*sub_dir",
-      get(generate_video_snapshot),
+      get(generate_video_snapshot_handler),
     )
     .route("/snapshot/*sub_dir", get(snapshot_handler))
     .route("/video-meta-info/*sub_dir", get(video_meta_info_handler))
@@ -191,41 +191,41 @@ async fn main() {
     )
     .route(
       "/parse-meta-info-by-id/:id",
-      get(parse_meta_info_by_id),
+      get(parse_meta_info_by_id_handler),
     )
-    .route("/move-cover", get(move_cover))
-    .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path))
-    .route("/cfb-video-by-id/:id", get(cfb_video_by_id))
+    .route("/move-cover", get(move_cover_handler))
+    .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path_handler))
+    .route("/cfb-video-by-id/:id", get(cfb_video_by_id_handler))
     // bussiness
     .route("/mount-config", get(mount_config_handler))
     .route("/mp4-dir/:base_index/", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index", get(mp4_dir_handler1))
     .route("/mp4-dir/:base_index/*sub_dir", get(mp4_dir_handler))
     .route("/video-info/:base_index/*sub_dir", get(video_info_handler))
-    .route("/video-rate/:id/:rate", post(video_rate))
-    .route("/video/:id", delete(delete_video))
-    .route("/add-tag/:tag", post(add_tag))
-    .route("/query-tags", get(query_tags))
-    .route("/bind-tag/:tag_id/:video_id", post(bind_tag))
-    .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag))
-    .route("/query-tags-by-video/:video_id", get(query_tags_by_video))
-    .route("/query-videos-by-tag/:tag_id", get(query_videos_by_tag))
-    .route("/statistic/patition/:id", get(statistic_handle))
+    .route("/video-rate/:id/:rate", post(video_rate_handler))
+    .route("/video/:id", delete(delete_video_handler))
+    .route("/add-tag/:tag", post(add_tag_handler))
+    .route("/query-tags", get(query_tags_handler))
+    .route("/bind-tag/:tag_id/:video_id", post(bind_tag_handler))
+    .route("/unbind-tag/:tag_id/:video_id", post(unbind_tag_handler))
+    .route("/query-tags-by-video/:video_id", get(query_tags_by_video_handler))
+    .route("/query-videos-by-tag/:tag_id", get(query_videos_by_tag_handler))
+    .route("/statistic/patition/:id", get(statistic_handler))
     // demo
-    .route("/mock-steam", get(mock_stream_hander))
-    .route("/file-steam", get(file_stream_hander))
+    .route("/mock-steam", get(mock_stream_handler))
+    .route("/file-steam", get(file_stream_handler))
     .route(
       "/demo-video/:base_index/*sub_dir",
-      get(demo_video_stream_hander),
+      get(demo_video_stream_handler),
     )
     .route(
       "/video-stream/:base_index/*sub_dir",
-      get(video_stream_hander),
+      get(video_stream_handler),
     )
-    .route("/video-exist/:base_index/*sub_dir", get(video_exist))
+    .route("/video-exist/:base_index/*sub_dir", get(video_exist_handler))
     .route(
       "/image-stream-by-path/:base_index/*sub_dir",
-      get(image_stream_by_path_hander),
+      get(image_stream_by_path_handler),
     )
     .route(
       "/image-stream-by-id/:id",
@@ -305,7 +305,7 @@ fn root() -> impl Future<Output = &'static str> {
 
 
 
-async fn create_user(
+async fn create_user_handler(
   Path((name, age)): Path<(String, u32)>,
   Json(payload): Json<CreateUser>,
 ) -> (StatusCode, Json<User>) {

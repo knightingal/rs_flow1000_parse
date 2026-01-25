@@ -223,7 +223,7 @@ pub async fn mp4_dir_handler(
   )
 }
 
-pub async fn video_rate(
+pub async fn video_rate_handler(
   Path((id, rate)): Path<(u32, u32)>,
 ) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
   let sqlite_conn = get_sqlite_connection();
@@ -267,7 +267,7 @@ pub async fn video_rate(
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
-pub async fn delete_video(
+pub async fn delete_video_handler(
   Path(id): Path<u32>,
 ) -> (StatusCode, HeaderMap) {
   let video_files = video_file_path_by_id(id);
@@ -313,7 +313,7 @@ pub async fn delete_video(
   (StatusCode::OK, header)
 }
 
-pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
+pub async fn add_tag_handler(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
@@ -353,7 +353,7 @@ pub async fn add_tag(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Js
   (StatusCode::OK, header, Json(tag_entity))
 }
 
-pub async fn bind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
+pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
   println!("tag_id:{}, video_id:{}", tag_id, video_id);
 
   let sqlite_conn = get_sqlite_connection();
@@ -385,7 +385,7 @@ pub async fn bind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode
 }
 
 
-pub async fn unbind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
+pub async fn unbind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
   println!("tag_id:{}, video_id:{}", tag_id, video_id);
 
   let sqlite_conn = get_sqlite_connection();
@@ -415,7 +415,7 @@ pub async fn unbind_tag(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCo
   }
 }
 
-pub async fn query_videos_by_tag(
+pub async fn query_videos_by_tag_handler(
   Path(tag_id): Path<u32>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let sqlite_conn = get_sqlite_connection();
@@ -475,7 +475,7 @@ fn repeat_vars(count: usize) -> String {
   s
 }
 
-pub async fn query_tags_by_video(
+pub async fn query_tags_by_video_handler(
   Path(video_id): Path<u32>,
 ) -> (StatusCode, HeaderMap, Json<Vec<u32>>) {
   let sqlite_conn = get_sqlite_connection();
@@ -501,7 +501,7 @@ pub async fn query_tags_by_video(
   (StatusCode::OK, header, Json::from(tag_vec))
 }
 
-pub async fn statistic_handle(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
+pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
   let (sql1, sql2) = if id != 0 {
     (
       "select video_size, cover_size from video_info where base_index = ".to_string() + &id.to_string(),
@@ -555,7 +555,7 @@ pub async fn statistic_handle(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Js
   (StatusCode::OK, header, Json::from(statistic))
 }
 
-pub fn query_tags() -> QueryTagsFuture {
+pub fn query_tags_handler() -> QueryTagsFuture {
   QueryTagsFuture {
     st: Arc::new(Mutex::new(St {
       done: false,

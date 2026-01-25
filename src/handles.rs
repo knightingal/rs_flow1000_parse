@@ -63,7 +63,7 @@ fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
 
 
 
-pub async fn video_detail(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<Option<VideoEntity>>) {
+pub async fn video_detail_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<Option<VideoEntity>>) {
   let conn = get_sqlite_connection();
   let video_entity = conn
     .query_row(
@@ -150,7 +150,7 @@ pub async fn video_meta_info_handler(
   (StatusCode::OK, Json(Some(meta_info)))
 }
 
-pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode {
+pub async fn generate_video_snapshot_handler(Path(sub_dir): Path<String>) -> StatusCode {
   println!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
   let names: Vec<(String, String)> = if path.is_file() {
@@ -199,7 +199,7 @@ pub async fn generate_video_snapshot(Path(sub_dir): Path<String>) -> StatusCode 
   StatusCode::OK
 }
 
-pub async fn all_duplicate_cover(
+pub async fn all_duplicate_cover_handler(
   Query(params): Query<HashMap<String, String>>,
 ) -> (StatusCode, Json<Vec<DuplicateCoverEntity>>) {
   let dir_path_param = params.get("dir_path");
@@ -288,7 +288,7 @@ pub async fn all_duplicate_cover(
   (StatusCode::OK, Json(duplicate_entity_list))
 }
 
-pub async fn all_duplicate_video() -> (StatusCode, HeaderMap, Json<Vec<DuplicateEntity>>) {
+pub async fn all_duplicate_video_handler() -> (StatusCode, HeaderMap, Json<Vec<DuplicateEntity>>) {
   let conn1 = get_sqlite_connection();
 
   let mut stmt = conn1.prepare(
@@ -378,7 +378,7 @@ pub async fn all_duplicate_video() -> (StatusCode, HeaderMap, Json<Vec<Duplicate
   (StatusCode::OK, header, Json(duplicate_entity_list))
 }
 
-pub async fn designation_search(
+pub async fn designation_search_handler(
   Path(designation_ori): Path<String>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   let designation = parse_designation(&designation_ori);
@@ -554,7 +554,7 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
 }
 
 
-pub async fn parse_meta_info_by_id(
+pub async fn parse_meta_info_by_id_handler(
   Path(id): Path<u32>,
 ) -> StatusCode {
   let file_names = video_file_path_by_id(id);
@@ -617,7 +617,7 @@ pub async fn parse_designation_all_handler() -> (StatusCode, HeaderMap, Json<Vec
   (StatusCode::OK, header, Json(vec![]))
 }
 
-pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
+pub async fn sync_mysql2sqlite_mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
   // let mut conn = get_mysql_connection();
   // let sqlite_conn = get_sqlite_connection();
   // let mount_config: Vec<MountConfig> = conn.query_map(
@@ -650,7 +650,7 @@ pub async fn sync_mysql2sqlite_mount_config() -> (StatusCode, HeaderMap, Json<Ve
   (StatusCode::OK, header, Json(vec![]))
 }
 
-pub async fn sync_mysql2sqlite_video_info() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
+pub async fn sync_mysql2sqlite_video_info_handler() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   // let mut conn = get_mysql_connection();
   // let sqlite_conn = get_sqlite_connection();
 
@@ -883,7 +883,7 @@ pub async fn init_video_handler(
 
 
 
-pub async fn cfb_video_by_id(
+pub async fn cfb_video_by_id_handler(
   Path(id): Path<u32>,
 ) -> (StatusCode, Json<Vec<String>>) {
 
@@ -963,7 +963,7 @@ pub async fn cfb_video_by_id(
   (StatusCode::OK, Json(resp_vec))
 }
 
-pub async fn cfb_video_by_path(
+pub async fn cfb_video_by_path_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, Json<Vec<String>>) {
 
@@ -1047,7 +1047,7 @@ pub async fn cfb_video_by_path(
   (StatusCode::OK, Json(resp_vec))
 }
 
-pub async fn move_cover() {
+pub async fn move_cover_handler() {
 
   let mount_configs = query_mount_configs();
 
