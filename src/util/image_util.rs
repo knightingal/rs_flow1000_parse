@@ -1,8 +1,11 @@
-use std::{io::Error, fs::File, io::{self, Read}};
+use std::{fs::File, io::{self, Error, Read, Seek}};
 use std::io::ErrorKind;
 
 
-pub fn parse_jpg_size(mut jpg: File) -> io::Result<(u32, u32)> {
+pub fn parse_jpg_size(mut jpg: File, start: u64) -> io::Result<(u32, u32)> {
+
+  jpg.seek(std::io::SeekFrom::Start(start))?;
+
   let mut buf = [0u8; 1];
   jpg.read_exact(&mut buf)?;
   let b1 = buf[0];
@@ -78,7 +81,9 @@ pub fn parse_jpg_size(mut jpg: File) -> io::Result<(u32, u32)> {
   }
 }
 
-pub fn parse_png_size(mut png: File) -> io::Result<(u32, u32)> {
+pub fn parse_png_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
+  png.seek(std::io::SeekFrom::Start(start))?;
+
   let mut buf = [0u8; 8];
   png.read_exact(&mut buf)?;
 
@@ -99,18 +104,18 @@ pub fn parse_png_size(mut png: File) -> io::Result<(u32, u32)> {
   let mut buf = [0u8; 4];
   png.read_exact(&mut buf)?;
   let width: u32 = 
-    (buf[0] as u32) << 24 |
-    (buf[1] as u32) << 16 |
-    (buf[2] as u32) <<  8 |
-    (buf[3] as u32) <<  0 ;
+      (buf[0] as u32) << 24 |
+      (buf[1] as u32) << 16 |
+      (buf[2] as u32) <<  8 |
+      (buf[3] as u32) <<  0 ;
 
   let mut buf = [0u8; 4];
   png.read_exact(&mut buf)?;
   let height: u32 = 
-    (buf[0] as u32) << 24 |
-    (buf[1] as u32) << 16 |
-    (buf[2] as u32) <<  8 |
-    (buf[3] as u32) <<  0 ;
+      (buf[0] as u32) << 24 |
+      (buf[1] as u32) << 16 |
+      (buf[2] as u32) <<  8 |
+      (buf[3] as u32) <<  0 ;
 
   Ok((width, height))
 }

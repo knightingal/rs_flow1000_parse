@@ -8,11 +8,10 @@ use std::{
 };
 
 
+use serde_json::{Value, json};
+
 use axum::{
-  body::{Body, Bytes},
-  extract::Path,
-  response::Response,
-  Error,
+  Error, Json, body::{Body, Bytes}, extract::Path, response::Response
 };
 use hyper::{
   header::{
@@ -22,7 +21,7 @@ use hyper::{
 };
 use rusqlite::named_params;
 
-use crate::{base_lib::{IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, entity::{MountConfig, VideoEntity}};
+use crate::{base_lib::{IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size}};
 
 // #[cfg(reallink)]
 // #[link(name = "cfb_decode")]
@@ -59,6 +58,19 @@ pub async fn file_stream_hander() -> Response {
   response_builder
     .body(Body::from_stream(mock_stream))
     .unwrap()
+}
+
+pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<Value>) {
+  let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
+  let image = File::open(real_file_name).unwrap();
+
+  if extension.eq_ignore_ascii_case("jpg") {
+    let (width, height) = parse_jpg_size(image, start).unwrap();
+    (StatusCode::OK, Json(json!({"width": width, "height": height})))
+  } else {
+    let (width, height) = parse_png_size(image, start).unwrap();
+    (StatusCode::OK, Json(json!({"width": width, "height": height})))
+  }
 }
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {

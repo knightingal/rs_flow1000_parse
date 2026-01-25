@@ -232,6 +232,10 @@ async fn main() {
       get(image_stream_by_id_handler),
     )
     .route(
+      "/image-size-by-id/:id",
+      get(image_size_by_id_handler),
+    )
+    .route(
       "/video-stream-by-id/:id/stream.mp4",
       get(video_stream_by_id_handler),
     )
