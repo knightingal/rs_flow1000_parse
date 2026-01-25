@@ -54,14 +54,14 @@ use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_siz
   #[test]
   fn test_parse_png_size() {
     let png = File::open("/home/knightingal/Pictures/Screenshots/ScreenshotFrom2026-01-2421-51-29.png").unwrap();
-    let (width, heigth) = parse_png_size(png).unwrap();
+    let (width, heigth) = parse_png_size(png, 0).unwrap();
     println!("width:{}, height:{}", width, heigth);
   }
 
   #[test]
   fn test_parse_jpg_size() {
     let jpg = File::open("/home/knightingal/Pictures/llqdfm.jpg").unwrap();
-    let (width, heigth) = parse_jpg_size(jpg).unwrap();
+    let (width, heigth) = parse_jpg_size(jpg, 0).unwrap();
     println!("width:{}, height:{}", width, heigth);
   }
 
