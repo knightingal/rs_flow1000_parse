@@ -3,7 +3,7 @@ mod tests {
   use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, };
 
 
-use crate::{ handles::{ snapshot, } };
+use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_size} };
 
   #[test]
   fn move_cover_test() {
@@ -49,6 +49,20 @@ use crate::{ handles::{ snapshot, } };
     let _ = f.read(& mut buf);
     println!("{:02x},{:02x},{:02x},{:02x},", buf[0], buf[1], buf[2], buf[3]);
     Ok(())
+  }
+
+  #[test]
+  fn test_parse_png_size() {
+    let png = File::open("/home/knightingal/Pictures/Screenshots/ScreenshotFrom2026-01-2421-51-29.png").unwrap();
+    let (width, heigth) = parse_png_size(png).unwrap();
+    println!("width:{}, height:{}", width, heigth);
+  }
+
+  #[test]
+  fn test_parse_jpg_size() {
+    let jpg = File::open("/home/knightingal/Pictures/llqdfm.jpg").unwrap();
+    let (width, heigth) = parse_jpg_size(jpg).unwrap();
+    println!("width:{}, height:{}", width, heigth);
   }
 
 }
