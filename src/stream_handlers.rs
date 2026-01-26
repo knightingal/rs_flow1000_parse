@@ -61,15 +61,23 @@ pub async fn file_stream_handler() -> Response {
 }
 
 pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<Value>) {
-  let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
+  let (width, height) = parse_image_size_by_id(id);
+
+  (StatusCode::OK, Json(json!({"width": width, "height": height})))
+}
+
+
+pub fn parse_image_size_by_id(id: u32) -> (u32, u32) {
+
+  let (real_file_name, start, _, extension) = find_cover_by_id(id);
   let image = File::open(real_file_name).unwrap();
 
   if extension.eq_ignore_ascii_case("jpg") {
     let (width, height) = parse_jpg_size(image, start).unwrap();
-    (StatusCode::OK, Json(json!({"width": width, "height": height})))
+    return (width, height);
   } else {
     let (width, height) = parse_png_size(image, start).unwrap();
-    (StatusCode::OK, Json(json!({"width": width, "height": height})))
+    return (width, height);
   }
 }
 
