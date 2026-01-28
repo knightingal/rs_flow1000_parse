@@ -1,9 +1,9 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry}};
+use std::{cmp::Ordering, env, fs::{self, DirEntry, File}};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
 
-use crate::{entity::{MountConfig, VideoEntity}, video_name_util::parse_video_meta_info};
+use crate::{entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size}, video_name_util::parse_video_meta_info};
 
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
@@ -309,4 +309,18 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
   let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
   (real_file_name, file_names[0].4, content_length, String::from(extension))
+}
+
+pub fn parse_image_size_by_id(id: u32) -> (u32, u32) {
+
+  let (real_file_name, start, _, extension) = find_cover_by_id(id);
+  let image = File::open(real_file_name).unwrap();
+
+  if extension.eq_ignore_ascii_case("jpg") {
+    let (width, height) = parse_jpg_size(image, start).unwrap();
+    return (width, height);
+  } else {
+    let (width, height) = parse_png_size(image, start).unwrap();
+    return (width, height);
+  }
 }

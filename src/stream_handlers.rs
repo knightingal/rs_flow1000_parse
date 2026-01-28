@@ -21,7 +21,13 @@ use hyper::{
 };
 use rusqlite::named_params;
 
-use crate::{base_lib::{IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, video_entity_to_file_path}, entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size}};
+use crate::{
+  base_lib::{
+    IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, 
+    video_entity_to_file_path, parse_image_size_by_id
+  }, 
+  entity::{MountConfig, VideoEntity}
+};
 
 // #[cfg(reallink)]
 // #[link(name = "cfb_decode")]
@@ -64,21 +70,6 @@ pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<
   let (width, height) = parse_image_size_by_id(id);
 
   (StatusCode::OK, Json(json!({"width": width, "height": height})))
-}
-
-
-pub fn parse_image_size_by_id(id: u32) -> (u32, u32) {
-
-  let (real_file_name, start, _, extension) = find_cover_by_id(id);
-  let image = File::open(real_file_name).unwrap();
-
-  if extension.eq_ignore_ascii_case("jpg") {
-    let (width, height) = parse_jpg_size(image, start).unwrap();
-    return (width, height);
-  } else {
-    let (width, height) = parse_png_size(image, start).unwrap();
-    return (width, height);
-  }
 }
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
