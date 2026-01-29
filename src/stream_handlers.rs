@@ -29,22 +29,11 @@ use crate::{
   entity::{MountConfig, VideoEntity}
 };
 
-// #[cfg(reallink)]
-// #[link(name = "cfb_decode")]
-// extern "C" {
-//   // fn inv_cfb(input_buf: *const u8, output: *mut u8, w: *const u32, iv: *const u8, len: usize);
-//   fn key_expansion(key: *const u8, w: *mut u32);
-//   // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
-// }
 
 #[cfg(reallink)]
 #[link(name = "cfb_decode")]
 extern "C" {
-  // fn cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
-  // #[allow(dead_code)]
-  // fn key_expansion(key: *const u8, w: *mut u32);
-  // fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
 
@@ -70,6 +59,11 @@ pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<
   let (width, height) = parse_image_size_by_id(id);
 
   (StatusCode::OK, Json(json!({"width": width, "height": height})))
+}
+
+pub async fn image_size_by_all_handler() -> StatusCode {
+
+  StatusCode::OK
 }
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
