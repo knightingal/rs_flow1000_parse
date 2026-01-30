@@ -324,3 +324,16 @@ pub fn parse_image_size_by_id(id: u32) -> (u32, u32) {
     return (width, height);
   }
 }
+
+pub fn scan_all_by_id<T, F>(mut f: F) -> Vec<T>
+where 
+  F: FnMut(u32) -> T,
+{
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare("select id from video_id").unwrap();
+  let ids: Vec<T> = stmt.query_map({}, |row| {
+    let id: u32 = row.get_unwrap("id");
+    Result::Ok(id)
+  }).unwrap().map(|it| f(it.unwrap())).collect();
+  return ids;
+}

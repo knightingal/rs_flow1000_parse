@@ -23,8 +23,7 @@ use rusqlite::named_params;
 
 use crate::{
   base_lib::{
-    IS_LINUX, find_cover_by_id, get_sqlite_connection, query_mount_configs, 
-    video_entity_to_file_path, parse_image_size_by_id
+    IS_LINUX, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
   }, 
   entity::{MountConfig, VideoEntity}
 };
@@ -63,9 +62,10 @@ pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<
 
 pub async fn image_size_by_all_handler() -> StatusCode {
 
-  let size_vec = scan_all_by_id(|row_result| {
-    let id = row_result.unwrap();
-    parse_image_size_by_id(id)
+  let size_vec = scan_all_by_id(|id| {
+    let (width, height) = parse_image_size_by_id(id);
+
+    return (width, height);
   });
   
 
@@ -73,18 +73,6 @@ pub async fn image_size_by_all_handler() -> StatusCode {
 }
 
 
-fn scan_all_by_id<T, F>(f: F) -> Vec<T>
-where 
-  F: FnMut(Result<u32, rusqlite::Error>) -> T,
-{
-  let sqlite_conn = get_sqlite_connection();
-  let mut stmt = sqlite_conn.prepare("select id from video_id").unwrap();
-  let ids: Vec<T> = stmt.query_map({}, |row| {
-    let id: u32 = row.get_unwrap("id");
-    Result::Ok(id)
-  }).unwrap().map(f).collect();
-  return ids;
-}
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
