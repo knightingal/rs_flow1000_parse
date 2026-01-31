@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry, File}};
+use std::{cmp::Ordering, env, fmt::Error, fs::{self, DirEntry, File}};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -336,4 +336,37 @@ where
     Result::Ok(id)
   }).unwrap().map(|it| f(it.unwrap())).collect();
   return ids;
+}
+
+pub fn video_info_list_by_sub_dir<T, CBF>(base_index: u32, sub_dir: String, mut cbf: CBF) -> Vec<T> 
+  where CBF: FnMut(VideoEntity) -> T
+{
+
+  let sql = "
+    select 
+      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path, 
+      designation_char, designation_num 
+    from 
+      video_info 
+    where 
+      dir_path = :dir_path and base_index=:base_index";
+  let params = named_params! {":dir_path": sub_dir.as_str(),":base_index": base_index};
+
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare(sql).unwrap();
+  let selected_iter: Vec<T> = 
+    stmt.query_map(params, |row| {
+    Ok(VideoEntity::new_for_base_info(
+            row.get_unwrap(0),
+            row.get_unwrap(1),
+            row.get_unwrap(2),
+            row.get_unwrap(4),
+            row.get_unwrap(3),
+            row.get_unwrap(5),
+            row.get_unwrap(6),
+            row.get_unwrap(7),
+            row.get_unwrap(8)
+          ))
+    }).unwrap().map(|it| cbf(it.unwrap())).collect();
+  return selected_iter;
 }

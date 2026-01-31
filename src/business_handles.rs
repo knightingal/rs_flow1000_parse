@@ -16,7 +16,7 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
 use tokio::task;
 
-use crate::{base_lib::{IS_LINUX, video_file_path_by_id}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
+use crate::{base_lib::{IS_LINUX, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
 
 
 fn get_sqlite_connection() -> Connection {
@@ -47,32 +47,9 @@ pub async fn video_info_handler(
     sub_dir_param.truncate(sub_dir_param.len() - 1);
   }
 
-  let sql = "
-    select 
-      id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path, 
-      designation_char, designation_num 
-    from 
-      video_info 
-    where 
-      dir_path = :dir_path and base_index=:base_index";
-  let params = named_params! {":dir_path": sub_dir_param.as_str(),":base_index": base_index};
-
-  fn cbf(row: &Row<'_>) -> Result<VideoEntity, Error> {
-    Ok(VideoEntity::new_for_base_info(
-            row.get_unwrap(0),
-            row.get_unwrap(1),
-            row.get_unwrap(2),
-            row.get_unwrap(4),
-            row.get_unwrap(3),
-            row.get_unwrap(5),
-            row.get_unwrap(6),
-            row.get_unwrap(7),
-            row.get_unwrap(8)
-          )
-    )
-  }
-
-  let selected_video = process_sql(sql, params, cbf);
+  let selected_video = video_info_list_by_sub_dir(base_index, sub_dir_param, 
+    |video_entity| video_entity
+  );
 
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
