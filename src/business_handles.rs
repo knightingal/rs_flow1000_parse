@@ -211,6 +211,7 @@ pub async fn video_rate_handler(
       rusqlite::params![rate, id],
     )
     .unwrap();
+
   let result: Result<VideoEntity, _> = sqlite_conn.query_row(
     "select 
       id, video_file_name, cover_file_name, rate, base_index, dir_path, 

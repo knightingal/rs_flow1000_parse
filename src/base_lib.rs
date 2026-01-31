@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, env, fmt::Error, fs::{self, DirEntry, File}};
+use std::{cmp::Ordering, env, fs::{self, DirEntry, File}};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -216,7 +216,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn
     .prepare(
-      "update 
+  "update 
     video_info 
   set 
     video_size = :video_size,
@@ -224,10 +224,10 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
     width = :width,
     height = :height,
     frame_rate = :frame_rate,
-    video_frame_count=:video_frame_count,
-    duration=:duration 
+    video_frame_count = :video_frame_count,
+    duration = :duration 
   where 
-    id=:id",
+    id = :id",
     )
     .unwrap();
 
@@ -338,8 +338,8 @@ where
   return ids;
 }
 
-pub fn video_info_list_by_sub_dir<T, CBF>(base_index: u32, sub_dir: String, mut cbf: CBF) -> Vec<T> 
-  where CBF: FnMut(VideoEntity) -> T
+pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f: F) -> Vec<T> 
+  where F: FnMut(VideoEntity) -> T
 {
 
   let sql = "
@@ -367,6 +367,6 @@ pub fn video_info_list_by_sub_dir<T, CBF>(base_index: u32, sub_dir: String, mut 
             row.get_unwrap(7),
             row.get_unwrap(8)
           ))
-    }).unwrap().map(|it| cbf(it.unwrap())).collect();
+    }).unwrap().map(|it| f(it.unwrap())).collect();
   return selected_iter;
 }
