@@ -1,19 +1,14 @@
 use std::{
-  cmp::Ordering,
-  env,
-  fs::{self, DirEntry},
-  future::Future,
-  pin::Pin,
-  sync::{Arc, Mutex},
-  task::{Context, Poll},
+  cmp::Ordering, collections::HashMap, env, fs::{self, DirEntry}, future::Future, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}
 };
 
-use axum::{extract::Path, Json};
+use axum::{Json, extract::{Path, Query}};
 use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
 use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
+use serde_derive::Deserialize;
 use tokio::task;
 
 use crate::{base_lib::{IS_LINUX, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
@@ -245,8 +240,14 @@ pub async fn video_rate_handler(
   (StatusCode::OK, header, Json(result.unwrap().clone()))
 }
 
+#[derive(Deserialize)]
+pub struct DeleteVideoParam {
+  duplicate_del: bool
+}
+
 pub async fn delete_video_handler(
   Path(id): Path<u32>,
+  // Query(params): Query<DeleteVideoParam>,
 ) -> (StatusCode, HeaderMap) {
   let video_files = video_file_path_by_id(id);
 
