@@ -315,18 +315,17 @@ pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
 
   let (real_file_name, start, _, extension) = find_cover_by_id(id);
   let image_result = File::open(real_file_name);
-  if image_result.is_ok() {
-    let image = image_result.unwrap();
-    if extension.eq_ignore_ascii_case("jpg") {
-      return parse_jpg_size(image, start);
-    } else {
-      return parse_png_size(image, start);
-    }
 
-  } else {
-    io::Result::Err(image_result.err().unwrap())
+  match image_result {
+    Ok(image) => {
+      if extension.eq_ignore_ascii_case("jpg") {
+        parse_jpg_size(image, start)
+      } else {
+        parse_png_size(image, start)
+      }
+    },
+    Err(err) => Err(err)
   }
-
 }
 
 pub fn scan_all_by_id<T, F>(mut f: F) -> Vec<T>
