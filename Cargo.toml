@@ -49,3 +49,6 @@ name="parse_meta_info_by_id"
 
 [[bin]]
 name="separate_cover"
+
+[[bin]]
+name="parse_all_cover_sizes"
