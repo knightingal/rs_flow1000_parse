@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry, File}};
+use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -311,18 +311,22 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
   (real_file_name, file_names[0].4, content_length, String::from(extension))
 }
 
-pub fn parse_image_size_by_id(id: u32) -> (u32, u32) {
+pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
 
   let (real_file_name, start, _, extension) = find_cover_by_id(id);
-  let image = File::open(real_file_name).unwrap();
+  let image_result = File::open(real_file_name);
+  if image_result.is_ok() {
+    let image = image_result.unwrap();
+    if extension.eq_ignore_ascii_case("jpg") {
+      return parse_jpg_size(image, start);
+    } else {
+      return parse_png_size(image, start);
+    }
 
-  if extension.eq_ignore_ascii_case("jpg") {
-    let (width, height) = parse_jpg_size(image, start).unwrap();
-    return (width, height);
   } else {
-    let (width, height) = parse_png_size(image, start).unwrap();
-    return (width, height);
+    io::Result::Err(image_result.err().unwrap())
   }
+
 }
 
 pub fn scan_all_by_id<T, F>(mut f: F) -> Vec<T>
@@ -330,7 +334,7 @@ where
   F: FnMut(u32) -> T,
 {
   let sqlite_conn = get_sqlite_connection();
-  let mut stmt = sqlite_conn.prepare("select id from video_id").unwrap();
+  let mut stmt = sqlite_conn.prepare("select id from video_info").unwrap();
   let ids: Vec<T> = stmt.query_map({}, |row| {
     let id: u32 = row.get_unwrap("id");
     Result::Ok(id)
@@ -354,8 +358,7 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
 
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(sql).unwrap();
-  let selected_iter: Vec<T> = 
-    stmt.query_map(params, |row| {
+  let selected_iter: Vec<T> = stmt.query_map(params, |row| {
     Ok(VideoEntity::new_for_base_info(
             row.get_unwrap(0),
             row.get_unwrap(1),
@@ -366,7 +369,7 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
             row.get_unwrap(6),
             row.get_unwrap(7),
             row.get_unwrap(8)
-          ))
-    }).unwrap().map(|it| f(it.unwrap())).collect();
+    ))
+  }).unwrap().map(|it| f(it.unwrap())).collect();
   return selected_iter;
 }
