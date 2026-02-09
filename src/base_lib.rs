@@ -341,6 +341,13 @@ where
   return ids;
 }
 
+pub fn update_cover_size_by_id(id: u32, width: u32, height: u32) -> rusqlite::Result<()> {
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare("update video_info set cover_width = :width, cover_height = :height where id = :id").unwrap();
+  stmt.execute(named_params! {":width": width, ":height": height, ":id": id})?;
+  Ok(())
+}
+
 pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f: F) -> Vec<T> 
   where F: FnMut(VideoEntity) -> T
 {
