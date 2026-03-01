@@ -311,6 +311,25 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
   (real_file_name, file_names[0].4, content_length, String::from(extension))
 }
 
+pub fn parse_image_size_by_file_name(file_name: String) -> io::Result<(u32, u32)> {
+
+  let image_result = File::open(&file_name);
+
+  let extension = std::path::Path::new(file_name.as_str()).extension().unwrap().to_str().unwrap();
+
+  match image_result {
+    Ok(image) => {
+      if extension.eq_ignore_ascii_case("jpg") {
+        parse_jpg_size(image, 0)
+      } else {
+        parse_png_size(image, 0)
+      }
+    },
+    Err(err) => Err(err)
+  }
+
+}
+
 pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
 
   let (real_file_name, start, _, extension) = find_cover_by_id(id);
