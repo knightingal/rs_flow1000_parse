@@ -4,6 +4,6 @@
 int main(int argc, char **argv)
 {
   // return frame_decode(0, 0);
-  snapshot_video(0, 1);
+  snapshot_video(0, 30);
   return 0;
 }
