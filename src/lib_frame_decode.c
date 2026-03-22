@@ -20,7 +20,7 @@ static char *DEST_URL = "demo_video_1.png";
 static FILE *output_file = NULL;
 
 
-static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
+static AVFrame *frame_to_rgb_buff41(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
 {
   printf("index=%d\n", index);
   int ret = 0;
@@ -61,14 +61,14 @@ static AVFrame *frame_to_rgb_buff(AVFrame *frame, uint32_t index, AVCodecContext
     rgb_frame->format = ctx->pix_fmt;
     rgb_frame->width = ctx->width;
     rgb_frame->height = ctx->height;
-    printf("finish frame_to_rgb_buff\n");
+    printf("finish frame_to_rgb_buff41\n");
     return rgb_frame;
   }
   else
   {
     av_frame_unref(rgb_frame);
     av_frame_free(&rgb_frame);
-    printf("finish frame_to_rgb_buff\n");
+    printf("finish frame_to_rgb_buff41\n");
     return NULL;
   }
 }
@@ -102,7 +102,7 @@ static int frame_array_to_image41(AVFrame **frame_array, enum AVCodecID code_id,
 
   init_AVCodecContext(ctx, frame_array[0]->width/4, frame_array[0]->height/4, *codec->pix_fmts);
   ret = avcodec_open2(ctx, codec, NULL);
-  rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
+  rgb_frame = frame_to_rgb_buff41(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
   rgb_frame->height = ctx->height;
@@ -146,13 +146,13 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   // avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
   init_AVCodecContext(ctx, frame_array[0]->width, frame_array[0]->height, *codec->pix_fmts);
   ret = avcodec_open2(ctx, codec, NULL);
-  rgb_frame = frame_to_rgb_buff(frame_array[0], 0, ctx, NULL);
+  rgb_frame = frame_to_rgb_buff41(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
   rgb_frame->height = ctx->height;
   for (int i = 1; i < PIC_NUM; i++)
   {
-    frame_to_rgb_buff(frame_array[i], i, ctx, rgb_frame->data[0]);
+    frame_to_rgb_buff41(frame_array[i], i, ctx, rgb_frame->data[0]);
   }
   ret = avcodec_send_frame(ctx, rgb_frame);
   ret = avcodec_receive_packet(ctx, pkt);
@@ -483,7 +483,7 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
     printf("Can not alloc buffer\n");
     ret = AVERROR(ENOMEM);
   }
-  ret = frame_array_to_image41(frame_array, AV_CODEC_ID_PNG, buffer, size);
+  ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
 
   for (int i = 0; i < 1; i++)
   {
