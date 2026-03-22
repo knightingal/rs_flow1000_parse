@@ -11,6 +11,7 @@ struct snapshot_st
 };
 
 struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_time);
+void avif_to_png(const char *name_path, const uint64_t snap_time);
 
 struct video_meta_info
 {

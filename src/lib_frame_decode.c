@@ -15,6 +15,8 @@
 
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
+// static char *AVIF_FILE_NAME = "/home/knightingal/linux1000/1807/[Fanbox] Coro Fae(05)/401.avif";
+static char *AVIF_FILE_NAME = "/home/knightingal/Pictures/llqdfm.jpg";
 static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
@@ -412,6 +414,155 @@ struct video_meta_info *video_meta_info(const char *name_path)
 
   avformat_close_input(&fmt_ctx);
   return p_video_meta_info;
+}
+
+void avif_to_png(const char *name_path, const uint64_t snap_time)
+{
+  int ret;
+  int eof;
+  const char *filename;
+  if (name_path != NULL)
+  {
+    filename = name_path;
+  }
+  else
+  {
+    filename = AVIF_FILE_NAME;
+  }
+
+  ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL);
+  printf("red=%d\n", ret);
+
+  ret = avformat_find_stream_info(fmt_ctx, 0);
+  printf("red=%d\n", ret);
+  av_dump_format(fmt_ctx, 0, filename, 0);
+  int count = fmt_ctx->nb_streams;
+  printf("number=%d\n", count);
+  int video_stream_index = -1;
+  int audio_stream_index = -1;
+  AVCodecContext *dec_ctx;
+  const AVCodec *codec;
+  AVStream *video_in_stream;
+  int i_duratoin;
+  for (int i = 0; i < fmt_ctx->nb_streams; i++)
+  {
+    AVStream *in_stream = fmt_ctx->streams[i];
+
+    if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+      video_in_stream = in_stream;
+      int width = in_stream->codecpar->width;
+      int height = in_stream->codecpar->height;
+      int frame_rate;
+      if (in_stream->avg_frame_rate.den != 0 && in_stream->avg_frame_rate.num != 0)
+      {
+        frame_rate = in_stream->avg_frame_rate.num / in_stream->avg_frame_rate.den;
+      }
+      int video_frame_count = in_stream->nb_frames;
+      printf("width=%d, height=%d, frame_rate=%d, video_frame_count=%d\n", width, height, frame_rate, video_frame_count);
+      // float f_duration = (float)video_frame_count / ((float)(in_stream->avg_frame_rate.num) / (float)(in_stream->avg_frame_rate.den));
+      // i_duratoin = (int)f_duration;
+      // printf("duration=%d\n", i_duratoin);
+      codec = avcodec_find_decoder(in_stream->codecpar->codec_id);
+      const char *codec_name = codec->long_name;
+      printf("codec_name=%s\n", codec_name);
+      printf("red=%d\n", ret);
+    }
+    if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+      video_stream_index = i;
+      break;
+    }
+    else if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+      audio_stream_index = i;
+    }
+  }
+  printf("video_stream_index=%d, audio_stream_index=%d\n", video_stream_index, audio_stream_index);
+
+  AVFrame *frame_array[1];
+  /**
+   * avcodec_alloc_context3 函数用于分配一个 AVCodecContext 结构体，并将其字段设置为默认值。生成的结构体需要使用 avcodec_free_context() 进行释放。
+   */
+  dec_ctx = avcodec_alloc_context3(codec);
+  avcodec_parameters_to_context(dec_ctx, video_in_stream->codecpar);
+  /**
+   * avcodec_open2 函数用于初始化 AVCodecContext 以使用指定的 AVCodec。
+   * 在调用此函数之前，需要先通过 avcodec_alloc_context3() 分配上下文，并根据需要通过设置选项或直接修改上下文来配置解码或编码参数。
+   */
+  ret = avcodec_open2(dec_ctx, codec, NULL);
+
+  int64_t timestamp = (int64_t)(snap_time) * 1000000l;
+
+  printf("i=%d, timestamp=%lld\n", 0, timestamp);
+  // av_seek_frame(fmt_ctx, -1, 0, AVSEEK_FLAG_BACKWARD);
+  AVPacket *p_packet = av_packet_alloc();
+  while (1)
+  {
+    ret = av_read_frame(fmt_ctx, p_packet);
+    printf("red=%d\n", ret);
+    ret = avcodec_send_packet(dec_ctx, p_packet);
+    printf("red=%d\n", ret);
+    AVFrame *frame = av_frame_alloc();
+
+    /* code */
+    ret = avcodec_receive_frame(dec_ctx, frame);
+    printf("avcodec_receive_frame red=%d\n", ret);
+    if (ret == 0)
+    {
+      frame_array[0] = frame;
+      printf("read succ \n");
+      int w = frame->width;
+      int h = frame->height;
+      printf("w=%d, h=%d\n", w, h);
+
+      break;
+    }
+  }
+  av_packet_free(&p_packet);
+  avcodec_flush_buffers(dec_ctx);
+
+  // avcodec_close(dec_ctx);
+  avcodec_free_context(&dec_ctx);
+
+  int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
+                                      frame_array[0]->height, 64);
+
+  printf("size=%d\n", size);
+  uint8_t *buffer = av_malloc(size);
+  if (!buffer)
+  {
+    printf("Can not alloc buffer\n");
+    ret = AVERROR(ENOMEM);
+  }
+  ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
+
+  for (int i = 0; i < 1; i++)
+  {
+    av_frame_free(&frame_array[i]);
+  }
+
+  output_file = fopen(DEST_URL, "w+b");
+  if (fwrite(buffer, 1, ret, output_file) < 0)
+  {
+    fprintf(stderr, "Failed to dump raw data.\n");
+  }
+  av_free(buffer);
+
+  fclose(output_file);
+
+  /**
+   * Copilot: The line below is commented out because it is incorrect.
+   * The `dec_ctx` variable is already freed by `avcodec_free_context()`,
+   * and freeing it again would lead to undefined behavior.
+   * If you need to free the context, you should use `avcodec_free_context(&dec_ctx);`
+   * instead of `free(dec_ctx);`.
+   */
+  // free(dec_ctx);
+  avformat_close_input(&fmt_ctx);
+  struct snapshot_st st = {buffer, ret};
+
+  // return st;
 }
 
 /**
