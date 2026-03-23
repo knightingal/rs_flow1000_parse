@@ -16,6 +16,7 @@
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
 static char *AVIF_FILE_NAME = "/home/knightingal/linux1000/1807/[Fanbox] Coro Fae(05)/401.avif";
+// static char *AVIF_FILE_NAME = "hato.profile0.10bpc.yuv420.avif";
 // static char *AVIF_FILE_NAME = "/home/knightingal/Pictures/llqdfm.jpg";
 static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
@@ -40,6 +41,7 @@ static AVFrame *frame_to_rgb_buff_full(AVFrame *frame, uint32_t index, AVCodecCo
   int dstRange = 1;
   
   int srcColorspace = frame->colorspace;
+  // Stream #0:0[0x1]: Video: av1 (libdav1d) (Main) (av01 / 0x31307661), yuv420p(pc, smpte170m/unknown/unknown), 1280x1808 [SAR 1:1 DAR 80:113], 1 fps, 1 tbr, 1 tbn (default)
   if (srcColorspace == AVCOL_SPC_UNSPECIFIED) {
     srcColorspace = AVCOL_SPC_BT709;
   }
