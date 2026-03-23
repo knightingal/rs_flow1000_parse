@@ -15,8 +15,8 @@
 
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
-// static char *AVIF_FILE_NAME = "/home/knightingal/linux1000/1807/[Fanbox] Coro Fae(05)/401.avif";
-static char *AVIF_FILE_NAME = "/home/knightingal/Pictures/llqdfm.jpg";
+static char *AVIF_FILE_NAME = "/home/knightingal/linux1000/1807/[Fanbox] Coro Fae(05)/401.avif";
+// static char *AVIF_FILE_NAME = "/home/knightingal/Pictures/llqdfm.jpg";
 static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
@@ -33,7 +33,21 @@ static AVFrame *frame_to_rgb_buff_full(AVFrame *frame, uint32_t index, AVCodecCo
   rgb_frame = av_frame_alloc();
   sws_context = sws_getContext(frame->width, frame->height,
                                (enum AVPixelFormat)frame->format, dest_width, dest_height,
-                               ctx->pix_fmt, 1, NULL, NULL, NULL);
+                               ctx->pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
+
+
+  int srcRange = (frame->color_range == AVCOL_RANGE_JPEG) ? 1: 0;
+  int dstRange = 1;
+  
+  int srcColorspace = frame->colorspace;
+  if (srcColorspace == AVCOL_SPC_UNSPECIFIED) {
+    srcColorspace = AVCOL_SPC_BT709;
+  }
+
+  const int *srcCoeffs = sws_getCoefficients(srcColorspace);
+  const int *dstCoeffs = sws_getCoefficients(AVCOL_SPC_RGB);
+  sws_setColorspaceDetails(sws_context, srcCoeffs, srcRange, dstCoeffs, dstRange, 0, 1 << 16, 1<< 16);
+
   int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
   buffer = (unsigned char *)av_malloc(buffer_size);
   av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, frame->width, frame->height, 1);
