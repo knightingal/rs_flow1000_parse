@@ -27,6 +27,29 @@ static AVFrame *green10x10_rgb_buff(AVCodecContext *ctx, uint8_t *dest_buff) {
 
   AVFrame *rgb_frame = NULL;
   rgb_frame = av_frame_alloc();
+  int width = 10;
+  int height = 10;
+
+  int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, width, height, 1) * 2;
+  uint8_t *buffer ;
+  buffer = (unsigned char *)av_malloc(buffer_size);
+
+  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, buffer, ctx->pix_fmt, width, height, 1);
+  int index = 0;
+
+  uint32_t x = index;
+  uint32_t y = index;
+  size_t width_offset = width * 3 * x;
+  size_t height_offset = height * rgb_frame->linesize[0] * y;
+  size_t rgb_data_size = rgb_frame->linesize[0] * height;
+  if (dest_buff == NULL)
+  {
+    dest_buff = (uint8_t *)av_malloc(rgb_data_size);
+  }
+  for (int line = 0; line < height; line++)
+  {
+    memcpy(dest_buff + height_offset + line * rgb_frame->linesize[0] + width_offset, rgb_frame->data[0] + line * rgb_frame->linesize[0], width * 3);
+  }
 
   return NULL;
 }
