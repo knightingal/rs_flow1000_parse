@@ -15,7 +15,7 @@
 
 static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
-static char *AVIF_FILE_NAME = "/home/knightingal/linux1000/1807/[Fanbox] Coro Fae(05)/401.avif";
+static char *AVIF_FILE_NAME = "1126.avif";
 // static char *AVIF_FILE_NAME = "hato.profile0.10bpc.yuv420.avif";
 // static char *AVIF_FILE_NAME = "/home/knightingal/Pictures/llqdfm.jpg";
 static char *DEST_URL = "demo_video_1.png";
@@ -37,18 +37,26 @@ static AVFrame *frame_to_rgb_buff_full(AVFrame *frame, uint32_t index, AVCodecCo
                                ctx->pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
 
 
-  int srcRange = (frame->color_range == AVCOL_RANGE_JPEG) ? 1: 0;
+  int srcRange ;
+  if (frame->color_range == AVCOL_RANGE_JPEG) {
+    srcRange = 1;
+  } else if (frame->color_range == AVCOL_RANGE_MPEG) {
+    srcRange = 0;
+  } else {
+    srcRange = 1;
+  }
   int dstRange = 1;
   
   int srcColorspace = frame->colorspace;
   // Stream #0:0[0x1]: Video: av1 (libdav1d) (Main) (av01 / 0x31307661), yuv420p(pc, smpte170m/unknown/unknown), 1280x1808 [SAR 1:1 DAR 80:113], 1 fps, 1 tbr, 1 tbn (default)
   if (srcColorspace == AVCOL_SPC_UNSPECIFIED) {
-    srcColorspace = AVCOL_SPC_BT709;
+    srcColorspace = AVCOL_SPC_SMPTE170M;
   }
 
   const int *srcCoeffs = sws_getCoefficients(srcColorspace);
-  const int *dstCoeffs = sws_getCoefficients(AVCOL_SPC_RGB);
-  sws_setColorspaceDetails(sws_context, srcCoeffs, srcRange, dstCoeffs, dstRange, 0, 1 << 16, 1<< 16);
+  // const int *dstCoeffs = sws_getCoefficients(AVCOL_SPC_RGB);
+  sws_setColorspaceDetails(sws_context, srcCoeffs, srcRange, srcCoeffs, dstRange, 0, 1 << 16, 1<< 16);
+  printf("srcRange=%d, srcColorspace=%d\n", srcRange, srcColorspace);
 
   int buffer_size = av_image_get_buffer_size(ctx->pix_fmt, frame->width, frame->height, 1) * 2;
   buffer = (unsigned char *)av_malloc(buffer_size);
