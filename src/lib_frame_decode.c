@@ -22,6 +22,16 @@ static char *DEST_URL = "demo_video_1.png";
 // static char* output_file = "/home/knightingal/demo_video_1.jpg";
 static FILE *output_file = NULL;
 
+
+static AVFrame *green10x10_rgb_buff(AVCodecContext *ctx, uint8_t *dest_buff) {
+
+  AVFrame *rgb_frame = NULL;
+  rgb_frame = av_frame_alloc();
+
+  return NULL;
+}
+
+
 static AVFrame *frame_to_rgb_buff_full(AVFrame *frame, uint32_t index, AVCodecContext *ctx, uint8_t *dest_buff)
 {
   printf("index=%d\n", index);
