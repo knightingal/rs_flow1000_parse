@@ -558,6 +558,17 @@ void avif_to_png(const char *name_path, const uint64_t snap_time)
   {
     ret = av_read_frame(fmt_ctx, p_packet);
     printf("red=%d\n", ret);
+    if (ret != 0) {
+      // av_packet_free(&p_packet);
+      av_packet_unref(p_packet);
+      continue;
+    }
+
+    if (p_packet->stream_index != video_stream_index) {
+      av_packet_unref(p_packet);
+      continue;
+    }
+
     ret = avcodec_send_packet(dec_ctx, p_packet);
     printf("red=%d\n", ret);
     AVFrame *frame = av_frame_alloc();
