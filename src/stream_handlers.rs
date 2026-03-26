@@ -185,6 +185,23 @@ pub async fn video_stream_by_id_handler(
   }
 }
 
+pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) -> Response {
+
+  let mut response_builder = Response::builder().status(StatusCode::OK);
+
+  let mut header = HeaderMap::new();
+  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  *response_builder.headers_mut().unwrap() = header;
+  let mut main_patition_path: String = String::from("/home/knightingal/linux1000/");
+
+  main_patition_path.push_str(&sub_dir);
+
+  let start = 0;
+  let mock_stream = VideoStream::new(start, &main_patition_path);
+  response_builder.body(Body::from_stream(mock_stream)).unwrap()
+}
+
+
 pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32, String)>) -> Response {
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
