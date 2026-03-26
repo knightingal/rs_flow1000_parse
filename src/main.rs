@@ -28,7 +28,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video_handler, handles::{cfb_video_by_id_handler, cfb_video_by_path_handler, parse_meta_info_by_id_handler}, stream_handlers::{demo_video_stream_handler, image_size_by_all_handler, image_size_by_id_handler, image_stream_by_id_handler, video_stream_by_id_handler}};
+use crate::{base_lib::{init_key, linux_init}, business_handles::delete_video_handler, handles::{cfb_video_by_id_handler, cfb_video_by_path_handler, parse_meta_info_by_id_handler}, stream_handlers::{demo_video_stream_handler, flow1000_image_stream_by_path_hanlder, image_size_by_all_handler, image_size_by_id_handler, image_stream_by_id_handler, video_stream_by_id_handler}};
 
 mod business_handles;
 mod designation;
@@ -226,6 +226,10 @@ async fn main() {
     .route(
       "/image-stream-by-path/:base_index/*sub_dir",
       get(image_stream_by_path_handler),
+    )
+    .route(
+      "/linux1000/*sub_dir",
+      get(flow1000_image_stream_by_path_hanlder),
     )
     .route(
       "/image-stream-by-id/:id",
