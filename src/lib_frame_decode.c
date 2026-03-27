@@ -473,7 +473,7 @@ struct video_meta_info *video_meta_info(const char *name_path)
   return p_video_meta_info;
 }
 
-void avif_to_png(const char *name_path, const uint64_t snap_time)
+struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
 {
   int ret;
   int eof;
@@ -615,7 +615,7 @@ void avif_to_png(const char *name_path, const uint64_t snap_time)
   {
     fprintf(stderr, "Failed to dump raw data.\n");
   }
-  av_free(buffer);
+  // av_free(buffer);
 
   fclose(output_file);
 
@@ -630,7 +630,7 @@ void avif_to_png(const char *name_path, const uint64_t snap_time)
   avformat_close_input(&fmt_ctx);
   struct snapshot_st st = {buffer, ret};
 
-  // return st;
+  return st;
 }
 
 /**
