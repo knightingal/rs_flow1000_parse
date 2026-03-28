@@ -1,10 +1,9 @@
 //! Interface for stream.
 //!
 //! This module contains basic code to investigate and validate stream response based axum
+use core::slice;
 use std::{
-  env,
-  fs::File,
-  io::{Read, Seek},
+  env, ffi::{CString, c_void}, fs::File, io::{Read, Seek}
 };
 
 
@@ -21,11 +20,17 @@ use hyper::{
 };
 use rusqlite::named_params;
 
+#[cfg(reallink)]
+use crate::handles::SnapshotSt;
 use crate::{
   base_lib::{
     IS_LINUX, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
   }, 
-  entity::{MountConfig, VideoEntity}
+  entity::{MountConfig, VideoEntity}, video_name_util::sub_string_matched
+};
+
+use std::{
+  ffi::{c_char }, usize
 };
 
 
@@ -33,6 +38,12 @@ use crate::{
 #[link(name = "cfb_decode")]
 extern "C" {
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
+}
+
+#[cfg(reallink)]
+#[link(name = "frame_decode")]
+extern "C" {
+  fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
 }
 
 
@@ -194,11 +205,27 @@ pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) 
   *response_builder.headers_mut().unwrap() = header;
   let mut main_patition_path: String = String::from("/home/knightingal/linux1000/");
 
-  main_patition_path.push_str(&sub_dir);
+  if sub_dir.ends_with(".avif.png") {
+    let real_file_name = sub_dir.replace(".avif.png", ".avif");
+    main_patition_path.push_str(&real_file_name);
 
-  let start = 0;
-  let mock_stream = VideoStream::new(start, &main_patition_path);
-  response_builder.body(Body::from_stream(mock_stream)).unwrap()
+    let video_name = CString::new(main_patition_path.as_str()).unwrap();
+    unsafe {
+      let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
+      let len = snapshot_st.buff_len.try_into().unwrap();
+      let slice = slice::from_raw_parts(snapshot_st.buff, len);
+      let buff: Vec<u8> = Vec::from(slice);
+      // libc::free(snapshot_st.buff as *mut c_void);
+      response_builder.body(Body::from(buff)).unwrap()
+    }
+  } else {
+    main_patition_path.push_str(&sub_dir);
+    let start = 0;
+    let mock_stream = VideoStream::new(start, &main_patition_path);
+    response_builder.body(Body::from_stream(mock_stream)).unwrap()
+  }
+
+
 }
 
 
