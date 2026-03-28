@@ -610,14 +610,14 @@ struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
     av_frame_free(&frame_array[i]);
   }
 
-  output_file = fopen(DEST_URL, "w+b");
-  if (fwrite(buffer, 1, ret, output_file) < 0)
-  {
-    fprintf(stderr, "Failed to dump raw data.\n");
-  }
+  // output_file = fopen(DEST_URL, "w+b");
+  // if (fwrite(buffer, 1, ret, output_file) < 0)
+  // {
+  //   fprintf(stderr, "Failed to dump raw data.\n");
+  // }
   // av_free(buffer);
 
-  fclose(output_file);
+  // fclose(output_file);
 
   /**
    * Copilot: The line below is commented out because it is incorrect.
