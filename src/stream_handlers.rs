@@ -3,7 +3,7 @@
 //! This module contains basic code to investigate and validate stream response based axum
 use core::slice;
 use std::{
-  env, ffi::{CString, c_void}, fs::File, io::{Read, Seek}
+  env, ffi::CString, fs::File, io::{Read, Seek}
 };
 
 
@@ -26,7 +26,7 @@ use crate::{
   base_lib::{
     IS_LINUX, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
   }, 
-  entity::{MountConfig, VideoEntity}, video_name_util::sub_string_matched
+  entity::{MountConfig, VideoEntity}
 };
 
 use std::{
