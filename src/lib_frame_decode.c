@@ -13,7 +13,6 @@
 #define INBUF_SIZE 4096
 #define PIC_NUM 16
 
-static AVFormatContext *fmt_ctx;
 static char *FILE_NAME = "/home/knightingal/demo_video.mp4";
 static char *AVIF_FILE_NAME = "1126.avif";
 // static char *AVIF_FILE_NAME = "hato.profile0.10bpc.yuv420.avif";
@@ -409,6 +408,7 @@ error:
 
 struct video_meta_info *video_meta_info(const char *name_path)
 {
+  AVFormatContext *fmt_ctx = NULL;
   struct video_meta_info *p_video_meta_info = malloc(sizeof(struct video_meta_info));
 
   int ret;
@@ -475,6 +475,7 @@ struct video_meta_info *video_meta_info(const char *name_path)
 
 struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
 {
+  AVFormatContext *fmt_ctx = NULL;
   int ret;
   int eof;
   const char *filename;
@@ -641,6 +642,8 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
 {
   int ret;
   int eof;
+
+  AVFormatContext *fmt_ctx = NULL;
   const char *filename;
   if (name_path != NULL)
   {
@@ -789,6 +792,8 @@ int frame_decode(const char *name_path, const char *dest_path)
 {
   int ret;
   int eof;
+
+  AVFormatContext *fmt_ctx = NULL;
   const char *filename;
   if (name_path != NULL)
   {
