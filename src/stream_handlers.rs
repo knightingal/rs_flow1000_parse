@@ -44,6 +44,7 @@ extern "C" {
 #[link(name = "frame_decode")]
 extern "C" {
   fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+  fn av_free_wrap(buff: *const u8);
 }
 
 
@@ -215,6 +216,7 @@ pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) 
       let len = snapshot_st.buff_len.try_into().unwrap();
       let slice = slice::from_raw_parts(snapshot_st.buff, len);
       let buff: Vec<u8> = Vec::from(slice);
+      av_free_wrap(snapshot_st.buff);
       // libc::free(snapshot_st.buff as *mut c_void);
       response_builder.body(Body::from(buff)).unwrap()
     }

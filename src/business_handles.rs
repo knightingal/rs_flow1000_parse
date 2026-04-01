@@ -1,8 +1,8 @@
 use std::{
-  cmp::Ordering, collections::HashMap, env, fs::{self, DirEntry}, future::Future, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}
+  cmp::Ordering, env, fs::{self, DirEntry}, future::Future, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}
 };
 
-use axum::{Json, extract::{Path, Query}};
+use axum::{Json, extract::{Path}};
 use hyper::{
   header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
   HeaderMap, StatusCode,
