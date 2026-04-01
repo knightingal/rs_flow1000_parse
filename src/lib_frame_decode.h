@@ -14,6 +14,8 @@ struct snapshot_st snapshot_video(const char *name_path, const uint64_t snap_tim
 
 struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time);
 
+void av_free_wrap(uint8_t* buffer);
+
 struct video_meta_info
 {
   int width;
