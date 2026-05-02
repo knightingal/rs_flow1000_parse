@@ -6,7 +6,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 /*
-gcc -shared -fPIC -o libcfb_decode.so aes.c
+gcc -shared -fPIC -o libcfb_decode.so cfbdecode.c
+or
+clang -dynamiclib cfbdecode.c -o libcfbdecode.dylib
+
 mv libcfb_decode.so /usr/lib
  */
 
