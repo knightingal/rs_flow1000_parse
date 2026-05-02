@@ -35,13 +35,13 @@ use std::{
 
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
 }
 
 #[cfg(reallink)]
-#[link(name = "frame_decode")]
+#[link(name = "framedecode")]
 extern "C" {
   fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
   fn av_free_wrap(buff: *const u8);

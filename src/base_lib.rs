@@ -6,7 +6,7 @@ use sysinfo::System;
 use crate::{entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size}, video_name_util::parse_video_meta_info};
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
   #[allow(dead_code)]
   fn init_inner_key_expansion(key: *const u8);

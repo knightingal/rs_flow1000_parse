@@ -28,7 +28,7 @@ pub struct SnapshotSt {
 }
 
 #[cfg(reallink)]
-#[link(name = "frame_decode")]
+#[link(name = "framedecode")]
 extern "C" {
   fn frame_decode_with_param(file_url: *const c_char, dest_url: *const c_char) -> i32;
   fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt;

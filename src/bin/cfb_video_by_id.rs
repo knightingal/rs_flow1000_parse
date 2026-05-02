@@ -9,7 +9,7 @@ use rs_flow1000_parse::{
 use rusqlite::named_params;
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
   fn cfb_file_streaming_v2(
     w: *const u32,

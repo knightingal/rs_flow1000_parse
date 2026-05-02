@@ -3,7 +3,7 @@ use std::ffi::c_char;
 use rs_flow1000_parse::base_lib::init_key;
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
   fn cfb_file_streaming_v2(
     w: *const u32,

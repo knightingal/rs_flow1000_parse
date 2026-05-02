@@ -103,7 +103,7 @@ fn simple_dll_function_return_heap_point() -> *const c_char {
 }
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
   #[allow(dead_code)]
   fn key_expansion(key: *const u8, w: *mut u32);

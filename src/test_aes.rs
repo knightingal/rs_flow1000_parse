@@ -9,7 +9,7 @@ mod tests {
 use libc::c_char;
 
 #[cfg(reallink)]
-#[link(name = "cfb_decode")]
+#[link(name = "cfbdecode")]
 extern "C" {
 
   fn cfb_file_streaming_v2(

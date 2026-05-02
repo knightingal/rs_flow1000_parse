@@ -6,7 +6,7 @@ use serde_derive::Serialize;
 use std::ptr::null_mut;
 
 #[cfg(reallink)]
-#[link(name = "frame_decode")]
+#[link(name = "framedecode")]
 extern "C" {
   fn video_meta_info(file_url: *const c_char) -> *mut VideoMetaInfo;
 }
