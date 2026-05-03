@@ -3,7 +3,7 @@ use std::{ffi::CString, fs::DirBuilder};
 
 use rs_flow1000_parse::base_lib::init_key;
 use rs_flow1000_parse::{
-  base_lib::{get_sqlite_connection, linux_init, query_mount_configs, IS_LINUX},
+  base_lib::{get_sqlite_connection, os_init, query_mount_configs, IS_LINUX},
   entity::VideoEntity,
 };
 use rusqlite::named_params;
@@ -22,7 +22,7 @@ extern "C" {
 fn main() {
   let id = 985;
 
-  linux_init();
+  os_init();
 
   init_key();
 

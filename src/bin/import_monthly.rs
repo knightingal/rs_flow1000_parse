@@ -1,10 +1,10 @@
-use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, linux_init, parse_dir_path, parse_image_size_by_file_name}, designation::parse_designation, video_name_util::{parse_video_cover, parse_video_meta_info}};
+use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path, parse_image_size_by_file_name}, designation::parse_designation, video_name_util::{parse_video_cover, parse_video_meta_info}};
 use rusqlite::named_params;
 
 fn main() {
   println!("import monthly videos!");
 
-  linux_init();
+  os_init();
 
   let base_index: u32 = 4;
   let sub_dir: String = String::from("/202512");

@@ -13,6 +13,7 @@ extern "C" {
 }
 
 pub static mut IS_LINUX: Option<&bool> = None;
+pub static mut IS_MACOS: Option<&bool> = None;
 
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   let mut byte_array: [u8; 32] = [0; 32];
@@ -23,7 +24,7 @@ pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   byte_array
 }
 
-pub fn linux_init() {
+pub fn os_init() {
   let is_linux = Box::new(
     System::name().unwrap().contains("Linux")
       || System::name().unwrap() == "Deepin"
@@ -31,6 +32,13 @@ pub fn linux_init() {
   );
   unsafe {
     IS_LINUX = Some(Box::leak(is_linux));
+  }
+
+  let is_macos = Box::new(
+    System::name().unwrap().contains("Darwin")
+  );
+  unsafe {
+    IS_MACOS = Some(Box::leak(is_macos));
   }
 }
 

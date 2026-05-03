@@ -1,13 +1,13 @@
 use std::{fs::File, io::{Read, Seek, SeekFrom, Write}, path::Path};
 
-use rs_flow1000_parse::{base_lib::{get_sqlite_connection, linux_init, query_mount_configs, video_entity_to_file_path}, entity::VideoEntity};
+use rs_flow1000_parse::{base_lib::{get_sqlite_connection, os_init, query_mount_configs, video_entity_to_file_path}, entity::VideoEntity};
 use rusqlite::{Connection, named_params};
 
 
 fn main() {
   println!("concat cover!");
 
-  linux_init();
+  os_init();
 
   let mount_config_list = query_mount_configs();
   let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();

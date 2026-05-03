@@ -1,8 +1,8 @@
-use rs_flow1000_parse::base_lib::{linux_init, parse_image_size_by_id, scan_all_by_id, update_cover_size_by_id};
+use rs_flow1000_parse::base_lib::{os_init, parse_image_size_by_id, scan_all_by_id, update_cover_size_by_id};
 
 fn main() {
 
-  linux_init();
+  os_init();
 
   let size_list = scan_all_by_id(|id| {
     println!("id: {}", id);
