@@ -7,6 +7,7 @@ use std::{
 };
 
 
+use rs_flow1000_parse::base_lib::IS_MACOS;
 use serde_json::{Value, json};
 
 use axum::{
@@ -243,6 +244,8 @@ pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32
   unsafe {
     dir_path_name = if *IS_LINUX.unwrap() {
       "dir_path"
+    } else if *IS_MACOS.unwrap() {
+      "mac_dir_path"
     } else {
       "win_dir_path"
     }
@@ -313,6 +316,8 @@ pub async fn video_exist_handler(
     unsafe {
       dir_path_name = if *IS_LINUX.unwrap() {
         "dir_path"
+      } else if *IS_MACOS.unwrap() {
+        "mac_dir_path"
       } else {
         "win_dir_path"
       }
@@ -437,6 +442,8 @@ pub async fn video_stream_handler(
     unsafe {
       dir_path_name = if *IS_LINUX.unwrap() {
         "dir_path"
+      } else if *IS_MACOS.unwrap() {
+        "mac_dir_path"
       } else {
         "win_dir_path"
       }
