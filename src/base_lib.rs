@@ -58,6 +58,8 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
   unsafe {
     dir_path_name = if *IS_LINUX.unwrap() {
       "dir_path"
+    } else if *IS_MACOS.unwrap() {
+      "mac_dir_path"
     } else {
       "win_dir_path"
     }
