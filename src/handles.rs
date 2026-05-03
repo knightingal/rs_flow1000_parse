@@ -16,7 +16,7 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter};
 
 use crate::{
-  base_lib::{IS_LINUX, check_exist_by_video_file_name, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{IS_LINUX, IS_MACOS, check_exist_by_video_file_name, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
 };
 
 
@@ -897,6 +897,8 @@ pub async fn cfb_video_by_id_handler(
   unsafe {
     dir_path_name = if *IS_LINUX.unwrap() {
       "dir_path"
+    } else if *IS_MACOS.unwrap() {
+      "mac_dir_path"
     } else {
       "win_dir_path"
     }
@@ -986,6 +988,8 @@ pub async fn cfb_video_by_path_handler(
   unsafe {
     dir_path_name = if *IS_LINUX.unwrap() {
       "dir_path"
+    } else if *IS_MACOS.unwrap() {
+      "mac_dir_path"
     } else {
       "win_dir_path"
     }
