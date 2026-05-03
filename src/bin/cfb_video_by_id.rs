@@ -1,7 +1,7 @@
 use std::ffi::c_char;
 use std::{ffi::CString, fs::DirBuilder};
 
-use rs_flow1000_parse::base_lib::init_key;
+use rs_flow1000_parse::base_lib::{IS_MACOS, init_key};
 use rs_flow1000_parse::{
   base_lib::{get_sqlite_connection, os_init, query_mount_configs, IS_LINUX},
   entity::VideoEntity,
@@ -36,6 +36,8 @@ fn main() {
   unsafe {
     dir_path_name = if *IS_LINUX.unwrap() {
       "dir_path"
+    } else if *IS_MACOS.unwrap() {
+      "mac_dir_path"
     } else {
       "win_dir_path"
     }
