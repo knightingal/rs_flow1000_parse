@@ -8,6 +8,10 @@ fn main() {
   } else {
     println!("cargo::rustc-cfg=mocklink");
   }
+
+  if std::env::consts::OS.eq("macos") {
+    println!("cargo::rustc-link-search=native=/usr/local/lib");
+  }
   println!("cargo::rustc-check-cfg=cfg(reallink)");
   println!("cargo::rustc-check-cfg=cfg(mocklink)");
 }
