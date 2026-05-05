@@ -74,13 +74,10 @@ pub async fn image_size_by_id_handler(Path(id): Path<u32>) -> (StatusCode, Json<
 }
 
 pub async fn image_size_by_all_handler() -> StatusCode {
-
-  let size_vec = scan_all_by_id(|id| {
+  let _ = scan_all_by_id(|id| {
     let (width, height) = parse_image_size_by_id(id).unwrap();
-
     return (width, height);
   });
-  
 
   StatusCode::OK
 }
