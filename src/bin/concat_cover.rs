@@ -53,6 +53,13 @@ fn main() {
 
   let concat_file_name = base_mount.dir_path.clone() + "/covers" + covers[0].2.as_str();
   let concat_path = Path::new(&concat_file_name).parent().unwrap();
+  if !concat_path.exists() {
+    let create_result = std::fs::create_dir(concat_path);
+    if create_result.is_err() {
+      println!("create {:?} failed, {:?}",concat_path, create_result);
+      return;
+    }
+  }
   let concat_path_name = concat_path.join("main.class");
 
   if concat_path_name.exists() {
