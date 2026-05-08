@@ -271,7 +271,34 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
     ":video_frame_count": meta_info.video_frame_count,
     ":id": id
   });
+
+
+  // do concat cover
+  let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
+        id, video_file_name, base_index, dir_path, cover_file_name
+      from 
+        video_info 
+      where 
+        id = :id",
+    )
+    .unwrap();
+  let dir_names: Vec<String> = stmt.query_map(
+    named_params! {":id": id}, |row| {
+
+      let dir_path: String = row.get_unwrap("dir_path");
+      Result::Ok(dir_path)
+    })
+    .unwrap().map(|it| it.unwrap())
+    .collect();
+
+  concat_cover(dir_names[0].clone());
 }
+
+
 
 pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
