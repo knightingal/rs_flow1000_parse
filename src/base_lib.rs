@@ -186,7 +186,7 @@ pub fn init_key() {
 
 }
 
-pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String)>{
+pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
 
   let mount_config_list = query_mount_configs();
 
@@ -203,7 +203,7 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String)>{
         id = :id",
     )
     .unwrap();
-  let file_names: Vec<(u32, String, String)> = stmt
+  let file_names: Vec<(u32, String, String, String)> = stmt
     .query_map(named_params! {":id": id}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
@@ -213,11 +213,11 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String)>{
       println!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
-        id, video_file_name, cover_file_name, dir_path, base_index
+        id, video_file_name, cover_file_name, dir_path.clone(), base_index
       ), &mount_config_list);
       println!("{}", cover_full_name);
 
-      Result::Ok((id, video_full_name, cover_full_name))
+      Result::Ok((id, video_full_name, cover_full_name, dir_path))
     })
     .unwrap()
     .map(|it| it.unwrap())
@@ -273,29 +273,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   });
 
 
-  // do concat cover
-  let sqlite_conn = get_sqlite_connection();
 
-  let mut stmt = sqlite_conn
-    .prepare(
-      "select 
-        id, video_file_name, base_index, dir_path, cover_file_name
-      from 
-        video_info 
-      where 
-        id = :id",
-    )
-    .unwrap();
-  let dir_names: Vec<String> = stmt.query_map(
-    named_params! {":id": id}, |row| {
-
-      let dir_path: String = row.get_unwrap("dir_path");
-      Result::Ok(dir_path)
-    })
-    .unwrap().map(|it| it.unwrap())
-    .collect();
-
-  concat_cover(dir_names[0].clone());
 }
 
 

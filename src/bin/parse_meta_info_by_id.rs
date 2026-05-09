@@ -9,7 +9,7 @@ fn main() {
 
   file_names
     .into_iter()
-    .for_each(|(id, video_file_name, cover_file_name)| {
+    .for_each(|(id, video_file_name, cover_file_name, _)| {
       parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
     });
 }
