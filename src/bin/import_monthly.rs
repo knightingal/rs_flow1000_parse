@@ -1,13 +1,20 @@
 use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path, parse_image_size_by_file_name}, designation::parse_designation, video_name_util::{parse_video_cover, parse_video_meta_info}};
 use rusqlite::named_params;
+use std::env;
 
 fn main() {
   println!("import monthly videos!");
 
+  let args: Vec<String> = env::args().collect();
+  if args.len() < 3 {
+    println!("invalid args. input args to indicate base_index and path such as \"3 /202512\"");
+    return;
+  }
+
   os_init();
 
-  let base_index: u32 = 4;
-  let sub_dir: String = String::from("/202512");
+  let base_index: u32 = args[1].parse().unwrap();
+  let sub_dir: String = args[2].clone();
 
   println!("{}", base_index);
   println!("{}", sub_dir);
