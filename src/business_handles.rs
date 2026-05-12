@@ -252,7 +252,7 @@ pub async fn video_rate_handler(
 
 #[derive(Deserialize)]
 pub struct DeleteVideoParam {
-  duplicate_del: bool
+  // duplicate_del: bool
 }
 
 pub async fn delete_video_handler(
