@@ -1,4 +1,5 @@
-use rs_flow1000_parse::base_lib::{os_init, parse_image_size_by_id, scan_all_by_id, update_cover_size_by_id};
+use rs_flow1000_parse::base_lib::{get_sqlite_connection, os_init, parse_image_size_by_id, scan_all_by_id};
+use rusqlite::named_params;
 
 fn main() {
 
@@ -25,4 +26,11 @@ fn main() {
       }
     }
   });
+}
+
+pub fn update_cover_size_by_id(id: u32, width: u32, height: u32) -> rusqlite::Result<()> {
+  let sqlite_conn = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare("update video_info set cover_width = :width, cover_height = :height where id = :id").unwrap();
+  stmt.execute(named_params! {":width": width, ":height": height, ":id": id})?;
+  Ok(())
 }
