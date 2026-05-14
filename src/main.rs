@@ -9,8 +9,8 @@ use business_handles::{
 use handles::{
   all_duplicate_cover_handler, all_duplicate_video_handler, designation_search_handler, generate_video_snapshot_handler,
   init_video_handler, move_cover_handler, parse_designation_all_handler, parse_designation_handler,
-  parse_meta_info_all_handler, snapshot_handler, sync_mysql2sqlite_mount_config_handler,
-  sync_mysql2sqlite_video_info_handler, video_detail_handler, video_meta_info_handler
+  parse_meta_info_all_handler, snapshot_handler,
+  video_detail_handler, video_meta_info_handler
 };
 use hyper::StatusCode;
 use serde_derive::{Deserialize, Serialize};
@@ -158,14 +158,6 @@ async fn main() {
     // mantain
     .route("/", get(root))
     .route("/init-video/:base_index/*sub_dir", get(init_video_handler))
-    .route(
-      "/sync-mysql2sqlite-video-info",
-      get(sync_mysql2sqlite_video_info_handler),
-    )
-    .route(
-      "/sync-mysql2sqlite-mount-config",
-      get(sync_mysql2sqlite_mount_config_handler),
-    )
     .route("/users/name/:name/age/:age", post(create_user_handler))
     .route(
       "/parse-designation/:base_index/*sub_dir",
