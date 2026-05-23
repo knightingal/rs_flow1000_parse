@@ -205,27 +205,29 @@ pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) 
   let mut main_patition_path: String = String::from("/home/knightingal/linux1000/");
 
   if sub_dir.ends_with(".avif.png") {
-    let real_file_name = sub_dir.replace(".avif.png", ".avif");
-    main_patition_path.push_str(&real_file_name);
-
-    let video_name = CString::new(main_patition_path.as_str()).unwrap();
-    unsafe {
-      let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
-      let len = snapshot_st.buff_len.try_into().unwrap();
-      let slice = slice::from_raw_parts(snapshot_st.buff, len);
-      let buff: Vec<u8> = Vec::from(slice);
-      av_free_wrap(snapshot_st.buff);
-      // libc::free(snapshot_st.buff as *mut c_void);
-      response_builder.body(Body::from(buff)).unwrap()
-    }
+    let buff = trans_avif_to_png(main_patition_path, sub_dir);
+    response_builder.body(Body::from(buff)).unwrap()
   } else {
     main_patition_path.push_str(&sub_dir);
     let start = 0;
-    let mock_stream = VideoStream::new(start, &main_patition_path);
-    response_builder.body(Body::from_stream(mock_stream)).unwrap()
+    let image_stream = VideoStream::new(start, &main_patition_path);
+    response_builder.body(Body::from_stream(image_stream)).unwrap()
   }
+}
 
+fn trans_avif_to_png(mut main_patition_path: String, file_name: String) -> Vec<u8> {
+  let real_file_name = file_name.replace(".avif.png", ".avif");
+  main_patition_path.push_str(&real_file_name);
 
+  let video_name = CString::new(main_patition_path.as_str()).unwrap();
+  unsafe {
+    let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
+    let len = snapshot_st.buff_len.try_into().unwrap();
+    let slice = slice::from_raw_parts(snapshot_st.buff, len);
+    let buff: Vec<u8> = Vec::from(slice);
+    av_free_wrap(snapshot_st.buff);
+    return buff;
+  }
 }
 
 
