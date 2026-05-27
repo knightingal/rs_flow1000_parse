@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek, SeekFrom, Write}, path::Path};
+use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek, SeekFrom, Write}, path::Path, sync::OnceLock};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -12,8 +12,8 @@ extern "C" {
   fn init_inner_key_expansion(key: *const u8);
 }
 
-pub static mut IS_LINUX: Option<&bool> = None;
-pub static mut IS_MACOS: Option<&bool> = None;
+pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
+pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   let mut byte_array: [u8; 32] = [0; 32];
@@ -25,21 +25,14 @@ pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
 }
 
 pub fn os_init() {
-  let is_linux = Box::new(
+  let is_linux =
     System::name().unwrap().contains("Linux")
       || System::name().unwrap() == "Deepin"
-      || System::name().unwrap().contains("openSUSE"),
-  );
-  unsafe {
-    IS_LINUX = Some(Box::leak(is_linux));
-  }
+      || System::name().unwrap().contains("openSUSE");
+  let _ = IS_LINUX.set(is_linux);
 
-  let is_macos = Box::new(
-    System::name().unwrap().contains("Darwin")
-  );
-  unsafe {
-    IS_MACOS = Some(Box::leak(is_macos));
-  }
+  let is_macos = System::name().unwrap().contains("Darwin");
+  let _ = IS_MACOS.set(is_macos);
 }
 
 pub fn get_sqlite_connection() -> Connection {
@@ -50,14 +43,12 @@ pub fn get_sqlite_connection() -> Connection {
 }
 
 pub fn chois_dir_path_field_name_by_os() -> String {
-  unsafe {
-    if *IS_LINUX.unwrap() {
-      "dir_path".into()
-    } else if *IS_MACOS.unwrap() {
-      "mac_dir_path".into()
-    } else {
-      "win_dir_path".into()
-    }
+  if *IS_LINUX.get().unwrap_or(&false) {
+    "dir_path".into()
+  } else if *IS_MACOS.get().unwrap_or(&false) {
+    "mac_dir_path".into()
+  } else {
+    "win_dir_path".into()
   }
 }
 

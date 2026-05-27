@@ -813,16 +813,13 @@ pub async fn cfb_video_by_id_handler(
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select vi.id, ");
-  let dir_path_name: &str;
-  unsafe {
-    dir_path_name = if *IS_LINUX.unwrap() {
-      "dir_path"
-    } else if *IS_MACOS.unwrap() {
-      "mac_dir_path"
-    } else {
-      "win_dir_path"
-    }
-  }
+  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
+    "dir_path"
+  } else if *IS_MACOS.get().unwrap_or(&false) {
+    "mac_dir_path"
+  } else {
+    "win_dir_path"
+  };
   sql += "mbd.";
   sql += dir_path_name;
   sql += " as mount_path, vi.video_file_name, vi.base_index, mbd.url_prefix, mbd.api_version, vi.dir_path 
@@ -904,16 +901,13 @@ pub async fn cfb_video_by_path_handler(
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select id, ");
-  let dir_path_name: &str;
-  unsafe {
-    dir_path_name = if *IS_LINUX.unwrap() {
-      "dir_path"
-    } else if *IS_MACOS.unwrap() {
-      "mac_dir_path"
-    } else {
-      "win_dir_path"
-    }
-  }
+  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
+    "dir_path"
+  } else if *IS_MACOS.get().unwrap_or(&false) {
+    "mac_dir_path"
+  } else {
+    "win_dir_path"
+  };
   sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
   let mount_config = sqlite_conn
