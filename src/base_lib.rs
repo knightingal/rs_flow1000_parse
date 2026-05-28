@@ -15,6 +15,7 @@ extern "C" {
 pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
 pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 
+/// Convert a 64-char hex string into a 32-byte array.
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   let mut byte_array: [u8; 32] = [0; 32];
   for i in 0..32 {
@@ -24,6 +25,7 @@ pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   byte_array
 }
 
+/// Detect the current OS and set the global `IS_LINUX` / `IS_MACOS` flags.
 pub fn os_init() {
   let is_linux =
     System::name().unwrap().contains("Linux")
@@ -35,6 +37,7 @@ pub fn os_init() {
   let _ = IS_MACOS.set(is_macos);
 }
 
+/// Open a SQLite connection using the `DB_PATH` env var (defaults to a hard-coded path).
 pub fn get_sqlite_connection() -> Connection {
   let db_path_env = env::var("DB_PATH")
     .unwrap_or_else(|_| String::from("/home/knightingal/source/keys/mp41000.db"));
@@ -42,6 +45,7 @@ pub fn get_sqlite_connection() -> Connection {
   return conn;
 }
 
+/// Return the column name for `dir_path` depending on the current OS.
 pub fn chois_dir_path_field_name_by_os() -> String {
   if *IS_LINUX.get().unwrap_or(&false) {
     "dir_path".into()
@@ -52,6 +56,7 @@ pub fn chois_dir_path_field_name_by_os() -> String {
   }
 }
 
+/// Query all mount configs from the `mp4_base_dir` table, using the OS-specific dir_path column.
 pub fn query_mount_configs() -> Vec<MountConfig> {
 
   let sqlite_conn = get_sqlite_connection();
@@ -79,6 +84,7 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
 }
 
 
+/// Resolve a `VideoEntity` to its full video path, cover path, and directory path on disk.
 pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
   let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
   let mut video_path = mount_config.dir_path.clone();
@@ -98,6 +104,7 @@ pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec
 } 
 
 
+/// List file names and sizes in a directory, excluding `.torrent` files, sorted by modification time descending.
 pub fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
   let mut file_entry_list: Vec<DirEntry> = fs::read_dir(dir_path)?
     .map(|res| res.unwrap())
@@ -126,6 +133,7 @@ fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
 }
 
 
+/// Check whether a video record with the given dir_path, base_index, and video_file_name already exists.
 pub fn check_exist_by_video_file_name(
   dir_path: &String,
   base_index: u32,
@@ -158,6 +166,7 @@ pub fn check_exist_by_video_file_name(
   count != 0
 }
 
+/// Initialize the CFB decryption key from the `CFB_KEY` env var (falls back to a hard-coded key).
 pub fn init_key() {
 
   let cfb_key = env::var("CFB_KEY");
@@ -177,6 +186,8 @@ pub fn init_key() {
 
 }
 
+/// Look up full video and cover file paths by video ID.
+/// Returns `(id, video_full_path, cover_full_path, dir_path)`.
 pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
 
   let mount_config_list = query_mount_configs();
@@ -216,6 +227,7 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
   return file_names;
 }
 
+/// Parse video metadata (resolution, frame rate, duration, etc.) and update the `video_info` row.
 pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_file_name: String) {
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn
@@ -269,6 +281,9 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
 
 
 
+/// Locate the cover image for a video by ID.
+/// Returns `(real_file_name, cover_offset, content_length, extension)`.
+/// If `cover_offset` is 0 the standalone cover file is used; otherwise the concatenated `main.class` archive.
 pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
   let mount_config_list = query_mount_configs();
@@ -321,6 +336,7 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 }
 
 
+/// Parse the width and height of a video's cover image by ID.
 pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
 
   let (real_file_name, start, _, extension) = find_cover_by_id(id);
@@ -338,6 +354,7 @@ pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
   }
 }
 
+/// Iterate over all video IDs and apply `f` to each, collecting the results.
 pub fn scan_all_by_id<T, F>(mut f: F) -> Vec<T>
 where 
   F: FnMut(u32) -> T,
@@ -352,6 +369,7 @@ where
 }
 
 
+/// Query video entities under a specific sub-directory and base index, applying `f` to each.
 pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f: F) -> Vec<T> 
   where F: FnMut(VideoEntity) -> T
 {
@@ -384,6 +402,8 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
   return selected_iter;
 }
 
+/// Concatenate all cover images in a directory into a single `main.class` archive with a CAFEBABE header,
+/// and persist each cover's byte offset in the `video_info` table.
 pub fn concat_cover(dir_name: String) {
 
   let mount_config_list = query_mount_configs();
