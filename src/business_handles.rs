@@ -535,6 +535,7 @@ pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, J
   (StatusCode::OK, header, Json::from(statistic))
 }
 
+// NOTE: Intentional manual Future implementation — kept as a learning exercise.
 pub fn query_tags_handler() -> QueryTagsFuture {
   QueryTagsFuture {
     st: Arc::new(Mutex::new(St {
