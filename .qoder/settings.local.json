@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git add -A && git commit -m \"Add note: manual Future impl is a learning exercise\")"
-    ]
-  }
-}
