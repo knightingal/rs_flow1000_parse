@@ -45,9 +45,37 @@
 - **Files:** `src/handles.rs:543`, `src/handles.rs:869`, `src/handles.rs:990`
 - **Details:** Blocking IO and CPU-bound work inside async handlers should run on Tokio's blocking thread pool, not the async worker threads.
 
-### [ ] Simplify `query_tags_handler` custom Future
+### ~~[ ] Simplify `query_tags_handler` custom Future~~ *(Dismissed — intentional learning exercise)*
 - **File:** `src/business_handles.rs:538-596`
-- **Details:** Hand-written `Future` with `Arc<Mutex<St>>` and manual waker management is unnecessary. Rewrite as a plain `async fn`.
+- **Details:** The hand-written `Future` implementation is kept as a learning exercise. A note has been added in the source code. Below is the simplified `async fn` equivalent for future reference:
+
+  ```rust
+  use tokio::task;
+
+  pub async fn query_tags_handler() -> (StatusCode, HeaderMap, Json<Vec<TagEntity>>) {
+      let tags = task::spawn_blocking(|| {
+          let sqlite_conn = get_sqlite_connection();
+          let mut stmt = sqlite_conn.prepare("select id, tag from tag")?;
+          let tags: Vec<TagEntity> = stmt
+              .query_map({}, |row| {
+                  Ok(TagEntity {
+                      id: row.get("id")?,
+                      tag: row.get("tag")?,
+                  })
+              })?
+              .collect::<Result<Vec<_>, _>>()?;
+          Ok::<Vec<TagEntity>, rusqlite::Error>(tags)
+      })
+      .await
+      .unwrap_or_else(|_| vec![]);
+
+      let mut header = HeaderMap::new();
+      header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+      header.insert(CONTENT_TYPE, "application/json; charset=utf-8".parse().unwrap());
+
+      (StatusCode::OK, header, Json(tags))
+  }
+  ```
 
 ### [ ] Cache mount config queries
 - **Details:** `query_mount_configs()` is called repeatedly per request. Cache results with `std::sync::OnceLock` or similar, refreshing on demand.
