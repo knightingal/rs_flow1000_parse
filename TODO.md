@@ -23,7 +23,7 @@
   ```
   Always use parameterized queries (`named_params! {":id": id}`).
 
-### [ ] Add null checks for FFI raw pointers
+### [x] Add null checks for FFI raw pointers
 - **Files:** `src/handles.rs`, `src/video_name_util.rs`, `src/stream_handlers.rs`
 - **Details:** C library return pointers are dereferenced without null checks.
   - `video_name_util.rs:19-28` — `p_meta_info` could be null
