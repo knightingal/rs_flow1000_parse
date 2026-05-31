@@ -16,15 +16,17 @@ fn video_meta_info(_: *const c_char) -> *mut VideoMetaInfo {
   return null_mut();
 }
 
-pub fn parse_video_meta_info(video_name: &String) -> VideoMetaInfo {
-  let meta_info = unsafe {
+pub fn parse_video_meta_info(video_name: &String) -> Option<VideoMetaInfo> {
+  unsafe {
     let video_name = CString::new(video_name.as_str()).unwrap();
     let p_meta_info = video_meta_info(video_name.as_ptr());
+    if p_meta_info.is_null() {
+      return None;
+    }
     let meta_info = (*p_meta_info).clone();
     libc::free(p_meta_info as *mut c_void);
-    meta_info
-  };
-  meta_info
+    Some(meta_info)
+  }
 }
 
 pub fn parse_video_cover(dir_list: &Vec<(String, u64)>) -> Vec<VideoCover> {
