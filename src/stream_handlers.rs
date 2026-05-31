@@ -222,6 +222,9 @@ fn trans_avif_to_png(mut main_patition_path: String, file_name: String) -> Vec<u
   let video_name = CString::new(main_patition_path.as_str()).unwrap();
   unsafe {
     let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
+    if snapshot_st.buff.is_null() {
+      return Vec::new();
+    }
     let len = snapshot_st.buff_len.try_into().unwrap();
     let slice = slice::from_raw_parts(snapshot_st.buff, len);
     let buff: Vec<u8> = Vec::from(slice);

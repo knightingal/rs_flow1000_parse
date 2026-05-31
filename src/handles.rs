@@ -641,6 +641,13 @@ pub async fn snapshot_handler(
   let snapshot_st = snapshot(video_name, *time_param.unwrap());
   println!("snapshot_st len:{}", snapshot_st.buff_len);
 
+  if snapshot_st.buff.is_null() {
+    return Response::builder()
+      .status(StatusCode::INTERNAL_SERVER_ERROR)
+      .body(Body::from("failed to generate snapshot"))
+      .unwrap();
+  }
+
   let content_type_value = String::from("image/png");
   let mut header = HeaderMap::new();
   header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
