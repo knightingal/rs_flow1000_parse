@@ -144,7 +144,10 @@ pub async fn video_meta_info_handler(
     (video_name, file_size)
   };
 
-  let mut meta_info = parse_video_meta_info(&video_name);
+  let mut meta_info = match parse_video_meta_info(&video_name) {
+    Some(info) => info,
+    None => return (StatusCode::NOT_FOUND, Json(Option::None)),
+  };
   meta_info.size = file_size;
 
   (StatusCode::OK, Json(Some(meta_info)))
