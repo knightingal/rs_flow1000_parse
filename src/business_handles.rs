@@ -482,42 +482,61 @@ pub async fn query_tags_by_video_handler(
 }
 
 pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
-  let (sql1, sql2) = if id != 0 {
+  let (sql1, sql2, has_filter) = if id != 0 {
     (
-      "select video_size, cover_size from video_info where base_index = ".to_string() + &id.to_string(),
-      "select sum(video_size) from video_info where rate = 3 and base_index = ".to_string() + &id.to_string(),
+      "select video_size, cover_size from video_info where base_index = :base_index",
+      "select sum(video_size) from video_info where rate = 3 and base_index = :base_index",
+      true,
     )
   } else {
     (
-      "select video_size, cover_size from video_info".to_string(),
-      "select sum(video_size) from video_info where rate = 3".to_string(),
+      "select video_size, cover_size from video_info",
+      "select sum(video_size) from video_info where rate = 3",
+      false,
     )
   };
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn
-    .prepare(sql1.as_str())
+    .prepare(sql1)
     .unwrap();
-  let sizes: Vec<(u64, u64)> = stmt
-    .query_map({}, |row| {
-      Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
-    })
-    .unwrap()
-    .map(|it| it.unwrap())
-    .collect();
+  let sizes: Vec<(u64, u64)> = if has_filter {
+    stmt
+      .query_map(named_params! {":base_index": id}, |row| {
+        Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
+      })
+      .unwrap()
+      .map(|it| it.unwrap())
+      .collect()
+  } else {
+    stmt
+      .query_map([], |row| {
+        Ok((row.get_unwrap("video_size"), row.get_unwrap("cover_size")))
+      })
+      .unwrap()
+      .map(|it| it.unwrap())
+      .collect()
+  };
 
   let sum = sizes
     .into_iter()
     .reduce(|acc, e| (acc.0 + e.0, acc.1 + e.1))
     .unwrap();
-  
+
   let mut stmt = sqlite_conn
-    .prepare(sql2.as_str())
+    .prepare(sql2)
     .unwrap();
 
-  let deleted_size = stmt.query_row({}, |row| {
-    let v: u64 = row.get_unwrap(0);
-    Ok(v)
-  }).unwrap();
+  let deleted_size = if has_filter {
+    stmt.query_row(named_params! {":base_index": id}, |row| {
+      let v: u64 = row.get_unwrap(0);
+      Ok(v)
+    }).unwrap()
+  } else {
+    stmt.query_row([], |row| {
+      let v: u64 = row.get_unwrap(0);
+      Ok(v)
+    }).unwrap()
+  };
 
 
   let statistic = StatisticEntity {
