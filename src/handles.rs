@@ -717,7 +717,10 @@ pub async fn init_video_handler(
     let mut dir_path_tmp = dir_path.clone();
     dir_path_tmp += "/";
     dir_path_tmp += video_cover_entry.video_file_name.as_str();
-    let meta_info = parse_video_meta_info(&dir_path_tmp);
+    let meta_info = match parse_video_meta_info(&dir_path_tmp) {
+      Some(info) => info,
+      None => continue,
+    };
     let path = std::path::Path::new(&dir_path_tmp);
     let video_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
