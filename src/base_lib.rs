@@ -264,16 +264,18 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   println!("parse file:{}", video_file_name);
 
   let meta_info = parse_video_meta_info(&video_file_name);
-  let _ = stmt.execute(named_params! {
-    ":width": meta_info.width,
-    ":height": meta_info.height,
-    ":frame_rate": meta_info.frame_rate,
-    ":video_size": video_file_size,
-    ":cover_size": cover_file_size,
-    ":duration":meta_info.duratoin,
-    ":video_frame_count": meta_info.video_frame_count,
-    ":id": id
-  });
+  if let Some(meta_info) = meta_info {
+    let _ = stmt.execute(named_params! {
+      ":width": meta_info.width,
+      ":height": meta_info.height,
+      ":frame_rate": meta_info.frame_rate,
+      ":video_size": video_file_size,
+      ":cover_size": cover_file_size,
+      ":duration":meta_info.duratoin,
+      ":video_frame_count": meta_info.video_frame_count,
+      ":id": id
+    });
+  }
 
 
 
