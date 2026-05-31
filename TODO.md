@@ -15,7 +15,7 @@
   - `handles.rs:400` — `designation.char_final.unwrap()`
   - `business_handles.rs:241` — `result.unwrap().clone()`
 
-### [ ] Fix SQL injection risk from string concatenation
+### [x] Fix SQL injection risk from string concatenation
 - **File:** `src/business_handles.rs:485-494`
 - **Details:** `statistic_handler` builds SQL via string concatenation:
   ```rust
