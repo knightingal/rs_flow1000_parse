@@ -117,20 +117,20 @@ async fn main() {
 
   unsafe {
     let simple = simple_dll_function();
-    println!("simple:{}", simple);
+    tracing::info!("simple:{}", simple);
     let rust_obj = RustObject { a: 1, b: 1024 };
 
     let simple = simple_dll_function_with_param(&rust_obj);
-    println!("rust_obj.b:{}", rust_obj.b);
-    println!("simple:{}", simple);
+    tracing::info!("rust_obj.b:{}", rust_obj.b);
+    tracing::info!("simple:{}", simple);
 
     let hp = simple_dll_function_return_heap_point();
-    println!("hp:{}", *hp);
+    tracing::info!("hp:{}", *hp);
     libc::free(hp as *mut c_void);
 
     if cfg!(reallink) {
       let rust_object_point = simple_dll_function_return_struct();
-      println!(
+      tracing::info!(
         "rust_object:{}, {}",
         (*rust_object_point).a,
         (*rust_object_point).b
@@ -140,16 +140,16 @@ async fn main() {
       let char_arr_object_point = simple_dll_function_return_char_arr();
       let a_string = CString::from(CStr::from_ptr((*char_arr_object_point).a));
 
-      println!("rust_object:{:?}", a_string);
+      tracing::info!("rust_object:{:?}", a_string);
       libc::free(char_arr_object_point as *mut c_void);
     }
   }
-  println!("{:?}", System::name());
+  tracing::info!("{:?}", System::name());
   let db_path_env = env::var("DB_PATH")
     .unwrap_or_else(|_| String::from("/home/knightingal/source/keys/mp41000.db"));
   let use_mysql = env::var("USE_MYSQL").map_or_else(|_| false, |v| v == "true");
-  println!("use_mysql:{}", use_mysql);
-  println!("db_path:{}", db_path_env);
+  tracing::info!("use_mysql:{}", use_mysql);
+  tracing::info!("db_path:{}", db_path_env);
 
   os_init();
 

@@ -2,10 +2,11 @@ use rs_flow1000_parse::base_lib::{os_init, parse_and_update_meta_info_by_id, vid
 
 fn main() {
 
+  tracing_subscriber::fmt::init();
   os_init();
   let id = 1;
   let file_names = video_file_path_by_id(id);
-  println!("file_names:{:?}", file_names);
+  tracing::info!("file_names:{:?}", file_names);
 
   file_names
     .into_iter()

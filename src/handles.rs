@@ -109,7 +109,7 @@ pub async fn video_detail_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap
 pub async fn video_meta_info_handler(
   Path(sub_dir): Path<String>,
 ) -> (StatusCode, Json<Option<VideoMetaInfo>>) {
-  println!("{}", sub_dir);
+  tracing::debug!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
   let (video_name, file_size): (String, u64) = if path.is_file() {
     let file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
@@ -140,7 +140,7 @@ pub async fn video_meta_info_handler(
       }
     };
 
-    println!("{}", video_name);
+    tracing::debug!("{}", video_name);
     (video_name, file_size)
   };
 
@@ -154,7 +154,7 @@ pub async fn video_meta_info_handler(
 }
 
 pub async fn generate_video_snapshot_handler(Path(sub_dir): Path<String>) -> StatusCode {
-  println!("{}", sub_dir);
+  tracing::debug!("{}", sub_dir);
   let path = std::path::Path::new(&sub_dir);
   let names: Vec<(String, String)> = if path.is_file() {
     let parent = path.parent().unwrap();
@@ -434,8 +434,8 @@ pub async fn designation_search_handler(
 pub async fn parse_designation_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  println!("{}", base_index);
-  println!("{}", sub_dir);
+  tracing::debug!("{}", base_index);
+  tracing::debug!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
   if sub_dir_param.ends_with("/") {
@@ -510,7 +510,7 @@ pub async fn parse_designation_handler(
 pub async fn parse_meta_info_all_handler() -> StatusCode {
   let mount_config_list = query_mount_configs();
 
-  println!("call query video_file_name");
+  tracing::debug!("call query video_file_name");
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
@@ -530,12 +530,12 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
       let dir_path: String = row.get_unwrap("dir_path");
       let base_index: u32 = row.get_unwrap("base_index");
       let id: u32 = row.get_unwrap("id");
-      println!("get file_name:{}, {}", video_file_name, cover_file_name);
+      tracing::debug!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
         id, video_file_name, cover_file_name, dir_path, base_index
       ), &mount_config_list);
-      println!("{}", cover_full_name);
+      tracing::debug!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name))
     })
@@ -544,7 +544,7 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
     .collect();
 
   thread::spawn(move || {
-    println!("thread process");
+    tracing::debug!("thread process");
 
     file_names
       .into_iter()
@@ -562,7 +562,7 @@ pub async fn parse_meta_info_by_id_handler(
 ) -> StatusCode {
   let file_names = video_file_path_by_id(id);
   thread::spawn(move || {
-    println!("thread process");
+    tracing::debug!("thread process");
 
     file_names
       .into_iter()
@@ -639,7 +639,7 @@ pub async fn snapshot_handler(
   let video_name = CString::new(sub_dir.as_str()).unwrap();
   let time_param = params.get("time");
   let snapshot_st = snapshot(video_name, *time_param.unwrap());
-  println!("snapshot_st len:{}", snapshot_st.buff_len);
+  tracing::debug!("snapshot_st len:{}", snapshot_st.buff_len);
 
   if snapshot_st.buff.is_null() {
     return Response::builder()
@@ -697,8 +697,8 @@ impl futures_core::Stream for BuffStream {
 pub async fn init_video_handler(
   Path((base_index, sub_dir)): Path<(u32, String)>,
 ) -> (StatusCode, HeaderMap, Json<Vec<VideoCover>>) {
-  println!("{}", base_index);
-  println!("{}", sub_dir);
+  tracing::debug!("{}", base_index);
+  tracing::debug!("{}", sub_dir);
   let mut sub_dir_param = String::from("/");
   sub_dir_param += &sub_dir;
 
@@ -802,7 +802,7 @@ pub async fn init_video_handler(
     }
   }
 
-  println!("{:?}", video_cover_list);
+  tracing::debug!("{:?}", video_cover_list);
 
   let mut header = HeaderMap::new();
   header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
@@ -1021,7 +1021,7 @@ pub async fn move_cover_handler() {
       target_cover_file.push_str(&video_entity.cover_file_name);
 
       if std::path::Path::new(&cover_path).exists() {
-        println!("copy cover path: {:?} to {:?}", cover_path, target_cover_file);
+        tracing::info!("copy cover path: {:?} to {:?}", cover_path, target_cover_file);
         let _ = fs::copy(cover_path, target_cover_file);
         let _ = get_sqlite_connection().execute(
           "update video_info set moved = 1 where id = :id",

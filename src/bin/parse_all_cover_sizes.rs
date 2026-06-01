@@ -3,10 +3,11 @@ use rusqlite::named_params;
 
 fn main() {
 
+  tracing_subscriber::fmt::init();
   os_init();
 
   let size_list = scan_all_by_id(|id| {
-    println!("id: {}", id);
+    tracing::debug!("id: {}", id);
     let res = parse_image_size_by_id(id);
     if res.is_ok() {
       let (width, height) = res.unwrap();
@@ -19,10 +20,10 @@ fn main() {
   size_list.iter().for_each(|res| {
     if res.is_ok() {
       let (id, width, height) = res.unwrap();
-      println!("id{}, width:{}, heigth:{}",id, width, height);
+      tracing::info!("id{}, width:{}, heigth:{}",id, width, height);
       let update_ret = update_cover_size_by_id(id, width, height);
       if update_ret.is_err() {
-        println!("fail to update id:{}, error:{}", id, update_ret.unwrap_err())
+        tracing::error!("fail to update id:{}, error:{}", id, update_ret.unwrap_err())
       }
     }
   });

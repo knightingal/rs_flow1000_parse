@@ -3,11 +3,12 @@ use rusqlite::named_params;
 use std::{env, fs::File, io};
 
 fn main() {
-  println!("import monthly videos!");
+  tracing_subscriber::fmt::init();
+  tracing::info!("import monthly videos!");
 
   let args: Vec<String> = env::args().collect();
   if args.len() < 3 {
-    println!("invalid args. input args to indicate base_index and path such as \"3 /202512\"");
+    tracing::error!("invalid args. input args to indicate base_index and path such as \"3 /202512\"");
     return;
   }
 
@@ -16,8 +17,8 @@ fn main() {
   let base_index: u32 = args[1].parse().unwrap();
   let sub_dir: String = args[2].clone();
 
-  println!("{}", base_index);
-  println!("{}", sub_dir);
+  tracing::info!("{}", base_index);
+  tracing::info!("{}", sub_dir);
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -59,7 +60,7 @@ fn main() {
     let (width, height) = if image_size_result.is_ok() {
       image_size_result.unwrap()
     } else {
-      println!("failed to parse cover size of {}", video_cover_entry.cover_file_name);
+      tracing::warn!("failed to parse cover size of {}", video_cover_entry.cover_file_name);
       (0, 0)
     };
 
@@ -132,7 +133,7 @@ fn main() {
     }
   }
 
-  println!("{:?}", video_cover_list);
+  tracing::info!("{:?}", video_cover_list);
 }
 
 pub fn parse_image_size_by_file_name(file_name: String) -> io::Result<(u32, u32)> {

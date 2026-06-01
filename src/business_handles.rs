@@ -93,7 +93,7 @@ pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountCon
 pub async fn mp4_dir_handler1(
   Path(base_index): Path<u32>,
 ) -> (StatusCode, HeaderMap, Json<Vec<String>>) {
-  println!("{}", base_index);
+  tracing::debug!("{}", base_index);
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -334,7 +334,7 @@ pub async fn add_tag_handler(Path(tag_name): Path<String>) -> (StatusCode, Heade
 }
 
 pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
-  println!("tag_id:{}, video_id:{}", tag_id, video_id);
+  tracing::debug!("tag_id:{}, video_id:{}", tag_id, video_id);
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -366,7 +366,7 @@ pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (St
 
 
 pub async fn unbind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
-  println!("tag_id:{}, video_id:{}", tag_id, video_id);
+  tracing::debug!("tag_id:{}, video_id:{}", tag_id, video_id);
 
   let sqlite_conn = get_sqlite_connection();
 

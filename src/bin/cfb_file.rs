@@ -14,6 +14,7 @@ extern "C" {
 }
 
 fn main() {
+  tracing_subscriber::fmt::init();
   init_key();
 
   unsafe {
@@ -25,7 +26,7 @@ fn main() {
         "/home/knightingal/demo_video.mp4\0".as_ptr() as *const c_char,
         "/home/knightingal/rust_cfb.mp4.bin\0".as_ptr() as *const c_char,
       );
-      println!("cfb_file_streaming_v2 ret: {}", ret);
+      tracing::info!("cfb_file_streaming_v2 ret: {}", ret);
     }
   }
 }

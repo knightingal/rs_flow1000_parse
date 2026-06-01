@@ -3,17 +3,18 @@ use std::env;
 
 
 fn main() {
-  println!("concat cover!");
+  tracing_subscriber::fmt::init();
+  tracing::info!("concat cover!");
 
   let args: Vec<String> = env::args().collect();
   if args.len() < 2 {
-    println!("invalid arg. input arg to indicate path such as \"/202512\"");
+    tracing::error!("invalid arg. input arg to indicate path such as \"/202512\"");
     return;
   }
 
   let sub_dir: String = args[1].clone();
 
-  println!("sub_dir {}", sub_dir);
+  tracing::info!("sub_dir {}", sub_dir);
 
   os_init();
   let dir_name = sub_dir;

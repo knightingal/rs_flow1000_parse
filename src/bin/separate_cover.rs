@@ -5,7 +5,8 @@ use rusqlite::{Connection, named_params};
 
 
 fn main() {
-  println!("separate cover!");
+  tracing_subscriber::fmt::init();
+  tracing::info!("separate cover!");
 
   os_init();
 
@@ -49,7 +50,7 @@ fn main() {
   }).unwrap().map(|result| {
     result.unwrap()
   }).collect();
-  println!("ids:{:?}", covers);
+  tracing::debug!("ids:{:?}", covers);
 
   let concat_file_name = base_mount.dir_path.clone() + "/covers" + covers[0].2.as_str();
   let concat_path = Path::new(&concat_file_name).parent().unwrap();
@@ -61,7 +62,7 @@ fn main() {
   let mut header: [u8; 4]  = [0, 0, 0, 0];
   let _ = concat_file.read_exact(& mut header);
   if !header.eq(&[0xca, 0xfe, 0xba, 0xbe]) {
-    println!("Error file");
+    tracing::error!("Error file");
     return;
   }
 
@@ -72,7 +73,7 @@ fn main() {
 
     let f_err = File::create(cover_file_name);
     if f_err.is_err() {
-      println!("open cover file error: {}", cover_file_name);
+      tracing::error!("open cover file error: {}", cover_file_name);
       return;
     }
     let mut f = f_err.unwrap();

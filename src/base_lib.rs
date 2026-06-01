@@ -192,7 +192,7 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
 
   let mount_config_list = query_mount_configs();
 
-  println!("call query video_file_name");
+  tracing::debug!("call query video_file_name");
   let sqlite_conn = get_sqlite_connection();
 
   let mut stmt = sqlite_conn
@@ -212,12 +212,12 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
       let dir_path: String = row.get_unwrap("dir_path");
       let base_index: u32 = row.get_unwrap("base_index");
       let id: u32 = row.get_unwrap("id");
-      println!("get file_name:{}, {}", video_file_name, cover_file_name);
+      tracing::debug!("get file_name:{}, {}", video_file_name, cover_file_name);
 
       let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
         id, video_file_name, cover_file_name, dir_path.clone(), base_index
       ), &mount_config_list);
-      println!("{}", cover_full_name);
+      tracing::debug!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name, dir_path))
     })
@@ -261,7 +261,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   }
   let cover_file_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
-  println!("parse file:{}", video_file_name);
+  tracing::debug!("parse file:{}", video_file_name);
 
   let meta_info = parse_video_meta_info(&video_file_name);
   if let Some(meta_info) = meta_info {
@@ -448,14 +448,14 @@ pub fn concat_cover(dir_name: String) {
   }).unwrap().map(|result| {
     result.unwrap()
   }).collect();
-  println!("ids:{:?}", covers);
+  tracing::debug!("ids:{:?}", covers);
 
   let concat_file_name = base_mount.dir_path.clone() + "/covers" + covers[0].2.as_str();
   let concat_path = Path::new(&concat_file_name).parent().unwrap();
   if !concat_path.exists() {
     let create_result = std::fs::create_dir(concat_path);
     if create_result.is_err() {
-      println!("create {:?} failed, {:?}",concat_path, create_result);
+      tracing::error!("create {:?} failed, {:?}",concat_path, create_result);
       return;
     }
   }
@@ -488,7 +488,7 @@ pub fn concat_cover(dir_name: String) {
 
     let f_err = File::open(cover_file_name);
     if f_err.is_err() {
-      println!("open cover file error: {}", cover_file_name);
+      tracing::error!("open cover file error: {}", cover_file_name);
       return;
     }
     let mut f = f_err.unwrap();

@@ -95,7 +95,7 @@ fn only_one_matched(
 }
 
 pub fn sub_string_matched(src: &String, target: &String, start: usize, end: usize) -> bool {
-  println!("parse {} to {}", src, target);
+  tracing::trace!("parse {} to {}", src, target);
   let target_len = target.chars().count();
 
   for i in 0..target_len {
