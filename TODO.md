@@ -34,7 +34,7 @@
 
 ## P1 — High
 
-### [ ] Introduce a SQLite connection pool
+### ~~[ ] Introduce a SQLite connection pool~~ *(Dismissed — hobby project with low concurrency; local SQLite is fast enough without a pool)*
 - **Details:** Every request creates a new `Connection`. Use `r2d2` + `rusqlite` (or `deadpool-sqlite`) to reuse connections.
 
 ### [ ] Guard test modules with `#[cfg(test)]`
