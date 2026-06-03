@@ -1,9 +1,9 @@
 use std::ffi::c_char;
 use std::{ffi::CString, fs::DirBuilder};
 
-use rs_flow1000_parse::base_lib::{IS_MACOS, init_key};
+use rs_flow1000_parse::base_lib::{chois_dir_path_field_name_by_os, init_key};
 use rs_flow1000_parse::{
-  base_lib::{get_sqlite_connection, os_init, query_mount_configs, IS_LINUX},
+  base_lib::{get_sqlite_connection, os_init, query_mount_configs},
   entity::VideoEntity,
 };
 use rusqlite::named_params;
@@ -32,13 +32,7 @@ fn main() {
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select vi.id, ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += "mbd.";
   sql += dir_path_name;
   sql += " as mount_path, vi.video_file_name, vi.base_index, mbd.url_prefix, mbd.api_version, vi.dir_path 

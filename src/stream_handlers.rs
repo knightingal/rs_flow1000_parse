@@ -7,7 +7,7 @@ use std::{
 };
 
 
-use rs_flow1000_parse::base_lib::IS_MACOS;
+
 use serde_json::{Value, json};
 
 use axum::{
@@ -25,8 +25,8 @@ use rusqlite::named_params;
 use crate::handles::SnapshotSt;
 use crate::{
   base_lib::{
-    IS_LINUX, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
-  }, 
+    chois_dir_path_field_name_by_os, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
+  },
   entity::{MountConfig, VideoEntity}
 };
 
@@ -242,13 +242,7 @@ pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32
   }
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select id, ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
   let mount_config = sqlite_conn
@@ -311,13 +305,7 @@ pub async fn video_exist_handler(
     }
     let sqlite_conn = get_sqlite_connection();
     let mut sql = String::from("select id, ");
-    let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-      "dir_path"
-    } else if *IS_MACOS.get().unwrap_or(&false) {
-      "mac_dir_path"
-    } else {
-      "win_dir_path"
-    };
+    let dir_path_name: &str = chois_dir_path_field_name_by_os();
     sql += dir_path_name;
     sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
     let mount_config = sqlite_conn
@@ -434,13 +422,7 @@ pub async fn video_stream_handler(
     }
     let sqlite_conn = get_sqlite_connection();
     let mut sql = String::from("select id, ");
-    let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-      "dir_path"
-    } else if *IS_MACOS.get().unwrap_or(&false) {
-      "mac_dir_path"
-    } else {
-      "win_dir_path"
-    };
+    let dir_path_name: &str = chois_dir_path_field_name_by_os();
     sql += dir_path_name;
     sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
     let mount_config = sqlite_conn

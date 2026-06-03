@@ -11,7 +11,7 @@ use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
 use serde_derive::Deserialize;
 use tokio::task;
 
-use crate::{base_lib::{IS_LINUX, IS_MACOS, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
+use crate::{base_lib::{chois_dir_path_field_name_by_os, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
 
 
 fn get_sqlite_connection() -> Connection {
@@ -59,13 +59,7 @@ pub async fn video_info_handler(
 
 pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
   let mut sql = String::from("select id, ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir ";
 
@@ -98,13 +92,7 @@ pub async fn mp4_dir_handler1(
   let sqlite_conn = get_sqlite_connection();
 
   let mut sql = String::from("select ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;
   sql += " from mp4_base_dir where id = :id";
 
@@ -161,13 +149,7 @@ pub async fn mp4_dir_handler(
   let sqlite_conn = get_sqlite_connection();
 
   let mut sql = String::from("select ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;
   sql += " from mp4_base_dir where id = :id";
 

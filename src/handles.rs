@@ -16,7 +16,7 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter};
 
 use crate::{
-  base_lib::{IS_LINUX, IS_MACOS, check_exist_by_video_file_name, concat_cover, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{chois_dir_path_field_name_by_os, check_exist_by_video_file_name, concat_cover, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
 };
 
 
@@ -826,13 +826,7 @@ pub async fn cfb_video_by_id_handler(
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select vi.id, ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += "mbd.";
   sql += dir_path_name;
   sql += " as mount_path, vi.video_file_name, vi.base_index, mbd.url_prefix, mbd.api_version, vi.dir_path 
@@ -914,13 +908,7 @@ pub async fn cfb_video_by_path_handler(
 
   let sqlite_conn = get_sqlite_connection();
   let mut sql = String::from("select id, ");
-  let dir_path_name: &str = if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path"
-  } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path"
-  } else {
-    "win_dir_path"
-  };
+  let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir where id = :id";
   let mount_config = sqlite_conn

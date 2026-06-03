@@ -94,7 +94,7 @@
   ```
   Create a helper like `json_response<T>(body: T) -> (StatusCode, HeaderMap, Json<T>)`.
 
-### [ ] Centralize OS-specific path field selection
+### [x] Centralize OS-specific path field selection
 - **Files:** `src/base_lib.rs`, `src/handles.rs`, `src/business_handles.rs`, `src/stream_handlers.rs`
 - **Details:** The logic choosing `dir_path` / `mac_dir_path` / `win_dir_path` is duplicated in four files. Extract to a single utility function.
 

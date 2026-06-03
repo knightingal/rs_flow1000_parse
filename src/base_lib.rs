@@ -46,13 +46,13 @@ pub fn get_sqlite_connection() -> Connection {
 }
 
 /// Return the column name for `dir_path` depending on the current OS.
-pub fn chois_dir_path_field_name_by_os() -> String {
+pub fn chois_dir_path_field_name_by_os() -> &'static str {
   if *IS_LINUX.get().unwrap_or(&false) {
-    "dir_path".into()
+    "dir_path"
   } else if *IS_MACOS.get().unwrap_or(&false) {
-    "mac_dir_path".into()
+    "mac_dir_path"
   } else {
-    "win_dir_path".into()
+    "win_dir_path"
   }
 }
 
@@ -63,7 +63,7 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
 
   let mut sql = String::from("select id, ");
   let dir_path_name = chois_dir_path_field_name_by_os();
-  sql += dir_path_name.as_str();
+  sql += dir_path_name;
   sql += " , url_prefix, api_version from mp4_base_dir ";
 
   let mut stmt = sqlite_conn.prepare(sql.as_str()).unwrap();
@@ -71,7 +71,7 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
     .query_map(named_params! {}, |row| {
       Ok(MountConfig {
         id: row.get_unwrap("id"),
-        dir_path: row.get_unwrap(dir_path_name.as_str()),
+        dir_path: row.get_unwrap(dir_path_name),
         url_prefix: row.get_unwrap("url_prefix"),
         api_version: row.get_unwrap("api_version"),
       })
