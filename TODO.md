@@ -37,7 +37,7 @@
 ### ~~[ ] Introduce a SQLite connection pool~~ *(Dismissed — hobby project with low concurrency; local SQLite is fast enough without a pool)*
 - **Details:** Every request creates a new `Connection`. Use `r2d2` + `rusqlite` (or `deadpool-sqlite`) to reuse connections.
 
-### [ ] Guard test modules with `#[cfg(test)]`
+### ~~[ ] Guard test modules with `#[cfg(test)]`~~ *(Dismissed - hobby project)*
 - **File:** `src/main.rs:38-41`
 - **Details:** `test_aes`, `test_designation`, `test_main`, `test_video_name_util` are compiled into release binaries. Wrap them in `#[cfg(test)]` or move to `tests/` directory.
 
