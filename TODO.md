@@ -84,7 +84,7 @@
 
 ## P2 — Medium
 
-### [ ] Extract common response building logic
+### [x] Extract common response building logic
 - **Files:** All handler modules
 - **Details:** The following header setup is duplicated 20+ times:
   ```rust

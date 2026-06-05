@@ -4,14 +4,13 @@ use std::{
 
 use axum::{Json, extract::{Path}};
 use hyper::{
-  header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
 use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
 use serde_derive::Deserialize;
 use tokio::task;
 
-use crate::{base_lib::{chois_dir_path_field_name_by_os, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}};
+use crate::{base_lib::{chois_dir_path_field_name_by_os, video_file_path_by_id, video_info_list_by_sub_dir}, entity::{MountConfig, StatisticEntity, TagEntity, VideoEntity}, util::{cors_json_headers, json_response}};
 
 
 fn get_sqlite_connection() -> Connection {
@@ -46,14 +45,7 @@ pub async fn video_info_handler(
     |video_entity| video_entity
   );
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(selected_video))
+  json_response(selected_video)
 }
 
 
@@ -74,14 +66,7 @@ pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountCon
 
   let mount_config_list = process_sql(sql.as_str(), named_params! {}, cbf);
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(mount_config_list))
+  json_response(mount_config_list)
 }
 
 pub async fn mp4_dir_handler1(
@@ -126,18 +111,7 @@ pub async fn mp4_dir_handler1(
     }
   };
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (
-    StatusCode::OK,
-    header,
-    Json(file_names.into_iter().map(|f| f.0).collect()),
-  )
+  json_response(file_names.into_iter().map(|f| f.0).collect())
 }
 
 pub async fn mp4_dir_handler(
@@ -164,18 +138,7 @@ pub async fn mp4_dir_handler(
   dir_path += &sub_dir;
 
   let file_names = parse_dir_path(&dir_path);
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (
-    StatusCode::OK,
-    header,
-    Json(file_names.unwrap().into_iter().map(|f| f.0).collect()),
-  )
+  json_response(file_names.unwrap().into_iter().map(|f| f.0).collect())
 }
 
 pub async fn video_rate_handler(
@@ -213,14 +176,7 @@ pub async fn video_rate_handler(
     },
   );
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(result.unwrap().clone()))
+  json_response(result.unwrap().clone())
 }
 
 #[derive(Deserialize)]
@@ -237,24 +193,12 @@ pub async fn delete_video_handler(
   let ret = fs::remove_file(&video_files[0].1);
   if ret.is_err() {
     tracing::error!("failed to delete {}, {}", video_files[0].1, ret.unwrap_err().to_string());
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-    return (StatusCode::INTERNAL_SERVER_ERROR, header);
+    return (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers());
   }
   let ret = fs::remove_file(&video_files[0].2);
   if ret.is_err() {
     tracing::error!("failed to delete {}, {}", video_files[0].2, ret.unwrap_err().to_string());
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-    return (StatusCode::INTERNAL_SERVER_ERROR, header);
+    return (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers());
   }
 
   let sqlite_conn = get_sqlite_connection();
@@ -265,14 +209,7 @@ pub async fn delete_video_handler(
     )
     .unwrap();
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header)
+  (StatusCode::OK, cors_json_headers())
 }
 
 pub async fn add_tag_handler(Path(tag_name): Path<String>) -> (StatusCode, HeaderMap, Json<TagEntity>) {
@@ -305,14 +242,7 @@ pub async fn add_tag_handler(Path(tag_name): Path<String>) -> (StatusCode, Heade
     )
     .unwrap();
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(tag_entity))
+  json_response(tag_entity)
 }
 
 pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (StatusCode, HeaderMap) {
@@ -326,23 +256,9 @@ pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (St
     named_params! {":tag_id": tag_id, ":video_id": video_id},
   );
   if ret.is_err() {
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-
-    (StatusCode::INTERNAL_SERVER_ERROR, header)
+    (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers())
   } else {
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-
-    (StatusCode::OK, header)
+    (StatusCode::OK, cors_json_headers())
   }
 }
 
@@ -357,23 +273,9 @@ pub async fn unbind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (
     named_params! {":tag_id": tag_id, ":video_id": video_id},
   );
   if ret.is_err() {
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-
-    (StatusCode::INTERNAL_SERVER_ERROR, header)
+    (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers())
   } else {
-    let mut header = HeaderMap::new();
-    header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-    header.insert(
-      CONTENT_TYPE,
-      "application/json; charset=utf-8".parse().unwrap(),
-    );
-
-    (StatusCode::OK, header)
+    (StatusCode::OK, cors_json_headers())
   }
 }
 
@@ -419,14 +321,7 @@ pub async fn query_videos_by_tag_handler(
       ))
   }).unwrap().map(|it|it.unwrap()).collect();
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json::from(video_entity_vec))
+  json_response(video_entity_vec)
 }
 
 fn repeat_vars(count: usize) -> String {
@@ -453,14 +348,7 @@ pub async fn query_tags_by_video_handler(
     .map(|it| it.unwrap())
     .collect();
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json::from(tag_vec))
+  json_response(tag_vec)
 }
 
 pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, Json<StatisticEntity>) {
@@ -527,13 +415,7 @@ pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, J
     deleted_size: deleted_size / 1024 / 1024 / 1024,
   };
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(
-    CONTENT_TYPE,
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-  (StatusCode::OK, header, Json::from(statistic))
+  json_response(statistic)
 }
 
 // NOTE: Intentional manual Future implementation — kept as a learning exercise.
@@ -561,13 +443,7 @@ impl Future for QueryTagsFuture {
   fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
     let st = self.st.lock().unwrap();
     if st.done == true {
-      let mut header = HeaderMap::new();
-      header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-      header.insert(
-        CONTENT_TYPE,
-        "application/json; charset=utf-8".parse().unwrap(),
-      );
-      Poll::Ready((StatusCode::OK, header, Json(st.reps.clone())))
+      Poll::Ready(json_response(st.reps.clone()))
     } else {
       let st = self.st.clone();
       let waker = ctx.waker().clone();

@@ -15,7 +15,7 @@ use axum::{
 };
 use hyper::{
   header::{
-    ACCEPT_RANGES, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE,
+    ACCEPT_RANGES, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, RANGE,
   },
   HeaderMap, StatusCode,
 };
@@ -27,7 +27,8 @@ use crate::{
   base_lib::{
     chois_dir_path_field_name_by_os, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
   },
-  entity::{MountConfig, VideoEntity}
+  entity::{MountConfig, VideoEntity},
+  util::cors_headers,
 };
 
 use std::{
@@ -88,8 +89,7 @@ pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
   let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
   let mut content_type_value = String::from("image/");
   content_type_value.push_str(extension.as_str());
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
 
@@ -155,8 +155,7 @@ pub async fn video_stream_by_id_handler(
     _ => (0, file_size - 1, file_size, false),
   };
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
   header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
@@ -199,8 +198,7 @@ pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) 
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let header = cors_headers();
   *response_builder.headers_mut().unwrap() = header;
   let mut main_patition_path: String = String::from("/home/knightingal/linux1000/");
 
@@ -280,8 +278,7 @@ pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32
   let extension = path.extension().unwrap().to_str().unwrap();
   let mut content_type_value = String::from("image/");
   content_type_value.push_str(extension);
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
 
@@ -327,8 +324,7 @@ pub async fn video_exist_handler(
 
   let path = std::path::Path::new(&file_path);
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_LENGTH, 0.into());
   if path.exists() {
     let mut response_builder = Response::builder().status(StatusCode::OK);
@@ -390,8 +386,7 @@ pub async fn demo_video_stream_handler(
     &file_path, 
     iv.as_bytes().try_into().unwrap());
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
   header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
@@ -476,8 +471,7 @@ pub async fn video_stream_handler(
   //   iv.as_bytes().try_into().unwrap(), 
   //   key.as_bytes().try_into().unwrap());
 
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+  let mut header = cors_headers();
   header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
   header.insert(CONTENT_LENGTH, content_length.into());
   header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());

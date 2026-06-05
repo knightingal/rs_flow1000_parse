@@ -10,13 +10,13 @@ use axum::{
   Error, Json,
 };
 use hyper::{
-  header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_LENGTH, CONTENT_TYPE},
+  header::{CONTENT_LENGTH, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
 use rusqlite::{named_params, params_from_iter};
 
 use crate::{
-  base_lib::{chois_dir_path_field_name_by_os, check_exist_by_video_file_name, concat_cover, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{chois_dir_path_field_name_by_os, check_exist_by_video_file_name, concat_cover, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, util::{cors_headers, json_response}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
 };
 
 
@@ -96,14 +96,7 @@ pub async fn video_detail_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap
     )
     .unwrap();
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(Option::Some(video_entity)))
+  json_response(Option::Some(video_entity))
 }
 
 pub async fn video_meta_info_handler(
@@ -371,14 +364,7 @@ pub async fn all_duplicate_video_handler() -> (StatusCode, HeaderMap, Json<Vec<D
     duplicate_entity.video_info_list = selected_video;
   }
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(duplicate_entity_list))
+  json_response(duplicate_entity_list)
 }
 
 pub async fn designation_search_handler(
@@ -420,13 +406,7 @@ pub async fn designation_search_handler(
     .unwrap()
     .map(|it| it.unwrap());
   let selected_video: Vec<VideoEntity> = selected_video_iter.collect();
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-  (StatusCode::OK, header, Json(selected_video))
+  json_response(selected_video)
 }
 
 
@@ -496,14 +476,7 @@ pub async fn parse_designation_handler(
     });
   });
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(selected_video))
+  json_response(selected_video)
 }
 
 
@@ -613,14 +586,7 @@ pub async fn parse_designation_all_handler() -> (StatusCode, HeaderMap, Json<Vec
 
   // });
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(vec![]))
+  json_response(vec![])
 }
 
 
@@ -648,10 +614,8 @@ pub async fn snapshot_handler(
       .unwrap();
   }
 
-  let content_type_value = String::from("image/png");
-  let mut header = HeaderMap::new();
-  header.insert(ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-  header.insert(CONTENT_TYPE, content_type_value.parse().unwrap());
+  let mut header = cors_headers();
+  header.insert(CONTENT_TYPE, "image/png".parse().unwrap());
   header.insert(CONTENT_LENGTH, snapshot_st.buff_len.into());
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
@@ -804,14 +768,7 @@ pub async fn init_video_handler(
 
   tracing::debug!("{:?}", video_cover_list);
 
-  let mut header = HeaderMap::new();
-  header.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-  header.insert(
-    "content-type",
-    "application/json; charset=utf-8".parse().unwrap(),
-  );
-
-  (StatusCode::OK, header, Json(video_cover_list))
+  json_response(video_cover_list)
 }
 
 
