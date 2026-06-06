@@ -418,6 +418,10 @@ pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, J
   json_response(statistic)
 }
 
+pub async fn execute_cli_handler() -> (StatusCode, HeaderMap, String) {
+  (StatusCode::OK, cors_json_headers(), String::from("OK"))
+}
+
 // NOTE: Intentional manual Future implementation — kept as a learning exercise.
 pub fn query_tags_handler() -> QueryTagsFuture {
   QueryTagsFuture {

@@ -28,7 +28,26 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use crate::{base_lib::{init_key, os_init}, business_handles::delete_video_handler, handles::{cfb_video_by_id_handler, cfb_video_by_path_handler, parse_meta_info_by_id_handler}, stream_handlers::{demo_video_stream_handler, flow1000_image_stream_by_path_hanlder, image_size_by_all_handler, image_size_by_id_handler, image_stream_by_id_handler, video_stream_by_id_handler}};
+use crate::{
+  base_lib::{init_key, os_init}, 
+  business_handles::{
+    delete_video_handler, 
+    execute_cli_handler
+  }, 
+  handles::{
+    cfb_video_by_id_handler, 
+    cfb_video_by_path_handler, 
+    parse_meta_info_by_id_handler
+  }, 
+  stream_handlers::{
+    demo_video_stream_handler, 
+    flow1000_image_stream_by_path_hanlder, 
+    image_size_by_all_handler, 
+    image_size_by_id_handler, 
+    image_stream_by_id_handler, 
+    video_stream_by_id_handler
+  }
+};
 
 mod business_handles;
 mod designation;
@@ -203,6 +222,7 @@ async fn main() {
     .route("/query-tags-by-video/:video_id", get(query_tags_by_video_handler))
     .route("/query-videos-by-tag/:tag_id", get(query_videos_by_tag_handler))
     .route("/statistic/patition/:id", get(statistic_handler))
+    .route("/execute-cli-hanlder", get(execute_cli_handler))
     // demo
     .route("/mock-steam", get(mock_stream_handler))
     .route("/file-steam", get(file_stream_handler))
