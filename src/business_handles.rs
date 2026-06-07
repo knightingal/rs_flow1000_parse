@@ -433,7 +433,12 @@ pub async fn statistic_handler(Path(id): Path<u32>) -> (StatusCode, HeaderMap, J
 }
 
 pub async fn execute_cli_handler() -> (StatusCode, HeaderMap, String) {
-  (StatusCode::OK, cors_json_headers(), String::from("OK"))
+  let output = Command::new("echo")
+    .arg("Hello, Rust!")
+    .output()
+    .expect("Failed to execute command");
+  let output_string = String::from_utf8(output.stdout).unwrap();
+  (StatusCode::OK, cors_headers(), output_string)
 }
 
 // NOTE: Intentional manual Future implementation — kept as a learning exercise.
