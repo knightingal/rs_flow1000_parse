@@ -14,6 +14,7 @@ extern "C" {
 
 pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
 pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
+pub static COVER_BASE_PATH: OnceLock<String> = OnceLock::new();
 
 /// Convert a 64-char hex string into a 32-byte array.
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
@@ -35,6 +36,9 @@ pub fn os_init() {
 
   let is_macos = System::name().unwrap().contains("Darwin");
   let _ = IS_MACOS.set(is_macos);
+
+  let cover_base_path = env::var("COVER_BASE_PATH").unwrap_or_else(|_| String::from("./"));
+  let _ = COVER_BASE_PATH.set(cover_base_path);
 }
 
 /// Open a SQLite connection using the `DB_PATH` env var (defaults to a hard-coded path).
@@ -323,7 +327,9 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
     .map(|it| it.unwrap())
     .collect();
 
-  let always_exist_cover_file = base_mount.dir_path.clone() + "/covers" + file_names[0].2.as_str();
+  let cover_base_path = COVER_BASE_PATH.get().unwrap().clone();
+
+  let always_exist_cover_file = cover_base_path + "/covers" + file_names[0].2.as_str();
   let real_file_name = if file_names[0].4 == 0 {
     always_exist_cover_file
   } else {
@@ -409,8 +415,8 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
 pub fn concat_cover(dir_name: String) {
 
   let mount_config_list = query_mount_configs();
-  let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
   // let dir_name = "/202604";
+  let cover_base_path = COVER_BASE_PATH.get().unwrap();
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(
     "select 
@@ -450,7 +456,7 @@ pub fn concat_cover(dir_name: String) {
   }).collect();
   tracing::debug!("ids:{:?}", covers);
 
-  let concat_file_name = base_mount.dir_path.clone() + "/covers" + covers[0].2.as_str();
+  let concat_file_name = cover_base_path.clone() + "/covers" + covers[0].2.as_str();
   let concat_path = Path::new(&concat_file_name).parent().unwrap();
   if !concat_path.exists() {
     let create_result = std::fs::create_dir(concat_path);
