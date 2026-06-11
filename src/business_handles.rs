@@ -170,7 +170,8 @@ pub async fn video_rate_handler(
   let result: Result<VideoEntity, _> = sqlite_conn.query_row(
     "select 
       id, video_file_name, cover_file_name, rate, base_index, dir_path, 
-      designation_char, designation_num 
+      designation_char, designation_num, 
+      cover_width, cover_height
     from video_info where id = :id ",
     named_params! {
         ":id" : id,
@@ -185,7 +186,9 @@ pub async fn video_rate_handler(
         row.get_unwrap(4),
         row.get_unwrap(5),
         row.get_unwrap(6),
-        row.get_unwrap(7)
+        row.get_unwrap(7),
+        row.get_unwrap(8),
+        row.get_unwrap(9)
       ))
     },
   );
@@ -313,7 +316,8 @@ pub async fn query_videos_by_tag_handler(
   let sql = format!("
     select 
       id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path,
-      designation_char, designation_num 
+      designation_char, designation_num,
+      cover_width, cover_height
     from 
       video_info where id in ({})
     ", vars);
@@ -332,6 +336,8 @@ pub async fn query_videos_by_tag_handler(
         row.get_unwrap(6),
         row.get_unwrap(7),
         row.get_unwrap(8),
+        row.get_unwrap(9),
+        row.get_unwrap(10),
       ))
   }).unwrap().map(|it|it.unwrap()).collect();
 

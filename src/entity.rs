@@ -32,6 +32,10 @@ pub struct VideoEntity {
   pub duration: i32,
   pub moved: Option<u8>,
   pub cfb: u8,
+  #[serde(rename = "coverWidth")]
+  pub cover_width: u32,
+  #[serde(rename = "coverHeight")]
+  pub cover_height: u32,
 }
 
 impl VideoEntity {
@@ -60,7 +64,9 @@ impl VideoEntity {
       cover_size: Option::Some(0),
       cover_offset: Option::Some(0),
       moved: Option::Some(0),
-      cfb: 0
+      cfb: 0,
+      cover_width: 0,
+      cover_height: 0,
     }
   }
 
@@ -98,6 +104,8 @@ impl VideoEntity {
       duration,
       moved: Option::Some(0),
       cfb: 0,
+      cover_width: 0,
+      cover_height: 0,
     }
   }
 
@@ -110,7 +118,9 @@ impl VideoEntity {
     base_index: u32,
     dir_path: String,
     designation_char: String,
-    designation_num: String
+    designation_num: String,
+    cover_width: u32,
+    cover_height: u32,
   ) -> VideoEntity {
     VideoEntity {
       id,
@@ -131,6 +141,8 @@ impl VideoEntity {
       cover_offset: Option::Some(0),
       moved: Option::Some(0),
       cfb: 0,
+      cover_width,
+      cover_height,
     }
   }
 
@@ -162,6 +174,8 @@ impl VideoEntity {
       cover_offset: Option::Some(0),
       moved: Option::Some(0),
       cfb: 0,
+      cover_width: 0,
+      cover_height: 0,
     }
   }
 }
