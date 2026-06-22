@@ -25,7 +25,7 @@ use rusqlite::named_params;
 use crate::handles::SnapshotSt;
 use crate::{
   base_lib::{
-    chois_dir_path_field_name_by_os, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
+    COVER_BASE_PATH, chois_dir_path_field_name_by_os, find_cover_by_id, get_sqlite_connection, parse_image_size_by_id, query_mount_configs, scan_all_by_id, video_entity_to_file_path
   },
   entity::{MountConfig, VideoEntity},
   util::cors_headers,
@@ -266,7 +266,7 @@ pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32
       })
     })
     .unwrap();
-  let mut main_patition_path = mount_config.dir_path.clone();
+  let mut main_patition_path = COVER_BASE_PATH.get().unwrap().clone();
   main_patition_path.push_str("/covers");
   main_patition_path.push_str(&file_path);
   
