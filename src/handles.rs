@@ -401,8 +401,8 @@ pub async fn designation_search_handler(
           row.get_unwrap(6),
           row.get_unwrap(7),
           row.get_unwrap(8),
-          row.get_unwrap(9),
-          row.get_unwrap(10)
+          row.get(9).unwrap_or(1),
+          row.get(10).unwrap_or(1)
         ))
       },
     )

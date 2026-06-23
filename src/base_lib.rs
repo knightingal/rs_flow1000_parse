@@ -406,8 +406,8 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
             row.get_unwrap(6),
             row.get_unwrap(7),
             row.get_unwrap(8),
-            row.get_unwrap(9),
-            row.get_unwrap(10),
+            row.get(9).unwrap_or(1),
+            row.get(10).unwrap_or(1)
     ))
   }).unwrap().map(|it| f(it.unwrap())).collect();
   return selected_iter;
