@@ -256,16 +256,6 @@ pub async fn image_stream_by_path_handler(Path((base_index, sub_dir)): Path<(u32
 
   let file_path = mount_config.dir_path + sub_dir_param.as_str();
 
-  let mount_config = sqlite_conn
-    .query_row(sql.as_str(), named_params! {":id": 1}, |row| {
-      Ok(MountConfig {
-        id: row.get_unwrap("id"),
-        dir_path: row.get_unwrap(dir_path_name),
-        url_prefix: row.get_unwrap("url_prefix"),
-        api_version: row.get_unwrap("api_version"),
-      })
-    })
-    .unwrap();
   let mut main_patition_path = COVER_BASE_PATH.get().unwrap().clone();
   main_patition_path.push_str("/covers");
   main_patition_path.push_str(&file_path);

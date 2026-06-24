@@ -293,7 +293,6 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
 pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
   let mount_config_list = query_mount_configs();
-  let base_mount = mount_config_list.iter().find(|it| it.id == 1).unwrap();
 
   let sqlite_conn = get_sqlite_connection();
 
