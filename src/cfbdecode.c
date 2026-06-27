@@ -6,11 +6,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 /*
-gcc -shared -fPIC -o libcfb_decode.so cfbdecode.c
+gcc -shared -fPIC -o libcfbdecode.so cfbdecode.c
 or
 clang -dynamiclib cfbdecode.c -o libcfbdecode.dylib
 
-mv libcfb_decode.so /usr/lib
+mv libcfbdecode.so /usr/lib
  */
 
 // Global round keys buffer for init_inner_key_expansion
