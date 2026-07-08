@@ -81,6 +81,12 @@ pub fn parse_jpg_size(mut jpg: File, start: u64) -> io::Result<(u32, u32)> {
   }
 }
 
+pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
+  png.seek(std::io::SeekFrom::Start(start))?;
+
+  Ok((0, 0))
+}
+
 pub fn parse_png_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
   png.seek(std::io::SeekFrom::Start(start))?;
 
