@@ -37,7 +37,8 @@ pub fn parse_video_cover(dir_list: &Vec<(String, u64)>) -> Vec<VideoCover> {
     if file_name.0.strip_suffix(".mp4").is_some() {
       video_file_name_list.push((&file_name.0, file_name.1));
     } else if file_name.0.strip_suffix(".jpg").is_some()
-      || file_name.0.strip_suffix(".png").is_some()
+      || file_name.0.strip_suffix(".png").is_some() 
+      || file_name.0.strip_suffix(".webp").is_some()
     {
       img_file_name_list.push(&file_name.0);
     }
