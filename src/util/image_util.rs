@@ -115,7 +115,7 @@ pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
     let mut buf = [0u8; 16];
     let read_len = png.read(&mut buf)?;
     if read_len != 16 {
-      return Err(Error::new(ErrorKind::Other, "read file failed, read header len: " + read_len.to_string())));
+      return Err(Error::new(ErrorKind::Other, "read file failed, read header len: "));
     }
     
     let data6 = buf[6] as u32;
@@ -131,7 +131,7 @@ pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
     let mut buf = [0u8; 20];
     let read_len = png.read(&mut buf)?;
     if read_len != 20 {
-      return Err(Error::new(ErrorKind::Other, "read file failed, read header len: " + read_len.to_string())));
+      return Err(Error::new(ErrorKind::Other, "read file failed, read header len: "));
     }
     
     let data12 = buf[8] as u32;
