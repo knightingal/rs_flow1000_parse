@@ -1,4 +1,4 @@
-use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path}, designation::parse_designation, util::image_util::{parse_jpg_size, parse_png_size}, video_name_util::{parse_video_cover, parse_video_meta_info}};
+use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path}, designation::parse_designation, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size}, video_name_util::{parse_video_cover, parse_video_meta_info}};
 use rusqlite::named_params;
 use std::{env, fs::File, io};
 
@@ -146,8 +146,10 @@ pub fn parse_image_size_by_file_name(file_name: String) -> io::Result<(u32, u32)
     Ok(image) => {
       if extension.eq_ignore_ascii_case("jpg") {
         parse_jpg_size(image, 0)
-      } else {
+      } else if extension.eq_ignore_ascii_case("png"){
         parse_png_size(image, 0)
+      } else {
+        parse_webp_size(image, 0)
       }
     },
     Err(err) => Err(err)
