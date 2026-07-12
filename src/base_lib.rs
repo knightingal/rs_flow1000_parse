@@ -3,7 +3,7 @@ use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek,
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
 
-use crate::{entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size}, video_name_util::parse_video_meta_info};
+use crate::{entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size}, video_name_util::parse_video_meta_info};
 
 #[cfg(reallink)]
 #[link(name = "cfbdecode")]
@@ -353,8 +353,10 @@ pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
     Ok(image) => {
       if extension.eq_ignore_ascii_case("jpg") {
         parse_jpg_size(image, start)
-      } else {
+      } else if extension.eq_ignore_ascii_case("png"){
         parse_png_size(image, start)
+      } else {
+        parse_webp_size(image, start)
       }
     },
     Err(err) => Err(err)
