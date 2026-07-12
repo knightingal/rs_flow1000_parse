@@ -3,7 +3,7 @@ mod tests {
   use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, };
 
 
-use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_size} };
+use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size} };
 
   #[test]
   fn move_cover_test() {
@@ -62,6 +62,13 @@ use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_siz
   fn test_parse_jpg_size() {
     let jpg = File::open("/home/knightingal/Pictures/llqdfm.jpg").unwrap();
     let (width, heigth) = parse_jpg_size(jpg, 0).unwrap();
+    println!("width:{}, height:{}", width, heigth);
+  }
+
+  #[test]
+  fn test_parse_webp_size() {
+    let webp = File::open("/home/knightingal/Pictures/3.webp").unwrap();
+    let (width, heigth) = parse_webp_size(webp, 0).unwrap();
     println!("width:{}, height:{}", width, heigth);
   }
 
