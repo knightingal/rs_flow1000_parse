@@ -81,11 +81,11 @@ pub fn parse_jpg_size(mut jpg: File, start: u64) -> io::Result<(u32, u32)> {
   }
 }
 
-pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
-  png.seek(std::io::SeekFrom::Start(start))?;
+pub fn parse_webp_size(mut webp: File, start: u64) -> io::Result<(u32, u32)> {
+  webp.seek(std::io::SeekFrom::Start(start))?;
 
   let mut buf = [0u8; 16];
-  png.read_exact(&mut buf)?;
+  webp.read_exact(&mut buf)?;
   
   let riff = String::from_utf8(Vec::from(&buf[0..4])).map_err(|_| Error::new(ErrorKind::Other, "unexpected header"))?;
   if riff != "RIFF" {
@@ -110,10 +110,10 @@ pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
   
   if vp8 == "VP8 " {
     let mut buf = [0u8; 4];
-    png.read_exact(&mut buf)?;
+    webp.read_exact(&mut buf)?;
     
     let mut buf = [0u8; 16];
-    let read_len = png.read(&mut buf)?;
+    let read_len = webp.read(&mut buf)?;
     if read_len != 16 {
       return Err(Error::new(ErrorKind::Other, "read file failed, read header len: "));
     }
@@ -129,7 +129,7 @@ pub fn parse_webp_size(mut png: File, start: u64) -> io::Result<(u32, u32)> {
     Ok((h, w))
   } else {
     let mut buf = [0u8; 20];
-    let read_len = png.read(&mut buf)?;
+    let read_len = webp.read(&mut buf)?;
     if read_len != 20 {
       return Err(Error::new(ErrorKind::Other, "read file failed, read header len: "));
     }
