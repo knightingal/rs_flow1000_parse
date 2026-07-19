@@ -512,3 +512,13 @@ pub fn concat_cover(dir_name: String) {
 
   concat_file.flush().unwrap()
 }
+
+pub fn refresh_video_and_cover_by_id(id: u32) {
+  let video_path_vec: Vec<(u32, String, String, String)> = video_file_path_by_id(id);
+  if video_path_vec.is_empty() {
+    tracing::error!("video not found by id:{}", id);
+    return;
+  }
+
+  let (_, video_full_name, cover_full_name, _) = &video_path_vec[0];
+}
