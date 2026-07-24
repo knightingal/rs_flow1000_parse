@@ -1,6 +1,6 @@
 use core::slice;
 use std::{
-  collections::HashMap, ffi::{c_char, c_void, CString}, fs::{self, DirBuilder, DirEntry}, thread, usize
+  collections::HashMap, ffi::{CString, OsStr, c_char, c_void}, fs::{self, DirBuilder, DirEntry}, thread, usize
 };
 
 use axum::{
@@ -151,10 +151,12 @@ pub async fn generate_video_snapshot_handler(Path(sub_dir): Path<String>) -> Sta
   let path = std::path::Path::new(&sub_dir);
   let names: Vec<(String, String)> = if path.is_file() {
     let parent = path.parent().unwrap();
-    let video_name = path.file_name().unwrap();
-    let image_name =
-      String::from(parent.to_str().unwrap()) + "/" + video_name.to_str().unwrap() + ".png";
-    vec![(sub_dir, image_name)]
+    let video_name: &OsStr = path.file_name().unwrap();
+    let image_name: String = String::from(parent.to_str().unwrap()) 
+        + "/" + video_name.to_str().unwrap() 
+        + ".png";
+    let names: Vec<(String, String)> = vec![(sub_dir, image_name)];
+    names
   } else {
     let ret = fs::read_dir(&sub_dir);
     if ret.is_err() {
