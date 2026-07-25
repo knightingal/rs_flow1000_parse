@@ -16,10 +16,31 @@ use hyper::{
 use rusqlite::{named_params, params_from_iter};
 
 use crate::{
-  base_lib::{chois_dir_path_field_name_by_os, check_exist_by_video_file_name, concat_cover, get_sqlite_connection, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, video_entity_to_file_path, video_file_path_by_id}, designation::parse_designation, entity::{DuplicateCoverEntity, DuplicateEntity, MountConfig, VideoEntity}, util::{cors_headers, json_response}, video_name_util::{VideoCover, VideoMetaInfo, parse_video_cover, parse_video_meta_info}
+  base_lib::{
+    chois_dir_path_field_name_by_os,
+    check_exist_by_video_file_name,
+    refresh_video_and_cover_by_id,
+    get_sqlite_connection,
+    parse_and_update_meta_info_by_id,
+    parse_dir_path,
+    query_mount_configs,
+    video_entity_to_file_path
+  },
+  designation::parse_designation,
+  entity::{
+    DuplicateCoverEntity,
+    DuplicateEntity,
+    MountConfig,
+    VideoEntity
+  },
+  util::{cors_headers, json_response},
+  video_name_util::{
+    VideoCover,
+    VideoMetaInfo,
+    parse_video_cover,
+    parse_video_meta_info
+  }
 };
-
-
 
 #[repr(C)]
 pub struct SnapshotSt {
@@ -535,22 +556,8 @@ pub async fn parse_meta_info_all_handler() -> StatusCode {
 }
 
 
-pub async fn parse_meta_info_by_id_handler(
-  Path(id): Path<u32>,
-) -> StatusCode {
-  let file_names = video_file_path_by_id(id);
-  thread::spawn(move || {
-    tracing::debug!("thread process");
-
-    file_names
-      .into_iter()
-      .for_each(|(id, video_file_name, cover_file_name, dir_path)| {
-        parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
-
-        // do concat cover
-        concat_cover(dir_path);
-      });
-  });
+pub async fn parse_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
+  refresh_video_and_cover_by_id(id);
 
   StatusCode::OK
 }

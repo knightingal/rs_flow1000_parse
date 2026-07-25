@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek, SeekFrom, Write}, path::Path, sync::OnceLock};
+use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek, SeekFrom, Write}, path::Path, sync::OnceLock, thread};
 
 use rusqlite::{Connection, named_params};
 use sysinfo::System;
@@ -516,10 +516,15 @@ pub fn concat_cover(dir_name: String) {
 pub fn refresh_video_and_cover_by_id(id: u32) {
   let file_names = video_file_path_by_id(id);
   tracing::info!("file_names:{:?}", file_names);
+  thread::spawn(move || {
+    tracing::debug!("thread process");
+    file_names
+      .into_iter()
+      .for_each(|(id, video_file_name, cover_file_name, dir_path)| {
+        parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
 
-  file_names
-    .into_iter()
-    .for_each(|(id, video_file_name, cover_file_name, _)| {
-      parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
-    });
+        // do concat cover
+        concat_cover(dir_path);
+      });
+  });
 }
