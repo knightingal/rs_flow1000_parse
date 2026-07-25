@@ -19,16 +19,16 @@ uint32_t g_round_keys[60] = {0};
 const int NK = 8; // Number of 32-bit words in the key (for AES-128)
 const int NR = 14; // Number of rounds for AES-128
 uint32_t rcon[16] = {
-  0x00000000, 
-  0x01000000, 
-  0x02000000, 
-  0x04000000, 
+  0x00000000,
+  0x01000000,
+  0x02000000,
+  0x04000000,
   0x08000000,
-  0x10000000, 
-  0x20000000, 
-  0x40000000, 
+  0x10000000,
+  0x20000000,
+  0x40000000,
   0x80000000,
-  0x1b000000, 
+  0x1b000000,
   0x36000000,
   0x6c000000,  // Additional constants for AES256
   0xd8000000,
