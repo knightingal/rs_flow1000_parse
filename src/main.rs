@@ -41,7 +41,7 @@ use crate::{
   }, 
   stream_handlers::{
     demo_video_stream_handler, 
-    flow1000_image_stream_by_path_hanlder, 
+    flow1000_image_stream_by_path_handler, 
     image_size_by_all_handler, 
     image_size_by_id_handler, 
     image_stream_by_id_handler, 
@@ -241,7 +241,7 @@ async fn main() {
     )
     .route(
       "/linux1000/*sub_dir",
-      get(flow1000_image_stream_by_path_hanlder),
+      get(flow1000_image_stream_by_path_handler),
     )
     .route(
       "/image-stream-by-id/:id",

@@ -194,7 +194,7 @@ pub async fn video_stream_by_id_handler(
   }
 }
 
-pub async fn flow1000_image_stream_by_path_hanlder(Path(sub_dir): Path<String>) -> Response {
+pub async fn flow1000_image_stream_by_path_handler(Path(sub_dir): Path<String>) -> Response {
 
   let mut response_builder = Response::builder().status(StatusCode::OK);
 
