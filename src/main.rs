@@ -204,6 +204,10 @@ async fn main() {
       "/parse-meta-info-by-id/:id",
       get(parse_meta_info_by_id_handler),
     )
+    .route(
+      "/refresh-meta-info-by-id/:id",
+      get(parse_meta_info_by_id_handler),
+    )
     .route("/move-cover", get(move_cover_handler))
     .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path_handler))
     .route("/cfb-video-by-id/:id", get(cfb_video_by_id_handler))
