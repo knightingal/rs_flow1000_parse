@@ -131,6 +131,7 @@ extern "C" {
 
 #[tokio::main]
 async fn main() {
+  env_logger::init();
 
   init_key();
 
