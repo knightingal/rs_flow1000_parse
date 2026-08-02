@@ -1,7 +1,7 @@
 //! Interface for stream.
 //!
 //! This module contains basic code to investigate and validate stream response based axum
-use core::slice;
+use core::{panic, slice};
 use std::{
   env, ffi::CString, fs::File, io::{Read, Seek}
 };
@@ -575,14 +575,25 @@ impl futures_core::Stream for ImageStream {
 }
 
 struct VideoStream {
-  file: File,
+  file: Option<File>,
 }
 
 impl VideoStream {
   fn new(start: u64, file_path: &String) -> Self {
-    let mut file = File::open(file_path).unwrap();
+    let file_result = File::open(file_path);
+    let mut file = match file_result {
+      Ok(file) => {
+        file
+      },
+      Err(error) => {
+        tracing::error!("cannot open file:{}, error:{}", file_path, error);
+        return Self { file: None }
+      }
+    };
+
     let _ = file.seek(std::io::SeekFrom::Start(start));
-    Self { file }
+    let opt_file = Some(file);
+    Self { file: opt_file }
   }
 }
 
@@ -591,11 +602,14 @@ impl futures_core::Stream for VideoStream {
   type Item = Result<Bytes, Error>;
 
   fn poll_next(
-    mut self: std::pin::Pin<&mut Self>,
+    self: std::pin::Pin<&mut Self>,
     _: &mut std::task::Context<'_>,
   ) -> std::task::Poll<Option<Self::Item>> {
+    if self.file.is_none() {
+      return std::task::Poll::Ready(None);
+    }
     let mut buf = [0u8; 4096];
-    let read_result = self.file.read(&mut buf);
+    let read_result = self.file.as_ref().unwrap().read(&mut buf);
     match read_result {
       Ok(read_len) => match read_len > 0 {
         true => std::task::Poll::Ready(Some(Ok(Bytes::copy_from_slice(&buf).slice(0..read_len)))),
