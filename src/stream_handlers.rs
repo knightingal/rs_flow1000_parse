@@ -1,7 +1,7 @@
 //! Interface for stream.
 //!
 //! This module contains basic code to investigate and validate stream response based axum
-use core::{panic, slice};
+use core::slice;
 use std::{
   env, ffi::CString, fs::File, io::{Read, Seek}
 };
