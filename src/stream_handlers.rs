@@ -537,15 +537,26 @@ impl futures_core::Stream for FileStream {
 
 struct ImageStream {
   content_length: u64,
-  file: File,
+  file: Option<File>,
   readed_lenght: u64,
 }
 
 impl ImageStream {
   fn new(start: u64, content_length: u64, file_path: &String) -> Self {
-    let mut file = File::open(file_path).unwrap();
+    let file_result = File::open(file_path);
+    let mut file = match file_result {
+      Ok(file) => {
+        file
+      },
+      Err(error) => {
+        tracing::error!("cannot open file:{}, error:{}", file_path, error);
+        return Self {content_length:0, file: None,  readed_lenght: 0}
+      }
+    };
     let _ = file.seek(std::io::SeekFrom::Start(start));
-    Self { content_length, file, readed_lenght: 0 }
+
+    let opt_file = Some(file);
+    Self { content_length, file: opt_file, readed_lenght: 0 }
   }
 }
 
@@ -555,8 +566,11 @@ impl futures_core::Stream for ImageStream {
     mut self: std::pin::Pin<&mut Self>,
     _: &mut std::task::Context<'_>,
   ) -> std::task::Poll<Option<Self::Item>> {
+    if self.file.is_none() {
+      return std::task::Poll::Ready(None);
+    }
     let mut buf = [0u8; 4096];
-    let read_result = self.file.read(&mut buf);
+    let read_result = self.file.as_ref().unwrap().read(&mut buf);
     match read_result {
       Ok(read_len) => match read_len > 0 {
         true => {
