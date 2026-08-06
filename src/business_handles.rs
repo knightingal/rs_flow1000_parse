@@ -2,7 +2,7 @@ use std::{
   cmp::Ordering, env, fs::{self, DirEntry}, future::Future, pin::Pin, process::Command, sync::{Arc, Mutex}, task::{Context, Poll}
 };
 
-use axum::{Json, extract::{Path}};
+use axum::{Json, extract::{Path, Query}};
 use hyper::{
   HeaderMap, StatusCode,
 };
@@ -198,12 +198,12 @@ pub async fn video_rate_handler(
 
 #[derive(Deserialize)]
 pub struct DeleteVideoParam {
-  // duplicate_del: bool
+  duplicate_del: Option<bool>
 }
 
 pub async fn delete_video_handler(
   Path(id): Path<u32>,
-  // Query(params): Query<DeleteVideoParam>,
+  Query(params): Query<DeleteVideoParam>,
 ) -> (StatusCode, HeaderMap) {
   let video_files = video_file_path_by_id(id);
 
@@ -219,12 +219,21 @@ pub async fn delete_video_handler(
   }
 
   let sqlite_conn = get_sqlite_connection();
-  sqlite_conn
-    .execute(
-      "update video_info set rate=?1 where id=?2",
-      rusqlite::params![4, id],
-    )
-    .unwrap();
+  if params.duplicate_del.unwrap_or(false) {
+    sqlite_conn
+      .execute(
+        "update video_info set rate=?1 where id=?2",
+        rusqlite::params![5, id],
+      )
+      .unwrap();
+  } else {
+    sqlite_conn
+      .execute(
+        "update video_info set rate=?1 where id=?2",
+        rusqlite::params![4, id],
+      )
+      .unwrap();
+  }
 
   (StatusCode::OK, cors_json_headers())
 }
