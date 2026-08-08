@@ -327,20 +327,29 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
     .collect();
 
   let cover_base_path = COVER_BASE_PATH.get().unwrap().clone();
+  let in_driver_path = file_names[0].2.clone();
 
-  let always_exist_cover_file = cover_base_path + "/covers" + file_names[0].2.as_str();
-  let real_file_name = if file_names[0].4 == 0 {
+  let always_exist_cover_file = cover_base_path + "/covers" + in_driver_path.as_str();
+  let mut real_file_name = if file_names[0].4 == 0 {
     // cover_offset == 0 means this cover is not concated
     always_exist_cover_file
   } else {
     std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
   };
 
+  let mut start_offset = file_names[0].4; 
+
+  if !Path::new(&real_file_name).exists() {
+    tracing::info!("real_file_name not exist, use in driver_path:{}", in_driver_path);
+    real_file_name = in_driver_path;
+    start_offset = 0;
+  }
+
   let file_size = file_names[0].3;
   let content_length = file_size;
 
   let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
-  (real_file_name, file_names[0].4, content_length, String::from(extension))
+  (real_file_name, start_offset, content_length, String::from(extension))
 }
 
 
