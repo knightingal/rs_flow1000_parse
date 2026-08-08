@@ -12,6 +12,10 @@ extern "C" {
   fn init_inner_key_expansion(key: *const u8);
 }
 
+#[cfg(mocklink)]
+fn init_inner_key_expansion(key: *const u8) {
+}
+
 pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
 pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 pub static COVER_BASE_PATH: OnceLock<String> = OnceLock::new();
