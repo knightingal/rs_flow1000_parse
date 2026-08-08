@@ -21,7 +21,6 @@ use hyper::{
 };
 use rusqlite::named_params;
 
-#[cfg(reallink)]
 use crate::handles::SnapshotSt;
 use crate::{
   base_lib::{
@@ -48,6 +47,21 @@ extern "C" {
   fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
   fn av_free_wrap(buff: *const u8);
 }
+
+#[cfg(mocklink)]
+fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize) {
+}
+
+#[cfg(mocklink)]
+fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
+    SnapshotSt {
+      buff: std::ptr::null(),
+      buff_len: 0,
+    }
+}
+
+#[cfg(mocklink)]
+fn av_free_wrap(buff: *const u8) {}
 
 
 pub async fn mock_stream_handler() -> Response {

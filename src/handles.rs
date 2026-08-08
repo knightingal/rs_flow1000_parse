@@ -70,6 +70,17 @@ extern "C" {}
 extern "C" {}
 
 #[cfg(mocklink)]
+fn cfb_file_streaming_v2(
+  w: *const u32,
+  iv: *const u8,
+  input_filename: *const c_char,
+  output_filename: *const c_char,
+) -> i32 {
+  return 0;
+}
+
+
+#[cfg(mocklink)]
 fn frame_decode_with_param(_: *const c_char, _: *const c_char) -> i32 {
   return 0;
 }

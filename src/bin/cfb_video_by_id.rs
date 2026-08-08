@@ -19,6 +19,16 @@ extern "C" {
   ) -> i32;
 }
 
+#[cfg(mocklink)]
+fn cfb_file_streaming_v2(
+  w: *const u32,
+  iv: *const u8,
+  input_filename: *const c_char,
+  output_filename: *const c_char,
+) -> i32 {
+  return 0;
+}
+
 fn main() {
   let id = 985;
 
