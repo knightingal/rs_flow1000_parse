@@ -86,6 +86,7 @@ pub async fn image_size_by_all_handler() -> StatusCode {
 
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
+  tracing::info!("enter image_stream_by_id_handler, id:{}", id);
   let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
   let mut content_type_value = String::from("image/");
   content_type_value.push_str(extension.as_str());
@@ -195,7 +196,7 @@ pub async fn video_stream_by_id_handler(
 }
 
 pub async fn flow1000_image_stream_by_path_handler(Path(sub_dir): Path<String>) -> Response {
-
+  tracing::info!("enter flow1000_image_stream_by_path_handler, sub_dir:{}", sub_dir);
   let mut response_builder = Response::builder().status(StatusCode::OK);
 
   let header = cors_headers();
@@ -549,7 +550,7 @@ impl ImageStream {
         file
       },
       Err(error) => {
-        tracing::error!("cannot open file:{}, error:{}", file_path, error);
+        tracing::error!("ImageStream cannot open file:{}, error:{}", file_path, error);
         return Self {content_length:0, file: None,  readed_lenght: 0}
       }
     };
@@ -600,7 +601,7 @@ impl VideoStream {
         file
       },
       Err(error) => {
-        tracing::error!("cannot open file:{}, error:{}", file_path, error);
+        tracing::error!("VideoStream cannot open file:{}, error:{}", file_path, error);
         return Self { file: None }
       }
     };

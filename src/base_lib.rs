@@ -330,6 +330,7 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
   let always_exist_cover_file = cover_base_path + "/covers" + file_names[0].2.as_str();
   let real_file_name = if file_names[0].4 == 0 {
+    // cover_offset == 0 means this cover is not concated
     always_exist_cover_file
   } else {
     std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
