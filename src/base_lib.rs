@@ -339,7 +339,9 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
 
   let mut start_offset = file_names[0].4; 
 
-  if !Path::new(&real_file_name).exists() {
+  if Path::new(&real_file_name).exists() {
+    tracing::info!("exist file found:{}", real_file_name);
+  } else {
     tracing::info!("real_file_name not exist, use in driver_path:{}", in_driver_path);
     real_file_name = in_driver_path;
     start_offset = 0;
