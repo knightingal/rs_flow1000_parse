@@ -126,7 +126,7 @@ pub fn parse_webp_size(mut webp: File, start: u64) -> io::Result<(u32, u32)> {
     let w = ((data7 << 8) | data6) & 0x3fff;
     let h = ((data9 << 8) | data8) & 0x3fff;
     
-    Ok((h, w))
+    Ok((w, h))
   } else {
     let mut buf = [0u8; 20];
     let read_len = webp.read(&mut buf)?;
@@ -144,7 +144,7 @@ pub fn parse_webp_size(mut webp: File, start: u64) -> io::Result<(u32, u32)> {
     let width = 1 + (data14 << 16 | data13 << 8 | data12);
     let height = 1 + (data17 << 16 | data16 << 8 | data15);
     
-    Ok((height, width))
+    Ok((width, height))
   }
 }
 
