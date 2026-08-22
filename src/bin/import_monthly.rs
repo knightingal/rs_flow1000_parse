@@ -110,7 +110,9 @@ fn main() {
         width=:width,
         duration=:duration,
         frame_rate=:frame_rate,
-        video_frame_count=:video_frame_count
+        video_frame_count=:video_frame_count,
+        cover_width=:cover_width,
+        cover_height=:cover_height
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
       ",
@@ -128,6 +130,8 @@ fn main() {
           ":duration": meta_info.duratoin,
           ":frame_rate": meta_info.frame_rate,
           ":video_frame_count": meta_info.video_frame_count,
+          ":cover_width": width,
+          ":cover_height": height,
         },
       );
     }
