@@ -573,6 +573,12 @@ pub async fn parse_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
   StatusCode::OK
 }
 
+pub async fn clean_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
+  refresh_video_and_cover_by_id(id);
+
+  StatusCode::OK
+}
+
 pub async fn parse_designation_all_handler() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
   // let mut conn = unsafe {
   //   POOL.unwrap().get_conn().unwrap()

@@ -29,17 +29,12 @@ use tracing::Span;
 use sysinfo::System;
 
 use crate::{
-  base_lib::{init_key, os_init}, 
-  business_handles::{
+  base_lib::{init_key, os_init}, business_handles::{
     delete_video_handler, 
     execute_cli_handler
-  }, 
-  handles::{
-    cfb_video_by_id_handler, 
-    cfb_video_by_path_handler, 
-    parse_meta_info_by_id_handler
-  }, 
-  stream_handlers::{
+  }, handles::{
+    cfb_video_by_id_handler, cfb_video_by_path_handler, clean_meta_info_by_id_handler, parse_meta_info_by_id_handler
+  }, stream_handlers::{
     demo_video_stream_handler, 
     flow1000_image_stream_by_path_handler, 
     image_size_by_all_handler, 
@@ -208,6 +203,10 @@ async fn main() {
     .route(
       "/refresh-meta-info-by-id/:id",
       get(parse_meta_info_by_id_handler),
+    )
+    .route(
+      "/clean-meta-info-by-id/:id",
+      get(clean_meta_info_by_id_handler),
     )
     .route("/move-cover", get(move_cover_handler))
     .route("/cfb-video-by-path/:base_index/*sub_dir", get(cfb_video_by_path_handler))
