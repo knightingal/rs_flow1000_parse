@@ -6,7 +6,7 @@ use axum::{Json, extract::{Path, Query}};
 use hyper::{
   HeaderMap, StatusCode,
 };
-use rusqlite::{named_params, params_from_iter, Connection, Error, Params, Row};
+use rusqlite::{Connection, Error, Params, Row, ToSql, named_params, params_from_iter};
 use serde_derive::Deserialize;
 use tokio::task;
 
@@ -160,12 +160,15 @@ pub async fn video_rate_handler(
 ) -> (StatusCode, HeaderMap, Json<VideoEntity>) {
   let sqlite_conn = get_sqlite_connection();
 
-  sqlite_conn
-    .execute(
-      "update video_info set rate=?1 where id=?2",
-      rusqlite::params![rate, id],
-    )
-    .unwrap();
+  let mut stmt = sqlite_conn.prepare("update video_info set rate=?1 where id=?2").unwrap();
+
+  stmt.execute(
+    rusqlite::params![rate, id],
+  ).unwrap();
+
+  tracing::info!("execute sql:{}", stmt.expanded_sql().unwrap());
+
+  let param: &[(&str, &dyn ToSql)] = &[(":id", &id)];
 
   let result: Result<VideoEntity, _> = sqlite_conn.query_row(
     "select 
@@ -173,9 +176,7 @@ pub async fn video_rate_handler(
       designation_char, designation_num, 
       cover_width, cover_height
     from video_info where id = :id ",
-    named_params! {
-        ":id" : id,
-    },
+    param,
     |row| {
       Result::Ok(VideoEntity::new_for_base_info(
         row.get_unwrap(0),
