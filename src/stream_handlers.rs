@@ -477,7 +477,9 @@ pub async fn video_stream_handler(
   //   key.as_bytes().try_into().unwrap());
 
   let mut header = cors_headers();
-  header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
+  if sub_dir.ends_with(".mp4") {
+    header.insert(CONTENT_TYPE, "video/mp4".parse().unwrap());
+  }
   header.insert(CONTENT_LENGTH, content_length.into());
   header.insert(ACCEPT_RANGES, "bytes".parse().unwrap());
   if part {
