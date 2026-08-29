@@ -738,28 +738,30 @@ pub async fn init_video_handler(
     );
 
     if !exist {
-      let _ = sqlite_conn.execute("insert into video_info(
+      let mut stmt = sqlite_conn.prepare("insert into video_info(
         dir_path, base_index, video_file_name, cover_file_name, designation_char, 
         designation_num, 
         video_size, width, height,duration,frame_rate,video_frame_count,cover_size
       ) values (
         :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, 
         :video_size, :width, :height,:duration,:frame_rate,:video_frame_count,:cover_size
-      )", named_params! {
-        ":dir_path": sub_dir_param, 
-        ":base_index": base_index, 
-        ":video_file_name": video_cover_entry.video_file_name, 
-        ":cover_file_name": video_cover_entry.cover_file_name,
-        ":designation_char": designation.char_final, 
-        ":designation_num": designation.num_final,
-        ":video_size": video_size,
-        ":cover_size": cover_size,
-        ":width": meta_info.width,
-        ":height": meta_info.height,
-        ":duration": meta_info.duratoin,
-        ":frame_rate": meta_info.frame_rate,
-        ":video_frame_count": meta_info.video_frame_count,
-      });
+      )").unwrap();
+      let _ = stmt.execute(
+        named_params! {
+          ":dir_path": sub_dir_param, 
+          ":base_index": base_index, 
+          ":video_file_name": video_cover_entry.video_file_name, 
+          ":cover_file_name": video_cover_entry.cover_file_name,
+          ":designation_char": designation.char_final, 
+          ":designation_num": designation.num_final,
+          ":video_size": video_size,
+          ":cover_size": cover_size,
+          ":width": meta_info.width,
+          ":height": meta_info.height,
+          ":duration": meta_info.duratoin,
+          ":frame_rate": meta_info.frame_rate,
+          ":video_frame_count": meta_info.video_frame_count,
+        });
     } else {
       let _ = sqlite_conn.execute(
         "update video_info set 

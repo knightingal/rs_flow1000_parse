@@ -1,5 +1,5 @@
 use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path}, designation::parse_designation, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size}, video_name_util::{parse_video_cover, parse_video_meta_info}};
-use rusqlite::named_params;
+use rusqlite::{ToSql, named_params};
 use std::{env, fs::File, io};
 
 fn main() {
@@ -72,7 +72,7 @@ fn main() {
     );
 
     if !exist {
-      let _ = sqlite_conn.execute("insert into video_info(
+      let mut stmt = sqlite_conn.prepare("insert into video_info(
         dir_path, base_index, video_file_name, cover_file_name, designation_char, 
         designation_num, 
         video_size, width, height,duration,frame_rate,video_frame_count,cover_size, 
@@ -81,23 +81,26 @@ fn main() {
         :dir_path, :base_index, :video_file_name, :cover_file_name, :designation_char, :designation_num, 
         :video_size, :width, :height,:duration,:frame_rate,:video_frame_count,:cover_size,
         :cover_width, :cover_height
-      )", named_params! {
-        ":dir_path": sub_dir, 
-        ":base_index": base_index, 
-        ":video_file_name": video_cover_entry.video_file_name, 
-        ":cover_file_name": video_cover_entry.cover_file_name,
-        ":designation_char": designation.char_final, 
-        ":designation_num": designation.num_final,
-        ":video_size": video_size,
-        ":cover_size": cover_size,
-        ":width": meta_info.width,
-        ":height": meta_info.height,
-        ":duration": meta_info.duratoin,
-        ":frame_rate": meta_info.frame_rate,
-        ":video_frame_count": meta_info.video_frame_count,
-        ":cover_width": width,
-        ":cover_height": height,
-      });
+      )" ).unwrap();
+      let _ = stmt.execute(
+        named_params! {
+          ":dir_path": sub_dir, 
+          ":base_index": base_index, 
+          ":video_file_name": video_cover_entry.video_file_name, 
+          ":cover_file_name": video_cover_entry.cover_file_name,
+          ":designation_char": designation.char_final, 
+          ":designation_num": designation.num_final,
+          ":video_size": video_size,
+          ":cover_size": cover_size,
+          ":width": meta_info.width,
+          ":height": meta_info.height,
+          ":duration": meta_info.duratoin,
+          ":frame_rate": meta_info.frame_rate,
+          ":video_frame_count": meta_info.video_frame_count,
+          ":cover_width": width,
+          ":cover_height": height,
+        }
+      );
     } else {
       let _ = sqlite_conn.execute(
         "update video_info set 

@@ -250,10 +250,9 @@ pub async fn add_tag_handler(Path(tag_name): Path<String>) -> (StatusCode, Heade
     .unwrap_or(false);
 
   if !exist {
-    let _ = sqlite_conn.execute(
-      "insert into tag (tag) values (:tag)",
-      named_params! {":tag": tag_name},
-    );
+    let mut stmt = sqlite_conn.prepare("insert into tag (tag) values (:tag)").unwrap();
+    
+    let _ = stmt.execute(named_params! {":tag": tag_name});
   }
 
   let tag_entity: TagEntity = sqlite_conn
@@ -277,10 +276,12 @@ pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (St
 
   let sqlite_conn = get_sqlite_connection();
 
-  let ret = sqlite_conn.execute(
-    "insert into video_tag 
-  (video_id, tag_id) values (:video_id, :tag_id)",
-    named_params! {":tag_id": tag_id, ":video_id": video_id},
+  let mut stmt = sqlite_conn.prepare(
+    "insert into video_tag (video_id, tag_id) values (:video_id, :tag_id)"
+  ).unwrap();
+
+  let ret = stmt.execute(
+    named_params! {":tag_id": tag_id, ":video_id": video_id}
   );
   if ret.is_err() {
     (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers())
