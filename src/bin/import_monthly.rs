@@ -102,6 +102,25 @@ fn main() {
         }
       );
     } else {
+
+      let named_params: &[(&str, &dyn ToSql)] = &[
+        (":dir_path", &sub_dir),
+        (":base_index", &base_index),
+        (":video_file_name", &video_cover_entry.video_file_name),
+        (":cover_file_name", &video_cover_entry.cover_file_name),
+        (":designation_char", &designation.char_final),
+        (":designation_num", &designation.num_final),
+        (":video_size", &video_size),
+        (":cover_size", &cover_size),
+        (":width", &meta_info.width),
+        (":height", &meta_info.height),
+        (":duration", &meta_info.duratoin),
+        (":frame_rate", &meta_info.frame_rate),
+        (":video_frame_count", &meta_info.video_frame_count),
+        (":cover_width", &width),
+        (":cover_height", &height),
+      ];
+
       let _ = sqlite_conn.execute(
         "update video_info set 
         cover_file_name=:cover_file_name, 
@@ -118,24 +137,7 @@ fn main() {
         cover_height=:cover_height
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
-      ",
-        named_params! {
-          ":dir_path": sub_dir,
-          ":base_index": base_index,
-          ":video_file_name": video_cover_entry.video_file_name,
-          ":cover_file_name": video_cover_entry.cover_file_name,
-          ":designation_char": designation.char_final,
-          ":designation_num": designation.num_final,
-          ":video_size": video_size,
-          ":cover_size": cover_size,
-          ":width": meta_info.width,
-          ":height": meta_info.height,
-          ":duration": meta_info.duratoin,
-          ":frame_rate": meta_info.frame_rate,
-          ":video_frame_count": meta_info.video_frame_count,
-          ":cover_width": width,
-          ":cover_height": height,
-        },
+      ", named_params
       );
     }
   }
