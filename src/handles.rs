@@ -61,13 +61,6 @@ extern "C" {
   ) -> i32;
 }
 
-#[cfg(reallink)]
-#[link(name = "avformat")]
-extern "C" {}
-
-#[cfg(reallink)]
-#[link(name = "swscale")]
-extern "C" {}
 
 #[cfg(mocklink)]
 fn cfb_file_streaming_v2(
