@@ -13,7 +13,7 @@ use hyper::{
   header::{CONTENT_LENGTH, CONTENT_TYPE},
   HeaderMap, StatusCode,
 };
-use rusqlite::{named_params, params_from_iter};
+use rusqlite::{Connection, ToSql, named_params, params_from_iter};
 
 use crate::{
   base_lib::{
@@ -567,7 +567,34 @@ pub async fn parse_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
 }
 
 pub async fn clean_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
-  refresh_video_and_cover_by_id(id);
+  let sqlite_conn: Connection = get_sqlite_connection();
+  let mut stmt = sqlite_conn.prepare(
+    "update 
+      video_info 
+    set 
+      video_size = :video_size,
+      cover_size = :cover_size,
+      width = :width,
+      height = :height,
+      frame_rate = :frame_rate,
+      video_frame_count = :video_frame_count,
+      duration = :duration 
+    where 
+      id = :id",
+  ).unwrap();
+
+  let named_params: &[(&str, &dyn ToSql)] = &[
+      (":width", &0),
+      (":height", &0),
+      (":frame_rate", &0),
+      (":video_size", &0),
+      (":cover_size", &0),
+      (":duration", &0),
+      (":video_frame_count", &0),
+      (":id", &id),
+  ];
+
+  let _ = stmt.execute(named_params);
 
   StatusCode::OK
 }
