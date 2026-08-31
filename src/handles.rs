@@ -783,7 +783,7 @@ pub async fn init_video_handler(
           ":video_frame_count": meta_info.video_frame_count,
         });
     } else {
-      let _ = sqlite_conn.execute(
+      let mut stmt = sqlite_conn.prepare(
         "update video_info set 
         cover_file_name=:cover_file_name, 
         designation_char=:designation_char, 
@@ -797,7 +797,8 @@ pub async fn init_video_handler(
         video_frame_count=:video_frame_count
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
-      ",
+      ").unwrap();
+      let _ = stmt.execute(
         named_params! {
           ":dir_path": sub_dir_param,
           ":base_index": base_index,
@@ -1019,10 +1020,11 @@ pub async fn move_cover_handler() {
       if std::path::Path::new(&cover_path).exists() {
         tracing::info!("copy cover path: {:?} to {:?}", cover_path, target_cover_file);
         let _ = fs::copy(cover_path, target_cover_file);
-        let _ = get_sqlite_connection().execute(
+        let conn = get_sqlite_connection();
+        let mut stmt = conn.prepare(
           "update video_info set moved = 1 where id = :id",
-          named_params! {":id": video_entity.id}
-        );
+        ).unwrap();
+        let _ = stmt.execute(named_params! {":id": video_entity.id});
       }
 
     });

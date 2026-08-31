@@ -100,9 +100,11 @@ fn main() {
   }
 
   let update_video_cfb_sql = "update video_info set cfb = 1 where id = :id";
-  sqlite_conn
-    .execute(update_video_cfb_sql, named_params! {":id": id})
+  let mut stmt = sqlite_conn
+    .prepare(update_video_cfb_sql)
     .unwrap();
+
+  let _ = stmt.execute(named_params! {":id": id});
 
   tracing::debug!("target_file_path {}", target_file_path);
   tracing::debug!("file_path {}", file_path);

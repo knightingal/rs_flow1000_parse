@@ -220,20 +220,19 @@ pub async fn delete_video_handler(
   }
 
   let sqlite_conn = get_sqlite_connection();
+
+  let mut stmt = sqlite_conn.prepare("update video_info set rate=?1 where id=?2").unwrap();
+
   if params.duplicate_del.unwrap_or(false) {
-    sqlite_conn
+    let _ = stmt
       .execute(
-        "update video_info set rate=?1 where id=?2",
         rusqlite::params![5, id],
-      )
-      .unwrap();
+      );
   } else {
-    sqlite_conn
+    let _  = stmt
       .execute(
-        "update video_info set rate=?1 where id=?2",
         rusqlite::params![4, id],
-      )
-      .unwrap();
+      );
   }
 
   (StatusCode::OK, cors_json_headers())
@@ -296,8 +295,11 @@ pub async fn unbind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (
 
   let sqlite_conn = get_sqlite_connection();
 
-  let ret = sqlite_conn.execute(
+  let mut stmt = sqlite_conn.prepare(
     "delete from video_tag where video_id=:video_id and tag_id=:tag_id",
+  ).unwrap();
+
+  let ret = stmt.execute(
     named_params! {":tag_id": tag_id, ":video_id": video_id},
   );
   if ret.is_err() {

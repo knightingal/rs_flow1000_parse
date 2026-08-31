@@ -121,7 +121,7 @@ fn main() {
         (":cover_height", &height),
       ];
 
-      let _ = sqlite_conn.execute(
+      let mut stmt = sqlite_conn.prepare(
         "update video_info set 
         cover_file_name=:cover_file_name, 
         designation_char=:designation_char, 
@@ -137,8 +137,9 @@ fn main() {
         cover_height=:cover_height
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
-      ", named_params
-      );
+      "
+      ).unwrap();
+      let _ = stmt.execute(named_params);
     }
   }
 
