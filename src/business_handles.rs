@@ -12,6 +12,7 @@ use tokio::task;
 
 use crate::{
   base_lib::{
+    log_sql,
     chois_dir_path_field_name_by_os, 
     video_file_path_by_id, 
     video_info_list_by_sub_dir
@@ -165,6 +166,7 @@ pub async fn video_rate_handler(
   stmt.execute(
     rusqlite::params![rate, id],
   ).unwrap();
+  log_sql(&stmt.expanded_sql().unwrap());
 
   tracing::info!("execute sql:{}", stmt.expanded_sql().unwrap());
 
@@ -234,6 +236,7 @@ pub async fn delete_video_handler(
         rusqlite::params![4, id],
       );
   }
+  log_sql(&stmt.expanded_sql().unwrap());
 
   (StatusCode::OK, cors_json_headers())
 }

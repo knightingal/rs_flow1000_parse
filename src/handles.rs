@@ -17,24 +17,13 @@ use rusqlite::{Connection, ToSql, named_params, params_from_iter};
 
 use crate::{
   base_lib::{
-    chois_dir_path_field_name_by_os,
-    check_exist_by_video_file_name,
-    refresh_video_and_cover_by_id,
-    get_sqlite_connection,
-    parse_and_update_meta_info_by_id,
-    parse_dir_path,
-    query_mount_configs,
-    video_entity_to_file_path
-  },
-  designation::parse_designation,
-  entity::{
+    check_exist_by_video_file_name, chois_dir_path_field_name_by_os, get_sqlite_connection, log_sql, parse_and_update_meta_info_by_id, parse_dir_path, query_mount_configs, refresh_video_and_cover_by_id, video_entity_to_file_path
+  }, designation::parse_designation, entity::{
     DuplicateCoverEntity,
     DuplicateEntity,
     MountConfig,
     VideoEntity
-  },
-  util::{cors_headers, json_response},
-  video_name_util::{
+  }, util::{cors_headers, json_response}, video_name_util::{
     VideoCover,
     VideoMetaInfo,
     parse_video_cover,
@@ -504,6 +493,7 @@ pub async fn parse_designation_handler(
       "num": video.designation_num.clone(),
       "id": video.id,
     });
+    log_sql(&stmt.expanded_sql().unwrap());
   });
 
   json_response(selected_video)
@@ -595,6 +585,7 @@ pub async fn clean_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
   ];
 
   let _ = stmt.execute(named_params);
+  log_sql(&stmt.expanded_sql().unwrap());
 
   StatusCode::OK
 }
@@ -815,6 +806,7 @@ pub async fn init_video_handler(
           ":video_frame_count": meta_info.video_frame_count,
         },
       );
+      log_sql(&stmt.expanded_sql().unwrap());
     }
   }
 
@@ -1025,6 +1017,7 @@ pub async fn move_cover_handler() {
           "update video_info set moved = 1 where id = :id",
         ).unwrap();
         let _ = stmt.execute(named_params! {":id": video_entity.id});
+        log_sql(&stmt.expanded_sql().unwrap());
       }
 
     });

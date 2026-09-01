@@ -1,4 +1,22 @@
-use rs_flow1000_parse::{base_lib::{check_exist_by_video_file_name, get_sqlite_connection, os_init, parse_dir_path}, designation::parse_designation, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size}, video_name_util::{parse_video_cover, parse_video_meta_info}};
+use rs_flow1000_parse::{
+  base_lib::{
+    check_exist_by_video_file_name, 
+    get_sqlite_connection, 
+    log_sql, 
+    os_init, 
+    parse_dir_path
+  }, 
+  designation::parse_designation, 
+  util::image_util::{
+    parse_jpg_size, 
+    parse_png_size, 
+    parse_webp_size
+  }, 
+  video_name_util::{
+    parse_video_cover, 
+    parse_video_meta_info
+  }
+};
 use rusqlite::{ToSql, named_params};
 use std::{env, fs::File, io};
 
@@ -140,6 +158,7 @@ fn main() {
       "
       ).unwrap();
       let _ = stmt.execute(named_params);
+      log_sql(&stmt.expanded_sql().unwrap());
     }
   }
 

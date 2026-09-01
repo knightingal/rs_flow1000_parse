@@ -513,6 +513,7 @@ pub fn concat_cover(dir_name: String) {
       ":cover_offset": write_offset,
       ":id": *id
     }).unwrap();
+    log_sql(&stmt.expanded_sql().unwrap());
 
     let f_err = File::open(cover_file_name);
     if f_err.is_err() {

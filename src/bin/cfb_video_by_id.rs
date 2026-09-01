@@ -1,7 +1,7 @@
 use std::ffi::c_char;
 use std::{ffi::CString, fs::DirBuilder};
 
-use rs_flow1000_parse::base_lib::{chois_dir_path_field_name_by_os, init_key};
+use rs_flow1000_parse::base_lib::{chois_dir_path_field_name_by_os, init_key, log_sql};
 use rs_flow1000_parse::{
   base_lib::{get_sqlite_connection, os_init, query_mount_configs},
   entity::VideoEntity,
@@ -105,6 +105,7 @@ fn main() {
     .unwrap();
 
   let _ = stmt.execute(named_params! {":id": id});
+  log_sql(&stmt.expanded_sql().unwrap());
 
   tracing::debug!("target_file_path {}", target_file_path);
   tracing::debug!("file_path {}", file_path);
