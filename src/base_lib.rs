@@ -20,6 +20,10 @@ pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
 pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 pub static COVER_BASE_PATH: OnceLock<String> = OnceLock::new();
 
+pub fn log_sql(sql: &String) {
+  tracing::info!("{}", sql);
+}
+
 /// Convert a 64-char hex string into a 32-byte array.
 pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
   let mut byte_array: [u8; 32] = [0; 32];
@@ -284,9 +288,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
       ":id": id
     });
   }
-
-
-
+  log_sql(&stmt.expanded_sql().unwrap());
 }
 
 
