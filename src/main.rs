@@ -26,7 +26,7 @@ use stream_handlers::{
   file_stream_handler, image_stream_by_path_handler, mock_stream_handler, video_exist_handler, video_stream_handler,
 };
 use tower_http::trace::TraceLayer;
-use tracing::{Span};
+use tracing::{Span, level_filters::LevelFilter};
 
 use sysinfo::System;
 
@@ -139,7 +139,9 @@ async fn main() {
 
   let (std_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
   let std_layer = tracing_subscriber::fmt::layer()
-    .with_writer(std_blocking);
+    .with_writer(std_blocking)
+    .with_filter(LevelFilter::INFO);
+
   tracing_subscriber::registry()
     .with(sql_layer)
     .with(std_layer)
