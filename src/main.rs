@@ -33,7 +33,7 @@ use crate::{
     execute_cli_handler
   }, handles::{
     cfb_video_by_id_handler, cfb_video_by_path_handler, clean_meta_info_by_id_handler, parse_meta_info_by_id_handler
-  }, stream_handlers::{
+  }, log_util::MyFormatter, stream_handlers::{
     demo_video_stream_handler, 
     flow1000_image_stream_by_path_handler, 
     image_size_by_all_handler, 
@@ -55,6 +55,7 @@ mod test_video_name_util;
 mod video_name_util;
 mod base_lib;
 mod util;
+mod log_util;
 
 #[repr(C)]
 struct RustObject {
@@ -139,6 +140,7 @@ async fn main() {
 
   let (std_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
   let std_layer = tracing_subscriber::fmt::layer()
+    .event_format(MyFormatter)
     .with_writer(std_blocking)
     .with_filter(
       LevelFilter::from_level(
