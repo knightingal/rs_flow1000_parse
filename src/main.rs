@@ -128,6 +128,8 @@ extern "C" {
 async fn main() {
   // env_logger::init();
 
+  // log_util::log_init();
+
   let rust_log_env = env::var("RUST_LOG")
     .unwrap_or_else(|_| String::from("INFO"));
   let sql_appender = RollingFileAppender::new(Rotation::NEVER, "./", "sql.log");
