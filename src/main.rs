@@ -33,7 +33,7 @@ use crate::{
     execute_cli_handler
   }, handles::{
     cfb_video_by_id_handler, cfb_video_by_path_handler, clean_meta_info_by_id_handler, parse_meta_info_by_id_handler
-  }, log_util::MyFormatter, stream_handlers::{
+  }, log_util::{MyFormatter, SqlFormatter}, stream_handlers::{
     demo_video_stream_handler, 
     flow1000_image_stream_by_path_handler, 
     image_size_by_all_handler, 
@@ -133,6 +133,7 @@ async fn main() {
   let sql_appender = RollingFileAppender::new(Rotation::NEVER, "./", "sql.log");
   let (sql_blocking, _guard) = tracing_appender::non_blocking(sql_appender);
   let sql_layer = tracing_subscriber::fmt::layer()
+    .event_format(SqlFormatter)
     .with_writer(sql_blocking)
     .with_filter(filter_fn(|metadata| {
       metadata.target() == "sql"
