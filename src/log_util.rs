@@ -1,10 +1,9 @@
-use std::fmt;
-use tracing::{Event, Subscriber};
-use tracing_subscriber::fmt::{
-    format::{self, FormatEvent, FormatFields},
-    FmtContext,
-    FormattedFields,
-};
+use std::{env, fmt, str::FromStr};
+use tracing::{Event, Level, Subscriber, level_filters::LevelFilter};
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::{Layer, filter::filter_fn, fmt::{
+    FmtContext, FormattedFields, format::{self, FormatEvent, FormatFields},
+}, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_subscriber::registry::LookupSpan;
 
 pub struct MyFormatter;
@@ -98,4 +97,32 @@ where
 
         writeln!(writer)
     }
+}
+
+pub fn log_init() {
+
+  let rust_log_env = env::var("RUST_LOG")
+    .unwrap_or_else(|_| String::from("INFO"));
+  let sql_appender = RollingFileAppender::new(Rotation::NEVER, "./", "sql.log");
+  let (sql_blocking, _guard) = tracing_appender::non_blocking(sql_appender);
+  let sql_layer = tracing_subscriber::fmt::layer()
+    .event_format(SqlFormatter)
+    .with_writer(sql_blocking)
+    .with_filter(filter_fn(|metadata| {
+      metadata.target() == "sql"
+    }));
+
+  let (std_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+  let std_layer = tracing_subscriber::fmt::layer()
+    .with_writer(std_blocking)
+    .with_filter(
+      LevelFilter::from_level(
+        Level::from_str(&rust_log_env).unwrap()
+      )
+    );
+
+  tracing_subscriber::registry()
+    .with(sql_layer)
+    .with(std_layer)
+    .init();
 }
