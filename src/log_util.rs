@@ -52,7 +52,8 @@ where
         // Write fields on the event
         ctx.field_format().format_fields(writer.by_ref(), event)?;
 
-        writeln!(writer)
+        let write_result = writeln!(writer);
+        return write_result;
     }
 }
 
@@ -95,7 +96,8 @@ where
         // Write fields on the event
         ctx.field_format().format_fields(writer.by_ref(), event)?;
 
-        writeln!(writer)
+        let write_result = writeln!(writer);
+        return write_result;
     }
 }
 
