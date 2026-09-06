@@ -6,12 +6,12 @@ use tracing_subscriber::{Layer, filter::filter_fn, fmt::{
 }, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_subscriber::registry::LookupSpan;
 
-pub struct MyFormatter;
+pub struct _StdFormatter;
 
 pub struct SqlFormatter;
 
 
-impl<S, N> FormatEvent<S, N> for MyFormatter
+impl<S, N> FormatEvent<S, N> for _StdFormatter
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
