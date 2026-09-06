@@ -99,12 +99,17 @@ where
     }
 }
 
-pub fn log_init() {
+pub struct LogGuards {
+  _sql_guard: tracing_appender::non_blocking::WorkerGuard,
+  _std_guard: tracing_appender::non_blocking::WorkerGuard,
+}
+
+pub fn log_init() -> LogGuards {
 
   let rust_log_env = env::var("RUST_LOG")
     .unwrap_or_else(|_| String::from("INFO"));
   let sql_appender = RollingFileAppender::new(Rotation::NEVER, "./", "sql.log");
-  let (sql_blocking, _guard) = tracing_appender::non_blocking(sql_appender);
+  let (sql_blocking, sql_guard) = tracing_appender::non_blocking(sql_appender);
   let sql_layer = tracing_subscriber::fmt::layer()
     .event_format(SqlFormatter)
     .with_writer(sql_blocking)
@@ -112,7 +117,7 @@ pub fn log_init() {
       metadata.target() == "sql"
     }));
 
-  let (std_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+  let (std_blocking, std_guard) = tracing_appender::non_blocking(std::io::stdout());
   let std_layer = tracing_subscriber::fmt::layer()
     .with_writer(std_blocking)
     .with_filter(
@@ -125,4 +130,9 @@ pub fn log_init() {
     .with(sql_layer)
     .with(std_layer)
     .init();
+
+  LogGuards {
+    _sql_guard: sql_guard,
+    _std_guard: std_guard,
+  }
 }

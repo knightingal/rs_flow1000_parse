@@ -14,16 +14,14 @@ use handles::{
 };
 use hyper::StatusCode;
 use serde_derive::{Deserialize, Serialize};
-use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_subscriber::{Layer, filter::filter_fn, layer::SubscriberExt, util::SubscriberInitExt};
 use std::{
-  env, ffi::{CStr, CString, c_char, c_void}, future::Future, str::FromStr, time::Duration,
+  env, ffi::{CStr, CString, c_char, c_void}, future::Future, time::Duration,
 };
 use stream_handlers::{
   file_stream_handler, image_stream_by_path_handler, mock_stream_handler, video_exist_handler, video_stream_handler,
 };
 use tower_http::trace::TraceLayer;
-use tracing::{Level, Span, level_filters::LevelFilter};
+use tracing::Span;
 
 use sysinfo::System;
 
@@ -33,7 +31,7 @@ use crate::{
     execute_cli_handler
   }, handles::{
     cfb_video_by_id_handler, cfb_video_by_path_handler, clean_meta_info_by_id_handler, parse_meta_info_by_id_handler
-  }, log_util::{MyFormatter, SqlFormatter}, stream_handlers::{
+  }, stream_handlers::{
     demo_video_stream_handler, 
     flow1000_image_stream_by_path_handler, 
     image_size_by_all_handler, 
@@ -128,32 +126,7 @@ extern "C" {
 async fn main() {
   // env_logger::init();
 
-  // log_util::log_init();
-
-  let rust_log_env = env::var("RUST_LOG")
-    .unwrap_or_else(|_| String::from("INFO"));
-  let sql_appender = RollingFileAppender::new(Rotation::NEVER, "./", "sql.log");
-  let (sql_blocking, _guard) = tracing_appender::non_blocking(sql_appender);
-  let sql_layer = tracing_subscriber::fmt::layer()
-    .event_format(SqlFormatter)
-    .with_writer(sql_blocking)
-    .with_filter(filter_fn(|metadata| {
-      metadata.target() == "sql"
-    }));
-
-  let (std_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-  let std_layer = tracing_subscriber::fmt::layer()
-    .with_writer(std_blocking)
-    .with_filter(
-      LevelFilter::from_level(
-        Level::from_str(&rust_log_env).unwrap()
-      )
-    );
-
-  tracing_subscriber::registry()
-    .with(sql_layer)
-    .with(std_layer)
-    .init();
+  let _guards = log_util::log_init();
 
   init_key();
 
