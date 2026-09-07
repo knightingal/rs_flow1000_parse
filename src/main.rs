@@ -25,8 +25,10 @@ use tracing::Span;
 
 use sysinfo::System;
 
+use rs_flow1000_parse::base_lib::{init_key, os_init};
+
 use crate::{
-  base_lib::{init_key, os_init}, business_handles::{
+  business_handles::{
     delete_video_handler, 
     execute_cli_handler
   }, handles::{
@@ -42,17 +44,12 @@ use crate::{
 };
 
 mod business_handles;
-mod designation;
-mod entity;
 mod handles;
 mod stream_handlers;
 mod test_aes;
 mod test_designation;
 mod test_main;
 mod test_video_name_util;
-mod video_name_util;
-mod base_lib;
-mod util;
 mod log_util;
 
 #[repr(C)]

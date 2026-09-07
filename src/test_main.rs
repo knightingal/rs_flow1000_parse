@@ -3,7 +3,8 @@ mod tests {
   use std::{ffi::{CString, c_void}, fs::File, io::{Read, Seek, SeekFrom, Write}, };
 
 
-use crate::{ handles::snapshot, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size} };
+use rs_flow1000_parse::util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size};
+use crate::handles::snapshot;
 
   #[test]
   fn move_cover_test() {

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use crate::video_name_util::{sub_string_matched, video_match_to_cover};
+  use rs_flow1000_parse::video_name_util::{sub_string_matched, video_match_to_cover};
 
   #[test]
   fn video_match_to_cover_test() {

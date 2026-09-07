@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-  use crate::designation::parse_designation;
+  use rs_flow1000_parse::designation::parse_designation;
   #[test]
   fn test_parse_designation1() {
     let file_name = String::from("ipx-091");
