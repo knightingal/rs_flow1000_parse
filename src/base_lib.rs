@@ -200,7 +200,7 @@ pub fn init_key() {
 
 /// Look up full video and cover file paths by video ID.
 /// Returns `(id, video_full_path, cover_full_path, dir_path)`.
-pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
+pub fn video_file_path_by_id(id: u32) -> (u32, String, String, String) {
 
   let mount_config_list = query_mount_configs();
 
@@ -217,8 +217,8 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
         id = :id",
     )
     .unwrap();
-  let file_names: Vec<(u32, String, String, String)> = stmt
-    .query_map(named_params! {":id": id}, |row| {
+  let file_names: (u32, String, String, String) = stmt
+    .query_row(named_params! {":id": id}, |row| {
       let video_file_name: String = row.get_unwrap("video_file_name");
       let cover_file_name: String = row.get_unwrap("cover_file_name");
       let dir_path: String = row.get_unwrap("dir_path");
@@ -233,9 +233,7 @@ pub fn video_file_path_by_id(id: u32) -> Vec<(u32, String, String, String)>{
 
       Result::Ok((id, video_full_name, cover_full_name, dir_path))
     })
-    .unwrap()
-    .map(|it| it.unwrap())
-    .collect();
+    .unwrap();
   return file_names;
 }
 
@@ -533,17 +531,12 @@ pub fn concat_cover(dir_name: String) {
 }
 
 pub fn refresh_video_and_cover_by_id(id: u32) {
-  let file_names = video_file_path_by_id(id);
-  tracing::info!("file_names:{:?}", file_names);
+  let (id, video_file_name, cover_file_name, dir_path) = video_file_path_by_id(id);
+  tracing::info!("file_names:{}, {}, {}, {}", id, video_file_name, cover_file_name, dir_path);
   thread::spawn(move || {
     tracing::debug!("thread process");
-    file_names
-      .into_iter()
-      .for_each(|(id, video_file_name, cover_file_name, dir_path)| {
-        parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
+    parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
 
-        // do concat cover
-        concat_cover(dir_path);
-      });
+    concat_cover(dir_path);
   });
 }

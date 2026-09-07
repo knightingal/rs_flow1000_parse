@@ -210,14 +210,14 @@ pub async fn delete_video_handler(
 ) -> (StatusCode, HeaderMap) {
   let video_files = video_file_path_by_id(id);
 
-  let ret = fs::remove_file(&video_files[0].1);
+  let ret = fs::remove_file(&video_files.1);
   if ret.is_err() {
-    tracing::error!("failed to delete {}, {}", video_files[0].1, ret.unwrap_err().to_string());
+    tracing::error!("failed to delete {}, {}", video_files.1, ret.unwrap_err().to_string());
     return (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers());
   }
-  let ret = fs::remove_file(&video_files[0].2);
+  let ret = fs::remove_file(&video_files.2);
   if ret.is_err() {
-    tracing::error!("failed to delete {}, {}", video_files[0].2, ret.unwrap_err().to_string());
+    tracing::error!("failed to delete {}, {}", video_files.2, ret.unwrap_err().to_string());
     return (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers());
   }
 
