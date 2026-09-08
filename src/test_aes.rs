@@ -5,7 +5,6 @@ mod tests {
 
   type Aes128Ctr64LE = ctr::Ctr64LE<aes::Aes128>;
 
-#[cfg(reallink)]
 use libc::c_char;
 
 #[cfg(reallink)]
@@ -23,26 +22,42 @@ extern "C" {
   fn key_expansion(key: *const u8, w: *mut u32);
 }
 
+#[cfg(mocklink)] 
+fn cfb_file_streaming_v2(
+  _w: *const u32,
+  _iv: *const u8,
+  _input_filename: *const c_char,
+  _output_filename: *const c_char,
+) -> i32 {
+  return 0;
+}
+
+#[cfg(mocklink)] 
+fn cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {}
+#[cfg(mocklink)] 
+fn inv_cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {}
+#[cfg(mocklink)] 
+fn key_expansion(_key: *const u8, _w: *mut u32) {}
+
+
+
   #[test]
   fn cfb_extern_test1() {
-    unsafe {
-      if cfg!(reallink) {
-        let key = "passwordpasswordpasswordpassword";
-        let iv = "2021000120210001";
-        let input_data = "0123456789abcdef0123456789abcdef";
-        let mut w: [u32; 60] = [0; 60];
-        key_expansion(key.as_ptr(), w.as_mut_ptr());
-        println!("key_expansion: {:?}", w);
-        let mut output = [0u8; 32];
-        cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
-        assert_eq!([195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164, 111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196], output);
-      }
+    if cfg!(reallink) {
+      let key = "passwordpasswordpasswordpassword";
+      let iv = "2021000120210001";
+      let input_data = "0123456789abcdef0123456789abcdef";
+      let mut w: [u32; 60] = [0; 60];
+      key_expansion(key.as_ptr(), w.as_mut_ptr());
+      println!("key_expansion: {:?}", w);
+      let mut output = [0u8; 32];
+      cfb_v2(w.as_ptr(), iv.as_ptr(), input_data.as_ptr(), output.as_mut_ptr(), input_data.len());
+      assert_eq!([195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164, 111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196], output);
     }
   }
 
   #[test]
   fn cfb_extern_test2() {
-    unsafe {
       if cfg!(reallink) {
         let key = "passwordpassword16bytesAES256!!\0";
         let iv = "2021000120210001";
@@ -63,12 +78,10 @@ extern "C" {
 
         assert_eq!(inv_output, input_data.as_bytes());
       }
-    }
   }
 
   #[test]
   fn cfb_extern_test3() {
-    unsafe {
       if cfg!(reallink) {
         let key = "passwordpasswordpasswordpassword";
         let iv = "2021000120210001";
@@ -83,7 +96,6 @@ extern "C" {
         );
         println!("cfb_file_streaming_v2 ret: {}", ret);
       }
-    }
   }
 
 
