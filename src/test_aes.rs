@@ -23,7 +23,7 @@ mod tests {
   }
 
   #[cfg(mocklink)]
-  fn cfb_file_streaming_v2(
+  unsafe fn cfb_file_streaming_v2(
     _w: *const u32,
     _iv: *const u8,
     _input_filename: *const c_char,
@@ -33,9 +33,9 @@ mod tests {
   }
 
   #[cfg(mocklink)]
-  fn cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {}
+  unsafe fn cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {}
   #[cfg(mocklink)]
-  fn inv_cfb_v2(
+  unsafe fn inv_cfb_v2(
     _w: *const u32,
     _iv: *const u8,
     _input_buf: *const u8,
@@ -44,7 +44,7 @@ mod tests {
   ) {
   }
   #[cfg(mocklink)]
-  fn key_expansion(_key: *const u8, _w: *mut u32) {}
+  unsafe fn key_expansion(_key: *const u8, _w: *mut u32) {}
 
   #[test]
   fn cfb_extern_test1() {
@@ -53,23 +53,25 @@ mod tests {
       let iv = "2021000120210001";
       let input_data = "0123456789abcdef0123456789abcdef";
       let mut w: [u32; 60] = [0; 60];
-      key_expansion(key.as_ptr(), w.as_mut_ptr());
-      println!("key_expansion: {:?}", w);
-      let mut output = [0u8; 32];
-      cfb_v2(
-        w.as_ptr(),
-        iv.as_ptr(),
-        input_data.as_ptr(),
-        output.as_mut_ptr(),
-        input_data.len(),
-      );
-      assert_eq!(
-        [
-          195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164,
-          111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196
-        ],
-        output
-      );
+      unsafe {
+        key_expansion(key.as_ptr(), w.as_mut_ptr());
+        println!("key_expansion: {:?}", w);
+        let mut output = [0u8; 32];
+        cfb_v2(
+          w.as_ptr(),
+          iv.as_ptr(),
+          input_data.as_ptr(),
+          output.as_mut_ptr(),
+          input_data.len(),
+        );
+        assert_eq!(
+          [
+            195, 133, 74, 75, 31, 218, 111, 133, 64, 199, 187, 70, 190, 65, 38, 172, 189, 251, 164,
+            111, 222, 167, 229, 186, 200, 235, 59, 224, 37, 231, 183, 196
+          ],
+          output
+        );
+      }
     }
   }
 
@@ -80,35 +82,37 @@ mod tests {
       let iv = "2021000120210001";
       let input_data = "0123456789abcdef0123456789abcdef";
       let mut w: [u32; 60] = [0; 60];
-      key_expansion(key.as_ptr(), w.as_mut_ptr());
-      println!("key_expansion: {:?}", w);
-      let mut output = [0u8; 32];
-      let mut inv_output = [0u8; 32];
-      cfb_v2(
-        w.as_ptr(),
-        iv.as_ptr(),
-        input_data.as_ptr(),
-        output.as_mut_ptr(),
-        input_data.len(),
-      );
-      assert_eq!(
-        [
-          0xef, 0xfb, 0x8c, 0xb0, 0x4c, 0x90, 0x9f, 0x33, 0x41, 0xd7, 0x14, 0x2a, 0x1e, 0xcf, 0xdd,
-          0xa4, 0xb6, 0xf9, 0x16, 0xf5, 0x09, 0xad, 0xa8, 0x83, 0x02, 0xf2, 0x9c, 0xd9, 0x5b, 0xbf,
-          0x23, 0x83
-        ],
-        output
-      );
+      unsafe {
+        key_expansion(key.as_ptr(), w.as_mut_ptr());
+        println!("key_expansion: {:?}", w);
+        let mut output = [0u8; 32];
+        let mut inv_output = [0u8; 32];
+        cfb_v2(
+          w.as_ptr(),
+          iv.as_ptr(),
+          input_data.as_ptr(),
+          output.as_mut_ptr(),
+          input_data.len(),
+        );
+        assert_eq!(
+          [
+            0xef, 0xfb, 0x8c, 0xb0, 0x4c, 0x90, 0x9f, 0x33, 0x41, 0xd7, 0x14, 0x2a, 0x1e, 0xcf, 0xdd,
+            0xa4, 0xb6, 0xf9, 0x16, 0xf5, 0x09, 0xad, 0xa8, 0x83, 0x02, 0xf2, 0x9c, 0xd9, 0x5b, 0xbf,
+            0x23, 0x83
+          ],
+          output
+        );
 
-      inv_cfb_v2(
-        w.as_ptr(),
-        iv.as_ptr(),
-        output.as_ptr(),
-        inv_output.as_mut_ptr(),
-        input_data.len(),
-      );
+        inv_cfb_v2(
+          w.as_ptr(),
+          iv.as_ptr(),
+          output.as_ptr(),
+          inv_output.as_mut_ptr(),
+          input_data.len(),
+        );
 
-      assert_eq!(inv_output, input_data.as_bytes());
+        assert_eq!(inv_output, input_data.as_bytes());
+      }
     }
   }
 
@@ -118,14 +122,16 @@ mod tests {
       let key = "passwordpasswordpasswordpassword";
       let iv = "2021000120210001";
       let mut w: [u32; 60] = [0; 60];
-      key_expansion(key.as_ptr(), w.as_mut_ptr());
-      println!("key_expansion: {:?}", w);
-      let ret = cfb_file_streaming_v2(
-        w.as_ptr(),
-        iv.as_ptr(),
-        "/home/knightingal/demo_video.mp4\0".as_ptr() as *const c_char,
-        "/home/knightingal/rust_cfb.mp4.bin\0".as_ptr() as *const c_char,
-      );
+      let ret = unsafe {
+        key_expansion(key.as_ptr(), w.as_mut_ptr());
+        println!("key_expansion: {:?}", w);
+        cfb_file_streaming_v2(
+          w.as_ptr(),
+          iv.as_ptr(),
+          "/home/knightingal/demo_video.mp4\0".as_ptr() as *const c_char,
+          "/home/knightingal/rust_cfb.mp4.bin\0".as_ptr() as *const c_char,
+        )
+      };
       println!("cfb_file_streaming_v2 ret: {}", ret);
     }
   }
