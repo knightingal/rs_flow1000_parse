@@ -49,11 +49,11 @@ extern "C" {
 }
 
 #[cfg(mocklink)]
-fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize) {
+unsafe fn inv_cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {
 }
 
 #[cfg(mocklink)]
-fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
+unsafe fn avif_to_png(_file_url: *const c_char, _snap_time: u64) -> SnapshotSt {
     SnapshotSt {
       buff: std::ptr::null(),
       buff_len: 0,
@@ -61,7 +61,7 @@ fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
 }
 
 #[cfg(mocklink)]
-fn av_free_wrap(buff: *const u8) {}
+unsafe fn av_free_wrap(_buff: *const u8) {}
 
 
 pub async fn mock_stream_handler() -> Response {

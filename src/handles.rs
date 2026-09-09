@@ -52,11 +52,11 @@ extern "C" {
 
 
 #[cfg(mocklink)]
-fn cfb_file_streaming_v2(
-  w: *const u32,
-  iv: *const u8,
-  input_filename: *const c_char,
-  output_filename: *const c_char,
+unsafe fn cfb_file_streaming_v2(
+  _w: *const u32,
+  _iv: *const u8,
+  _input_filename: *const c_char,
+  _output_filename: *const c_char,
 ) -> i32 {
   return 0;
 }
@@ -68,7 +68,7 @@ fn frame_decode_with_param(_: *const c_char, _: *const c_char) -> i32 {
 }
 
 #[cfg(mocklink)]
-fn snapshot_video(file_url: *const c_char, snap_time: u64) -> SnapshotSt {
+unsafe fn snapshot_video(_file_url: *const c_char, _snap_time: u64) -> SnapshotSt {
     SnapshotSt {
       buff: std::ptr::null(),
       buff_len: 0,
