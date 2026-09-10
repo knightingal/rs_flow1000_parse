@@ -14,11 +14,11 @@ extern "C" {
 }
 
 #[cfg(mocklink)]
-fn cfb_file_streaming_v2(
-  w: *const u32,
-  iv: *const u8,
-  input_filename: *const c_char,
-  output_filename: *const c_char,
+unsafe fn cfb_file_streaming_v2(
+  _w: *const u32,
+  _iv: *const u8,
+  _input_filename: *const c_char,
+  _output_filename: *const c_char,
 ) -> i32 {
   return 0;
 }
