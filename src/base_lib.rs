@@ -13,7 +13,7 @@ extern "C" {
 }
 
 #[cfg(mocklink)]
-fn init_inner_key_expansion(key: *const u8) {
+unsafe fn init_inner_key_expansion(_key: *const u8) {
 }
 
 pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
