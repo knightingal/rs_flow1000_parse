@@ -5,14 +5,11 @@ use rs_flow1000_parse::{
     log_sql, 
     os_init, 
     parse_dir_path
-  }, 
-  designation::parse_designation, 
-  util::image_util::{
+  }, designation::parse_designation, log_util, util::image_util::{
     parse_jpg_size, 
     parse_png_size, 
     parse_webp_size
-  }, 
-  video_name_util::{
+  }, video_name_util::{
     parse_video_cover, 
     parse_video_meta_info
   }
@@ -21,9 +18,8 @@ use rusqlite::{ToSql, named_params};
 use std::{env, fs::File, io};
 
 fn main() {
-  tracing_subscriber::fmt::init();
+  let _guards = log_util::log_init();
   tracing::info!("import monthly videos!");
-
   let args: Vec<String> = env::args().collect();
   if args.len() < 3 {
     tracing::error!("invalid args. input args to indicate base_index and path such as \"3 /202512\"");
