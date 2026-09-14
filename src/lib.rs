@@ -8,3 +8,5 @@ pub mod video_name_util;
 pub mod designation;
 
 pub mod util;
+
+pub mod log_util;

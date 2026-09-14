@@ -25,7 +25,7 @@ use tracing::Span;
 
 use sysinfo::System;
 
-use rs_flow1000_parse::base_lib::{init_key, os_init};
+use rs_flow1000_parse::{base_lib::{init_key, os_init}, log_util};
 
 use crate::{
   business_handles::{
@@ -50,7 +50,6 @@ mod test_aes;
 mod test_designation;
 mod test_main;
 mod test_video_name_util;
-mod log_util;
 
 #[repr(C)]
 struct RustObject {
