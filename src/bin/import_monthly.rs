@@ -1,20 +1,13 @@
 use rs_flow1000_parse::{
   base_lib::{
-    check_exist_by_video_file_name, 
-    get_sqlite_connection, 
-    log_sql, 
-    os_init, 
-    parse_dir_path
-  }, designation::parse_designation, log_util, util::image_util::{
-    parse_jpg_size, 
-    parse_png_size, 
-    parse_webp_size
-  }, video_name_util::{
-    parse_video_cover, 
-    parse_video_meta_info
-  }
+    check_exist_by_video_file_name, get_sqlite_connection, log_sql, os_init, parse_dir_path,
+  },
+  designation::parse_designation,
+  log_util,
+  util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size},
+  video_name_util::{parse_video_cover, parse_video_meta_info},
 };
-use rusqlite::{ToSql, named_params};
+use rusqlite::{named_params, ToSql};
 use std::{env, fs::File, io};
 
 fn main() {
@@ -22,7 +15,9 @@ fn main() {
   tracing::info!("import monthly videos!");
   let args: Vec<String> = env::args().collect();
   if args.len() < 3 {
-    tracing::error!("invalid args. input args to indicate base_index and path such as \"3 /202512\"");
+    tracing::error!(
+      "invalid args. input args to indicate base_index and path such as \"3 /202512\""
+    );
     return;
   }
 
@@ -69,21 +64,20 @@ fn main() {
     let path = std::path::Path::new(&dir_path_tmp);
     let cover_size = path.metadata().map_or_else(|_| 0, |m| m.len());
 
-    
-    let image_size_result  = parse_image_size_by_file_name(dir_path_tmp);
+    let image_size_result = parse_image_size_by_file_name(dir_path_tmp);
     let (width, height) = if image_size_result.is_ok() {
       image_size_result.unwrap()
     } else {
-      tracing::warn!("failed to parse cover size of {}", video_cover_entry.cover_file_name);
+      tracing::warn!(
+        "failed to parse cover size of {}",
+        video_cover_entry.cover_file_name
+      );
       (0, 0)
     };
 
     let designation = parse_designation(&video_cover_entry.video_file_name);
-    let exist = check_exist_by_video_file_name(
-      &sub_dir,
-      base_index,
-      &video_cover_entry.video_file_name,
-    );
+    let exist =
+      check_exist_by_video_file_name(&sub_dir, base_index, &video_cover_entry.video_file_name);
 
     if !exist {
       let mut stmt = sqlite_conn.prepare("insert into video_info(
@@ -96,27 +90,24 @@ fn main() {
         :video_size, :width, :height,:duration,:frame_rate,:video_frame_count,:cover_size,
         :cover_width, :cover_height
       )" ).unwrap();
-      let _ = stmt.execute(
-        named_params! {
-          ":dir_path": sub_dir, 
-          ":base_index": base_index, 
-          ":video_file_name": video_cover_entry.video_file_name, 
-          ":cover_file_name": video_cover_entry.cover_file_name,
-          ":designation_char": designation.char_final, 
-          ":designation_num": designation.num_final,
-          ":video_size": video_size,
-          ":cover_size": cover_size,
-          ":width": meta_info.width,
-          ":height": meta_info.height,
-          ":duration": meta_info.duratoin,
-          ":frame_rate": meta_info.frame_rate,
-          ":video_frame_count": meta_info.video_frame_count,
-          ":cover_width": width,
-          ":cover_height": height,
-        }
-      );
+      let _ = stmt.execute(named_params! {
+        ":dir_path": sub_dir,
+        ":base_index": base_index,
+        ":video_file_name": video_cover_entry.video_file_name,
+        ":cover_file_name": video_cover_entry.cover_file_name,
+        ":designation_char": designation.char_final,
+        ":designation_num": designation.num_final,
+        ":video_size": video_size,
+        ":cover_size": cover_size,
+        ":width": meta_info.width,
+        ":height": meta_info.height,
+        ":duration": meta_info.duratoin,
+        ":frame_rate": meta_info.frame_rate,
+        ":video_frame_count": meta_info.video_frame_count,
+        ":cover_width": width,
+        ":cover_height": height,
+      });
     } else {
-
       let named_params: &[(&str, &dyn ToSql)] = &[
         (":dir_path", &sub_dir),
         (":base_index", &base_index),
@@ -135,8 +126,9 @@ fn main() {
         (":cover_height", &height),
       ];
 
-      let mut stmt = sqlite_conn.prepare(
-        "update video_info set 
+      let mut stmt = sqlite_conn
+        .prepare(
+          "update video_info set 
         cover_file_name=:cover_file_name, 
         designation_char=:designation_char, 
         designation_num=:designation_num, 
@@ -151,8 +143,9 @@ fn main() {
         cover_height=:cover_height
       where
         dir_path=:dir_path and base_index=:base_index and video_file_name=:video_file_name
-      "
-      ).unwrap();
+      ",
+        )
+        .unwrap();
       let _ = stmt.execute(named_params);
       log_sql(&stmt.expanded_sql().unwrap());
     }
@@ -162,22 +155,24 @@ fn main() {
 }
 
 pub fn parse_image_size_by_file_name(file_name: String) -> io::Result<(u32, u32)> {
-
   let image_result = File::open(&file_name);
 
-  let extension = std::path::Path::new(file_name.as_str()).extension().unwrap().to_str().unwrap();
+  let extension = std::path::Path::new(file_name.as_str())
+    .extension()
+    .unwrap()
+    .to_str()
+    .unwrap();
 
   match image_result {
     Ok(image) => {
       if extension.eq_ignore_ascii_case("jpg") {
         parse_jpg_size(image, 0)
-      } else if extension.eq_ignore_ascii_case("png"){
+      } else if extension.eq_ignore_ascii_case("png") {
         parse_png_size(image, 0)
       } else {
         parse_webp_size(image, 0)
       }
-    },
-    Err(err) => Err(err)
+    }
+    Err(err) => Err(err),
   }
-
 }
