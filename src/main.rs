@@ -8,7 +8,7 @@ use business_handles::{
 };
 use handles::{
   all_duplicate_cover_handler, all_duplicate_video_handler, designation_search_handler, generate_video_snapshot_handler,
-  init_video_handler, move_cover_handler, parse_designation_all_handler, parse_designation_handler,
+  init_video_handler, move_cover_handler, parse_designation_handler,
   parse_meta_info_all_handler, snapshot_handler,
   video_detail_handler, video_meta_info_handler
 };
@@ -174,7 +174,6 @@ async fn main() {
       "/parse-designation/:base_index/*sub_dir",
       get(parse_designation_handler),
     )
-    .route("/parse-designation-all", get(parse_designation_all_handler))
     .route(
       "/designation-search/:designation_ori",
       get(designation_search_handler),

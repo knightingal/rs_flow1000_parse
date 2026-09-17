@@ -590,46 +590,6 @@ pub async fn clean_meta_info_by_id_handler(Path(id): Path<u32>) -> StatusCode {
   StatusCode::OK
 }
 
-pub async fn parse_designation_all_handler() -> (StatusCode, HeaderMap, Json<Vec<VideoEntity>>) {
-  // let mut conn = unsafe {
-  //   POOL.unwrap().get_conn().unwrap()
-  // };
-
-  // let selected_video: Vec<VideoEntity> = conn.query_map(
-  //   "select id, video_file_name, cover_file_name from video_info ", |(id, video_file_name, cover_file_name)| {
-  //     let designation = parse_designation(&video_file_name);
-
-  //     return VideoEntity{
-  //       id,
-  //       video_file_name,
-  //       cover_file_name,
-  //       designation_char: designation.char_final.unwrap(),
-  //       designation_num: designation.num_final.unwrap(),
-  //       dir_path: String::new(),
-  //       base_index: 0,
-  //       video_size: Option::Some(0),
-  //       rate: Option::None,
-  //       height:0,
-  //       width: 0,
-  //       frame_rate: 0,
-  //       video_frame_count: 0,
-  //       duration: 0,
-  //     };
-  //   }).unwrap();
-
-  // selected_video.iter().for_each(|video| {
-  //   let _:Vec<Row> = conn.exec("update video_info set designation_char=:char, designation_num=:num where id=:id", params! {
-  //     "char" => video.designation_char.clone(),
-  //     "num" => video.designation_num.clone(),
-  //     "id" => video.id
-  //   }).unwrap();
-
-  // });
-
-  json_response(vec![])
-}
-
-
 pub fn snapshot(file_url: CString, snap_time: u64) -> SnapshotSt {
   unsafe {
     let snapshot_st = snapshot_video(file_url.as_ptr(), snap_time);
