@@ -100,7 +100,7 @@ pub async fn image_size_by_all_handler() -> StatusCode {
 
 
 pub async fn image_stream_by_id_handler(Path(id): Path<u32>) -> Response {
-  tracing::info!("enter image_stream_by_id_handler, id:{}", id);
+  tracing::debug!("enter image_stream_by_id_handler, id:{}", id);
   let (real_file_name, start, content_length, extension) = find_cover_by_id(id);
   let mut content_type_value = String::from("image/");
   content_type_value.push_str(extension.as_str());
