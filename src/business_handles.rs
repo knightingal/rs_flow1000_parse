@@ -43,7 +43,12 @@ fn process_sql<T, P, CBF>(sql: &str, params: P, cbf: CBF) -> Vec<T>
   let selected_iter = 
     stmt.query_map(params, cbf).unwrap().map(|it|it.unwrap());
 
-  selected_iter.collect()
+
+  let result = selected_iter.collect();
+  let sql_content = stmt.expanded_sql().unwrap();
+  log_sql(&sql_content);
+
+  result
 }
 
 
@@ -65,6 +70,7 @@ pub async fn video_info_handler(
 
 
 pub async fn mount_config_handler() -> (StatusCode, HeaderMap, Json<Vec<MountConfig>>) {
+  tracing::info!("mount_config_handler");
   let mut sql = String::from("select id, ");
   let dir_path_name: &str = chois_dir_path_field_name_by_os();
   sql += dir_path_name;

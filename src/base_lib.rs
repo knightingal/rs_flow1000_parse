@@ -21,7 +21,8 @@ pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 pub static COVER_BASE_PATH: OnceLock<String> = OnceLock::new();
 
 pub fn log_sql(sql: &String) {
-  tracing::info!("{}", sql);
+  tracing::info!("log sql:{}", sql);
+  tracing::info!(target="sql", "{}", sql);
 }
 
 /// Convert a 64-char hex string into a 32-byte array.
@@ -70,6 +71,7 @@ pub fn chois_dir_path_field_name_by_os() -> &'static str {
 
 /// Query all mount configs from the `mp4_base_dir` table, using the OS-specific dir_path column.
 pub fn query_mount_configs() -> Vec<MountConfig> {
+  tracing::info!("query_mount_configs");
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -90,8 +92,11 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
     })
     .unwrap()
     .map(|it| it.unwrap());
-
   let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
+
+  let sql = &stmt.expanded_sql().unwrap();
+  log_sql(sql);
+
   return mount_config_list;
 }
 
