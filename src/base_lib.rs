@@ -21,8 +21,7 @@ pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
 pub static COVER_BASE_PATH: OnceLock<String> = OnceLock::new();
 
 pub fn log_sql(sql: &String) {
-  tracing::info!("log sql:{}", sql);
-  tracing::info!(target="sql", "{}", sql);
+  tracing::info!(target:"sql", "{}", sql);
 }
 
 /// Convert a 64-char hex string into a 32-byte array.
