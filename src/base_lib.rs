@@ -70,7 +70,6 @@ pub fn chois_dir_path_field_name_by_os() -> &'static str {
 
 /// Query all mount configs from the `mp4_base_dir` table, using the OS-specific dir_path column.
 pub fn query_mount_configs() -> Vec<MountConfig> {
-  tracing::info!("query_mount_configs");
 
   let sqlite_conn = get_sqlite_connection();
 
@@ -93,8 +92,6 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
     .map(|it| it.unwrap());
   let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
 
-  let sql = &stmt.expanded_sql().unwrap();
-  log_sql(sql);
 
   return mount_config_list;
 }
