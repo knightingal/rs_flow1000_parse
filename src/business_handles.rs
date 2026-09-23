@@ -174,8 +174,6 @@ pub async fn video_rate_handler(
   ).unwrap();
   log_sql(&stmt.expanded_sql().unwrap());
 
-  tracing::info!("execute sql:{}", stmt.expanded_sql().unwrap());
-
   let param: &[(&str, &dyn ToSql)] = &[(":id", &id)];
 
   let result: Result<VideoEntity, _> = sqlite_conn.query_row(
@@ -294,6 +292,8 @@ pub async fn bind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (St
   if ret.is_err() {
     (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers())
   } else {
+    let sql = stmt.expanded_sql().unwrap();
+    log_sql(&sql);
     (StatusCode::OK, cors_json_headers())
   }
 }
@@ -314,6 +314,8 @@ pub async fn unbind_tag_handler(Path((tag_id, video_id)): Path<(u32, u32)>) -> (
   if ret.is_err() {
     (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers())
   } else {
+    let sql = stmt.expanded_sql().unwrap();
+    log_sql(&sql);
     (StatusCode::OK, cors_json_headers())
   }
 }
