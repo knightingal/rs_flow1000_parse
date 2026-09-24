@@ -1,9 +1,21 @@
-use std::{cmp::Ordering, env, fs::{self, DirEntry, File}, io::{self, Read, Seek, SeekFrom, Write}, path::Path, sync::OnceLock, thread};
+use std::{
+  cmp::Ordering,
+  env,
+  fs::{self, DirEntry, File},
+  io::{self, Read, Seek, SeekFrom, Write},
+  path::Path,
+  sync::OnceLock,
+  thread,
+};
 
-use rusqlite::{Connection, named_params};
+use rusqlite::{named_params, Connection};
 use sysinfo::System;
 
-use crate::{entity::{MountConfig, VideoEntity}, util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size}, video_name_util::parse_video_meta_info};
+use crate::{
+  entity::{MountConfig, VideoEntity},
+  util::image_util::{parse_jpg_size, parse_png_size, parse_webp_size},
+  video_name_util::parse_video_meta_info,
+};
 
 #[cfg(reallink)]
 #[link(name = "cfbdecode")]
@@ -13,8 +25,7 @@ extern "C" {
 }
 
 #[cfg(mocklink)]
-unsafe fn init_inner_key_expansion(_key: *const u8) {
-}
+unsafe fn init_inner_key_expansion(_key: *const u8) {}
 
 pub static IS_LINUX: OnceLock<bool> = OnceLock::new();
 pub static IS_MACOS: OnceLock<bool> = OnceLock::new();
@@ -36,10 +47,9 @@ pub fn hex_to_byte_array(hex: String) -> [u8; 32] {
 
 /// Detect the current OS and set the global `IS_LINUX` / `IS_MACOS` flags.
 pub fn os_init() {
-  let is_linux =
-    System::name().unwrap().contains("Linux")
-      || System::name().unwrap() == "Deepin"
-      || System::name().unwrap().contains("openSUSE");
+  let is_linux = System::name().unwrap().contains("Linux")
+    || System::name().unwrap() == "Deepin"
+    || System::name().unwrap().contains("openSUSE");
   let _ = IS_LINUX.set(is_linux);
 
   let is_macos = System::name().unwrap().contains("Darwin");
@@ -70,7 +80,6 @@ pub fn chois_dir_path_field_name_by_os() -> &'static str {
 
 /// Query all mount configs from the `mp4_base_dir` table, using the OS-specific dir_path column.
 pub fn query_mount_configs() -> Vec<MountConfig> {
-
   let sqlite_conn = get_sqlite_connection();
 
   let mut sql = String::from("select id, ");
@@ -92,14 +101,18 @@ pub fn query_mount_configs() -> Vec<MountConfig> {
     .map(|it| it.unwrap());
   let mount_config_list: Vec<MountConfig> = mount_config_iter.collect();
 
-
   return mount_config_list;
 }
 
-
 /// Resolve a `VideoEntity` to its full video path, cover path, and directory path on disk.
-pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec<MountConfig>) -> (String, String, String) {
-  let mount_config = mount_configs.iter().find(|it| it.id == video_entity.base_index).unwrap();
+pub fn video_entity_to_file_path(
+  video_entity: &VideoEntity,
+  mount_configs: &Vec<MountConfig>,
+) -> (String, String, String) {
+  let mount_config = mount_configs
+    .iter()
+    .find(|it| it.id == video_entity.base_index)
+    .unwrap();
   let mut video_path = mount_config.dir_path.clone();
   video_path.push_str(&video_entity.dir_path);
   video_path.push_str("/");
@@ -114,8 +127,7 @@ pub fn video_entity_to_file_path(video_entity: &VideoEntity, mount_configs: &Vec
   dir_path.push_str(&video_entity.dir_path);
 
   (video_path, cover_path, dir_path)
-} 
-
+}
 
 /// List file names and sizes in a directory, excluding `.torrent` files, sorted by modification time descending.
 pub fn parse_dir_path(dir_path: &String) -> Result<Vec<(String, u64)>, std::io::Error> {
@@ -144,7 +156,6 @@ fn comp_path(a: &DirEntry, b: &DirEntry) -> Result<Ordering, std::io::Error> {
 
   Result::Ok(mod_a.cmp(&mod_b))
 }
-
 
 /// Check whether a video record with the given dir_path, base_index, and video_file_name already exists.
 pub fn check_exist_by_video_file_name(
@@ -181,28 +192,25 @@ pub fn check_exist_by_video_file_name(
 
 /// Initialize the CFB decryption key from the `CFB_KEY` env var (falls back to a hard-coded key).
 pub fn init_key() {
-
   let cfb_key = env::var("CFB_KEY");
 
   let pwd: [u8; 32] = match cfb_key {
-      Ok(cfb_key) => hex_to_byte_array(cfb_key),
-      Err(_) => {
-        tracing::warn!("CFB_KEY not set, use hard coded key");
-        let key = "passwordpasswordpasswordpassword"; // 32 bytes key
-        key.as_bytes().try_into().unwrap()
-      },
+    Ok(cfb_key) => hex_to_byte_array(cfb_key),
+    Err(_) => {
+      tracing::warn!("CFB_KEY not set, use hard coded key");
+      let key = "passwordpasswordpasswordpassword"; // 32 bytes key
+      key.as_bytes().try_into().unwrap()
+    }
   };
 
   unsafe {
     init_inner_key_expansion(pwd.as_ptr());
   }
-
 }
 
 /// Look up full video and cover file paths by video ID.
 /// Returns `(id, video_full_path, cover_full_path, dir_path)`.
 pub fn video_file_path_by_id(id: u32) -> (u32, String, String, String) {
-
   let mount_config_list = query_mount_configs();
 
   tracing::debug!("call query video_file_name");
@@ -227,9 +235,16 @@ pub fn video_file_path_by_id(id: u32) -> (u32, String, String, String) {
       let id: u32 = row.get_unwrap("id");
       tracing::debug!("get file_name:{}, {}", video_file_name, cover_file_name);
 
-      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
-        id, video_file_name, cover_file_name, dir_path.clone(), base_index
-      ), &mount_config_list);
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(
+        &VideoEntity::new_by_file_name(
+          id,
+          video_file_name,
+          cover_file_name,
+          dir_path.clone(),
+          base_index,
+        ),
+        &mount_config_list,
+      );
       tracing::debug!("{}", cover_full_name);
 
       Result::Ok((id, video_full_name, cover_full_name, dir_path))
@@ -243,7 +258,7 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   let sqlite_conn: Connection = get_sqlite_connection();
   let mut stmt: rusqlite::Statement<'_> = sqlite_conn
     .prepare(
-  "update 
+      "update 
     video_info 
   set 
     video_size = :video_size,
@@ -290,13 +305,10 @@ pub fn parse_and_update_meta_info_by_id(id: u32, video_file_name: String, cover_
   log_sql(&stmt.expanded_sql().unwrap());
 }
 
-
-
 /// Locate the cover image for a video by ID.
 /// Returns `(real_file_name, cover_offset, content_length, extension)`.
 /// If `cover_offset` is 0 the standalone cover file is used; otherwise the concatenated `main.class` archive.
 pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
-
   let mount_config_list = query_mount_configs();
 
   let sqlite_conn = get_sqlite_connection();
@@ -321,11 +333,18 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
       let cover_size: u64 = row.get_unwrap("cover_size");
       let cover_offset: u64 = row.get_unwrap("cover_offset");
 
-      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
-        id, video_file_name, cover_file_name, dir_path, base_index
-      ), &mount_config_list);
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(
+        &VideoEntity::new_by_file_name(id, video_file_name, cover_file_name, dir_path, base_index),
+        &mount_config_list,
+      );
 
-      Result::Ok((id, video_full_name, cover_full_name, cover_size, cover_offset))
+      Result::Ok((
+        id,
+        video_full_name,
+        cover_full_name,
+        cover_size,
+        cover_offset,
+      ))
     })
     .unwrap()
     .map(|it| it.unwrap())
@@ -339,15 +358,24 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
     // cover_offset == 0 means this cover is not concated
     always_exist_cover_file
   } else {
-    std::path::Path::new(&always_exist_cover_file).parent().unwrap().join("main.class").to_str().unwrap().to_string()
+    std::path::Path::new(&always_exist_cover_file)
+      .parent()
+      .unwrap()
+      .join("main.class")
+      .to_str()
+      .unwrap()
+      .to_string()
   };
 
-  let mut start_offset = file_names[0].4; 
+  let mut start_offset = file_names[0].4;
 
   if Path::new(&real_file_name).exists() {
     tracing::debug!("exist file found:{}", real_file_name);
   } else {
-    tracing::info!("real_file_name not exist, use in driver_path:{}", in_driver_path);
+    tracing::info!(
+      "real_file_name not exist, use in driver_path:{}",
+      in_driver_path
+    );
     real_file_name = in_driver_path;
     start_offset = 0;
   }
@@ -355,14 +383,21 @@ pub fn find_cover_by_id(id: u32) -> (String, u64, u64, String) {
   let file_size = file_names[0].3;
   let content_length = file_size;
 
-  let extension = std::path::Path::new(file_names[0].2.as_str()).extension().unwrap().to_str().unwrap();
-  (real_file_name, start_offset, content_length, String::from(extension))
+  let extension = std::path::Path::new(file_names[0].2.as_str())
+    .extension()
+    .unwrap()
+    .to_str()
+    .unwrap();
+  (
+    real_file_name,
+    start_offset,
+    content_length,
+    String::from(extension),
+  )
 }
-
 
 /// Parse the width and height of a video's cover image by ID.
 pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
-
   let (real_file_name, start, _, extension) = find_cover_by_id(id);
   let image_result = File::open(real_file_name);
 
@@ -370,36 +405,39 @@ pub fn parse_image_size_by_id(id: u32) -> io::Result<(u32, u32)> {
     Ok(image) => {
       if extension.eq_ignore_ascii_case("jpg") {
         parse_jpg_size(image, start)
-      } else if extension.eq_ignore_ascii_case("png"){
+      } else if extension.eq_ignore_ascii_case("png") {
         parse_png_size(image, start)
       } else {
         parse_webp_size(image, start)
       }
-    },
-    Err(err) => Err(err)
+    }
+    Err(err) => Err(err),
   }
 }
 
 /// Iterate over all video IDs and apply `f` to each, collecting the results.
 pub fn scan_all_by_id<T, F>(mut f: F) -> Vec<T>
-where 
+where
   F: FnMut(u32) -> T,
 {
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare("select id from video_info").unwrap();
-  let ids: Vec<T> = stmt.query_map({}, |row| {
-    let id: u32 = row.get_unwrap("id");
-    Result::Ok(id)
-  }).unwrap().map(|it| f(it.unwrap())).collect();
+  let ids: Vec<T> = stmt
+    .query_map({}, |row| {
+      let id: u32 = row.get_unwrap("id");
+      Result::Ok(id)
+    })
+    .unwrap()
+    .map(|it| f(it.unwrap()))
+    .collect();
   return ids;
 }
 
-
 /// Query video entities under a specific sub-directory and base index, applying `f` to each.
-pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f: F) -> Vec<T> 
-  where F: FnMut(VideoEntity) -> T
+pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f: F) -> Vec<T>
+where
+  F: FnMut(VideoEntity) -> T,
 {
-
   let sql = "
     select 
       id, video_file_name, cover_file_name, rate, video_size, base_index, dir_path, 
@@ -413,68 +451,71 @@ pub fn video_info_list_by_sub_dir<T, F>(base_index: u32, sub_dir: String, mut f:
 
   let sqlite_conn = get_sqlite_connection();
   let mut stmt = sqlite_conn.prepare(sql).unwrap();
-  let selected_iter: Vec<T> = stmt.query_map(params, |row| {
-    Ok(VideoEntity::new_for_base_info(
-            row.get_unwrap(0),
-            row.get_unwrap(1),
-            row.get_unwrap(2),
-            row.get_unwrap(4),
-            row.get_unwrap(3),
-            row.get_unwrap(5),
-            row.get_unwrap(6),
-            row.get_unwrap(7),
-            row.get_unwrap(8),
-            row.get(9).unwrap_or(1),
-            row.get(10).unwrap_or(1)
-    ))
-  }).unwrap().map(|it| f(it.unwrap())).collect();
+  let selected_iter: Vec<T> = stmt
+    .query_map(params, |row| {
+      Ok(VideoEntity::new_for_base_info(
+        row.get_unwrap(0),
+        row.get_unwrap(1),
+        row.get_unwrap(2),
+        row.get_unwrap(4),
+        row.get_unwrap(3),
+        row.get_unwrap(5),
+        row.get_unwrap(6),
+        row.get_unwrap(7),
+        row.get_unwrap(8),
+        row.get(9).unwrap_or(1),
+        row.get(10).unwrap_or(1),
+      ))
+    })
+    .unwrap()
+    .map(|it| f(it.unwrap()))
+    .collect();
   return selected_iter;
 }
 
 /// Concatenate all cover images in a directory into a single `main.class` archive with a CAFEBABE header,
 /// and persist each cover's byte offset in the `video_info` table.
 pub fn concat_cover(dir_name: String) {
-
   let mount_config_list = query_mount_configs();
   // let dir_name = "/202604";
   let cover_base_path = COVER_BASE_PATH.get().unwrap();
   let sqlite_conn: Connection = get_sqlite_connection();
-  let mut stmt = sqlite_conn.prepare(
-    "select 
+  let mut stmt = sqlite_conn
+    .prepare(
+      "select 
       id, video_file_name, base_index, dir_path, cover_file_name, cover_size, cover_offset
     FROM 
       video_info 
     WHERE 
-      dir_path = :dir_path").unwrap();
+      dir_path = :dir_path",
+    )
+    .unwrap();
 
-  let covers: Vec<(
-      u32, 
-      String, 
-      String, 
-      u64, 
-      u64
-  )> = stmt.query_map(named_params! {":dir_path": dir_name}, |row| {
-    let video_file_name: String = row.get_unwrap("video_file_name");
-    let cover_file_name: String = row.get_unwrap("cover_file_name");
-    let dir_path: String = row.get_unwrap("dir_path");
-    let base_index: u32 = row.get_unwrap("base_index");
-    let id: u32 = row.get_unwrap("id");
-    let cover_size: u64 = row.get_unwrap("cover_size");
-    let cover_offset: u64 = row.get_unwrap("cover_offset");
-    let (video_full_name, cover_full_name, _) = video_entity_to_file_path(&VideoEntity::new_by_file_name(
-      id, video_file_name, cover_file_name, dir_path, base_index
-    ), &mount_config_list);
+  let covers: Vec<(u32, String, String, u64, u64)> = stmt
+    .query_map(named_params! {":dir_path": dir_name}, |row| {
+      let video_file_name: String = row.get_unwrap("video_file_name");
+      let cover_file_name: String = row.get_unwrap("cover_file_name");
+      let dir_path: String = row.get_unwrap("dir_path");
+      let base_index: u32 = row.get_unwrap("base_index");
+      let id: u32 = row.get_unwrap("id");
+      let cover_size: u64 = row.get_unwrap("cover_size");
+      let cover_offset: u64 = row.get_unwrap("cover_offset");
+      let (video_full_name, cover_full_name, _) = video_entity_to_file_path(
+        &VideoEntity::new_by_file_name(id, video_file_name, cover_file_name, dir_path, base_index),
+        &mount_config_list,
+      );
 
-    Result::Ok((
-      id, 
-      video_full_name, 
-      cover_full_name, 
-      cover_size, 
-      cover_offset
-    ))
-  }).unwrap().map(|result| {
-    result.unwrap()
-  }).collect();
+      Result::Ok((
+        id,
+        video_full_name,
+        cover_full_name,
+        cover_size,
+        cover_offset,
+      ))
+    })
+    .unwrap()
+    .map(|result| result.unwrap())
+    .collect();
   tracing::debug!("ids:{:?}", covers);
 
   let concat_file_name = cover_base_path.clone() + "/covers" + covers[0].2.as_str();
@@ -482,7 +523,7 @@ pub fn concat_cover(dir_name: String) {
   if !concat_path.exists() {
     let create_result = std::fs::create_dir(concat_path);
     if create_result.is_err() {
-      tracing::error!("create {:?} failed, {:?}",concat_path, create_result);
+      tracing::error!("create {:?} failed, {:?}", concat_path, create_result);
       return;
     }
   }
@@ -492,48 +533,60 @@ pub fn concat_cover(dir_name: String) {
     std::fs::remove_file(&concat_path_name).unwrap();
   }
 
-
   let mut concat_file = File::create_new(concat_path_name).unwrap();
   let header: [u8; 4] = [0xca, 0xfe, 0xba, 0xbe]; // "CAFEBABE"
   let _ = concat_file.write(&header);
 
   let mut write_offset: u64 = 4;
 
-  let mut stmt = sqlite_conn.prepare(
-    "update 
+  let mut stmt = sqlite_conn
+    .prepare(
+      "update 
       video_info 
     set 
       cover_offset = :cover_offset 
     where 
-      id = :id").unwrap();
+      id = :id",
+    )
+    .unwrap();
 
-  covers.iter().for_each(|(id, _video_file_name, cover_file_name, cover_size, _cover_offset)| {
-    stmt.execute(named_params! {
-      ":cover_offset": write_offset,
-      ":id": *id
-    }).unwrap();
-    log_sql(&stmt.expanded_sql().unwrap());
+  covers.iter().for_each(
+    |(id, _video_file_name, cover_file_name, cover_size, _cover_offset)| {
+      stmt
+        .execute(named_params! {
+          ":cover_offset": write_offset,
+          ":id": *id
+        })
+        .unwrap();
+      log_sql(&stmt.expanded_sql().unwrap());
 
-    let f_err = File::open(cover_file_name);
-    if f_err.is_err() {
-      tracing::error!("open cover file error: {}", cover_file_name);
-      return;
-    }
-    let mut f = f_err.unwrap();
-      
-    let mut buf: Vec<u8> = vec![0; *cover_size as usize];
-    let _ = f.seek(SeekFrom::Start(0));
-    let _ = f.read_exact(&mut buf);
-    let _ = concat_file.write_all(&buf);
-    write_offset += *cover_size;
-  });
+      let f_err = File::open(cover_file_name);
+      if f_err.is_err() {
+        tracing::error!("open cover file error: {}", cover_file_name);
+        return;
+      }
+      let mut f = f_err.unwrap();
+
+      let mut buf: Vec<u8> = vec![0; *cover_size as usize];
+      let _ = f.seek(SeekFrom::Start(0));
+      let _ = f.read_exact(&mut buf);
+      let _ = concat_file.write_all(&buf);
+      write_offset += *cover_size;
+    },
+  );
 
   concat_file.flush().unwrap()
 }
 
 pub fn refresh_video_and_cover_by_id(id: u32) {
   let (id, video_file_name, cover_file_name, dir_path) = video_file_path_by_id(id);
-  tracing::info!("file_names:{}, {}, {}, {}", id, video_file_name, cover_file_name, dir_path);
+  tracing::info!(
+    "file_names:{}, {}, {}, {}",
+    id,
+    video_file_name,
+    cover_file_name,
+    dir_path
+  );
   thread::spawn(move || {
     tracing::debug!("thread process");
     parse_and_update_meta_info_by_id(id, video_file_name, cover_file_name);
