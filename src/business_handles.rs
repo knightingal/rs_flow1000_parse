@@ -212,13 +212,17 @@ pub async fn delete_video_handler(
   Path(id): Path<u32>,
   Query(params): Query<DeleteVideoParam>,
 ) -> (StatusCode, HeaderMap) {
+  tracing::info!("delete video by id:{}", id);
   let video_files = video_file_path_by_id(id);
-
+  
+  tracing::info!("delete video file {}", video_files.1);
   let ret = fs::remove_file(&video_files.1);
   if ret.is_err() {
     tracing::error!("failed to delete {}, {}", video_files.1, ret.unwrap_err().to_string());
     return (StatusCode::INTERNAL_SERVER_ERROR, cors_json_headers());
   }
+
+  tracing::info!("delete cover file {}", video_files.2);
   let ret = fs::remove_file(&video_files.2);
   if ret.is_err() {
     tracing::error!("failed to delete {}, {}", video_files.2, ret.unwrap_err().to_string());
