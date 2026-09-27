@@ -255,13 +255,19 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   AVFrame *rgb_frame = NULL;
   uint8_t *buffer = NULL;
   struct SwsContext *sws_context = NULL;
+  printf("avcodec_find_encoder\n");
   codec = avcodec_find_encoder(code_id);
+  printf("avcodec_alloc_context3\n");
   ctx = avcodec_alloc_context3(codec);
 
   const enum AVPixelFormat pix_fmts;
+  printf("avcodec_get_supported_config\n");
   avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts, NULL);
+  printf("init_AVCodecContext\n");
   init_AVCodecContext(ctx, frame_array[0]->width, frame_array[0]->height, pix_fmts);
+  printf("avcodec_open2\n");
   ret = avcodec_open2(ctx, codec, NULL);
+  printf("frame_to_rgb_buff_full\n");
   rgb_frame = frame_to_rgb_buff_full(frame_array[0], 0, ctx, NULL);
   rgb_frame->format = ctx->pix_fmt;
   rgb_frame->width = ctx->width;
@@ -270,7 +276,9 @@ static int frame_array_to_image(AVFrame **frame_array, enum AVCodecID code_id, u
   {
     frame_to_rgb_buff_full(frame_array[i], i, ctx, rgb_frame->data[0]);
   }
+  printf("avcodec_send_frame\n");
   ret = avcodec_send_frame(ctx, rgb_frame);
+  printf("avcodec_receive_packet\n");
   ret = avcodec_receive_packet(ctx, pkt);
   memcpy(outbuf, pkt->data, pkt->size);
   ret = pkt->size;
@@ -599,6 +607,7 @@ struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
   // avcodec_close(dec_ctx);
   avcodec_free_context(&dec_ctx);
 
+  printf("av_image_get_buffer_size AV_CODEC_ID_PNG\n");
   int size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, frame_array[0]->width,
                                       frame_array[0]->height, 64);
 
@@ -609,6 +618,7 @@ struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
     printf("Can not alloc buffer\n");
     ret = AVERROR(ENOMEM);
   }
+  printf("frame_array_to_image AV_CODEC_ID_PNG\n");
   ret = frame_array_to_image(frame_array, AV_CODEC_ID_PNG, buffer, size);
 
   for (int i = 0; i < 1; i++)
