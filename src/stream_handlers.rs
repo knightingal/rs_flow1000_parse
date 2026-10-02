@@ -41,12 +41,12 @@ extern "C" {
   fn inv_cfb_v2(w: *const u32, iv: *const u8, input_buf: *const u8, output: *mut u8, len: usize);
 }
 
-#[cfg(reallink)]
-#[link(name = "framedecode")]
-extern "C" {
-  fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
-  fn av_free_wrap(buff: *const u8);
-}
+// #[cfg(reallink)]
+// #[link(name = "framedecode")]
+// extern "C" {
+//   fn avif_to_png(file_url: *const c_char, snap_time: u64) -> SnapshotSt;
+//   fn av_free_wrap(buff: *const u8);
+// }
 
 #[cfg(mocklink)]
 unsafe fn inv_cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {
@@ -233,17 +233,18 @@ fn trans_avif_to_png(mut main_patition_path: String, file_name: String) -> Vec<u
   main_patition_path.push_str(&real_file_name);
 
   let video_name = CString::new(main_patition_path.as_str()).unwrap();
-  unsafe {
-    let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
-    if snapshot_st.buff.is_null() {
-      return Vec::new();
-    }
-    let len = snapshot_st.buff_len.try_into().unwrap();
-    let slice = slice::from_raw_parts(snapshot_st.buff, len);
-    let buff: Vec<u8> = Vec::from(slice);
-    av_free_wrap(snapshot_st.buff);
-    return buff;
-  }
+  return Vec::new();
+  // unsafe {
+  //   let snapshot_st = avif_to_png(video_name.as_ptr(), 0u64);
+  //   if snapshot_st.buff.is_null() {
+  //     return Vec::new();
+  //   }
+  //   let len = snapshot_st.buff_len.try_into().unwrap();
+  //   let slice = slice::from_raw_parts(snapshot_st.buff, len);
+  //   let buff: Vec<u8> = Vec::from(slice);
+  //   av_free_wrap(snapshot_st.buff);
+  //   return buff;
+  // }
 }
 
 
