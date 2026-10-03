@@ -4,5 +4,5 @@
 #include "avifpng.h"
 
 
-expandableBuff* avif_to_png(const char* avif_file_name);
+expandableBuff* avif_to_png_v2(const char* avif_file_name);
 #endif
