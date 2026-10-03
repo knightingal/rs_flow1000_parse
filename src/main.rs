@@ -73,22 +73,6 @@ extern "C" {
   fn simple_dll_function_return_heap_point() -> *const c_char;
 }
 
-struct AvifRWData {
-  data: *const u8,
-  size: u64,
-}
-
-struct ExpandablueBuff {
-  data: AvifRWData,
-  written_len: u64,
-}
-
-#[cfg(reallink)]
-#[link(name = "avifdecode")]
-extern "C" {
-  fn avif_to_png(file_url: *const c_char) -> *const ExpandablueBuff;
-
-}
 
 
 #[cfg(mocklink)]
