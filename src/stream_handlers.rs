@@ -251,8 +251,9 @@ fn trans_avif_to_png(mut main_patition_path: String, file_name: String) -> Vec<u
 
     let len:usize = (*expandablue_buff).written_len as usize;
     let slice = slice::from_raw_parts((*expandablue_buff).data.data, len);
-    // free_expandableBuff(expandablue_buff);
-    Vec::from(slice)
+    let buff = Vec::from(slice);
+    free_expandableBuff(expandablue_buff);
+    return buff;
   }
 }
 
