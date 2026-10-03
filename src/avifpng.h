@@ -23,6 +23,9 @@ expandableBuff* avifPNGWriteToMemory(
   int compressionLevel
 );
 
+void free_expandableBuff(expandableBuff* pBuff);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
