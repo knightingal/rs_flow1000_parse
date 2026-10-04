@@ -41,7 +41,6 @@ void free_expandableBuff(expandableBuff* pBuff) {
 void 
 png_memory_write_data(png_structp png_ptr, png_bytep data, size_t length)
 {
-  printf("write data %d\n", length);
   expandableBuff* io_ptr = png_get_io_ptr(png_ptr);
   size_t pre_write_len = io_ptr->written_len + length;
   if (pre_write_len > io_ptr->data.size) {
@@ -322,11 +321,6 @@ expandableBuff* avifPNGWriteToMemory(
     png_write_end(png, NULL);
 
     writeResult = AVIF_TRUE;
-    FILE* f = fopen("output.png", "wb");
-    fwrite(p_buff->data.data, 1, p_buff->written_len, f);
-    fflush(f);
-    fclose(f);
-    printf("Wrote PNG\n");
 cleanup:
     if (png) {
         png_destroy_write_struct(&png, &info);
