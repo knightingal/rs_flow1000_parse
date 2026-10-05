@@ -11,7 +11,7 @@
 gcc -shared -fPIC avifpng.c  avifutil.c avifexif.c avifdecode.c -o libavifdecode.so -lavif -lpng
  */
 
-expandableBuff* avif_to_png_v2(const char* avif_file_name) {
+expandableBuff* avif_to_png(const char* avif_file_name) {
   avifBool rawColor = AVIF_FALSE;
   int pngCompressionLevel = -1; // -1 is a sentinel to avifPNGWrite() to skip calling png_set_compression_level()
   int requestedDepth = 0;

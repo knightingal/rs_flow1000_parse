@@ -55,7 +55,7 @@ struct ExpandablueBuff {
 #[cfg(reallink)]
 #[link(name = "avifdecode")]
 extern "C" {
-  fn avif_to_png_v2(file_url: *const c_char) -> *const ExpandablueBuff;
+  fn avif_to_png(file_url: *const c_char) -> *const ExpandablueBuff;
   fn free_expandableBuff(buff: *const ExpandablueBuff);
 }
 
@@ -64,13 +64,6 @@ extern "C" {
 unsafe fn inv_cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {
 }
 
-#[cfg(mocklink)]
-unsafe fn avif_to_png(_file_url: *const c_char, _snap_time: u64) -> SnapshotSt {
-    SnapshotSt {
-      buff: std::ptr::null(),
-      buff_len: 0,
-    }
-}
 
 #[cfg(mocklink)]
 unsafe fn av_free_wrap(_buff: *const u8) {}
@@ -241,17 +234,16 @@ pub async fn flow1000_image_stream_by_path_handler(Path(sub_dir): Path<String>) 
 }
 
 fn trans_avif_to_png(mut main_patition_path: String, file_name: String) -> Vec<u8> {
-  tracing::info!("trans_avif_to_png: {}", file_name);
-  let real_file_name = file_name.replace(".avif.png", ".avif");
+  let real_file_name: String = file_name.replace(".avif.png", ".avif");
   main_patition_path.push_str(&real_file_name);
 
-  let video_name = CString::new(main_patition_path.as_str()).unwrap();
+  let video_name: CString = CString::new(main_patition_path.as_str()).unwrap();
   unsafe {
-    let expandablue_buff = avif_to_png_v2(video_name.as_ptr());
+    let expandablue_buff: *const ExpandablueBuff = avif_to_png(video_name.as_ptr());
 
     let len:usize = (*expandablue_buff).written_len as usize;
-    let slice = slice::from_raw_parts((*expandablue_buff).data.data, len);
-    let buff = Vec::from(slice);
+    let slice: &[u8] = slice::from_raw_parts((*expandablue_buff).data.data, len);
+    let buff: Vec<u8> = Vec::from(slice);
     free_expandableBuff(expandablue_buff);
     return buff;
   }
