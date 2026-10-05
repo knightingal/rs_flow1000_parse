@@ -486,7 +486,7 @@ struct video_meta_info *video_meta_info(const char *name_path)
   return p_video_meta_info;
 }
 
-struct snapshot_st avif_to_png(const char *name_path, const uint64_t snap_time)
+struct snapshot_st avif_to_png_deprecated(const char *name_path, const uint64_t snap_time)
 {
   AVFormatContext *fmt_ctx = NULL;
   int ret;
