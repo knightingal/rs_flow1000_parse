@@ -59,6 +59,13 @@ extern "C" {
   fn free_expandableBuff(buff: *const ExpandablueBuff);
 }
 
+#[cfg(mocklink)]
+unsafe fn avif_to_png(file_url: *const c_char) -> *const ExpandablueBuff {
+  return std::ptr::null();
+}
+
+#[cfg(mocklink)]
+unsafe fn free_expandableBuff(buff: *const ExpandablueBuff) {}
 
 #[cfg(mocklink)]
 unsafe fn inv_cfb_v2(_w: *const u32, _iv: *const u8, _input_buf: *const u8, _output: *mut u8, _len: usize) {
